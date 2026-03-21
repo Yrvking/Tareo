@@ -1,0 +1,370 @@
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:3] C1:CLIENTE | C2:INVERSIONES SAURIS SAC | C3: | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:4] C1:PERIODO | C2:1 | C3: | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:5] C1:ITEM | C2:ACTIVIDAD | C3:PARTIDA DE CONTROL | C4:TOTAL DE SEMANA
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:7] C1:1 | C2:Trabajos provisionales almacen | C3:Obras provosionales | C4:26
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:8] C1:2 | C2:Caseta vestuarios | C3:Obras provosionales | C4:8
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:9] C1:3 | C2:Oficinas provisionales | C3:Obras provosionales | C4:17
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:10] C1:4 | C2:Limpieza de obra | C3:Varios - Obras Provisionales | C4:6
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:11] C1:5 | C2:Vigia fachada | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:12] C1:6 | C2:cerco  perimetrico provicional | C3:Tarrajeo, Revoques y Enlucido | C4:5
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:13] C1:7 | C2:Trabajos provicionales - oficina staff - Almacen | C3:Caseta para Oficinas, comedor y Cerco perimetrico | C4:17
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:14] C1:8 | C2:Trabajos provicionales - baños | C3:Servicios Higienicos para Staff y Obreros | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:15] C1:9 | C2:Señalizacion de obra | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:8
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:16] C1:10 | C2:Topografia | C3:Topografia | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:17] C1:11 | C2:Protecciones colectivas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:18] C1:12 | C2:Limpieza de vecinos | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:19] C1:13 | C2:Traslado de materiales de Almacen | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:20] C1:14 | C2:Acabados de canaletas de sotanos | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:21] C1:15 | C2:Acarreo Horizontal | C3:Traslado Vertical y Horizontal | C4:9
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:22] C1:16 | C2:Acarreo Vertical | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:23] C1:17 | C2:Forjado de escaleras en sotano | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:24] C1:18 | C2:Bimastil | C3:Marmol, Granito, Cuarzo | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:25] C1:19 | C2:colocacion bordes pvc  en escaleras | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:26] C1:20 | C2:Asentado de ladrillo remates sotanos | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:27] C1:21 | C2:Copado resanes y limpieza de vigas y columnas de fachada | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:28] C1:22 | C2:Resane en sotanos  pisos y muros | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:29] C1:23 | C2:Capataz de acabados | C3:Gastos de personal | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:30] C1:24 | C2:Encofradoy concreto en ductos en montantes | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:31] C1:25 | C2:resanes en casa vecinas | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:32] C1:26 | C2:resanes piso 16 | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:33] C1:27 | C2:Limpieza en zona de piscina | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:34] C1:28 | C2:Solaqueo de pasosy contrapasos de escalera de evacuacion | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:35] C1:29 | C2:armado y desarmado de andamios | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:36] C1:30 | C2:Limpieza y  acarreo de escombros de departamentos | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:37] C1:31 | C2:Eliminacion de desmonte y escombros | C3:Eliminación de basura y desmonte con cajas ecologicas | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:38] C1:32 | C2:Limpieza de rebabas de piso para enchape | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:39] C1:33 | C2:Picado y forjado de canaletas para mamparas y duchas | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:40] C1:34 | C2:Correccion de centros dicroicos | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:41] C1:35 | C2:fragua en enchapesy sellado  fachada | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:42] C1:36 | C2:Remate de pintura en departamentos | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:43] C1:37 | C2:Remate de pintura en areas comunes | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:44] C1:38 | C2:Instalacion de drywall en departamentos | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:45] C1:39 | C2:Sellado de junta en muros con espuma cortafuego | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:46] C1:40 | C2:Forrado de  manparas y ventana | C3:Vidrios y cristales | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:47] C1:41 | C2:Instalacion de drywall en areas comunes | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:48] C1:42 | C2:Impermeabilizado de retiros de fachada | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:49] C1:43 | C2:Colocacion de topes de puerta | C3:Carpinteria de Madera | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:50] C1:44 | C2:nivelacion de piso gimnacio | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:51] C1:45 | C2:forrado de pisos spc | C3:Otros Formatos de Pisos | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:52] C1:46 | C2:Colocacion de topellantas en sotanos | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:53] C1:47 | C2:Solaqueos en montantes iiee iiss  gas | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:54] C1:48 | C2:Siliconeado de muebles de melamine - cocinas, closet | C3:Carpinteria de Melamina | C4:17
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:55] C1:49 | C2:Tarrajeo de banco de medidores | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:56] C1:50 | C2:dado de concreto acelografo | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:57] C1:51 | C2:nicho para control de riego piso 16 | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:58] C1:52 | C2:Forrado de enchape de baños | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:59] C1:53 | C2:Trazo en fachada para ventanas | C3:Topografia | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:60] C1:54 | C2:Corte de fierro con instalacion de ventanas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:61] C1:55 | C2:Encofrado y concreto  lobby | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:62] C1:56 | C2:Tarrajeos de derrames y resanes en dpts | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:63] C1:57 | C2:Acentado ladrillo  blanco piso 1 | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:64] C1:58 | C2:Tarrajeos derrames  solaqueo techo tecnico | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:65] C1:59 | C2:Tarrajeo muros y derrames piso  1 | C3:Tarrajeo, Revoques y Enlucido | C4:8.5
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:66] C1:60 | C2:Llavero | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:67] C1:61 | C2:Encofrado y concreto muro y meza pet sotano 2 | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:68] C1:62 | C2:Retoque de pintura piloto ventas | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:69] C1:63 | C2:Forrado de inodoros | C3:Aparatos Sanitarios y Accesorios | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:70] C1:64 | C2:Forrado de cerraduras | C3:Cerrajeria | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:71] C1:65 | C2:Colocacion ladrillo adoquines | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:72] C1:66 | C2:concreto rampa buñado exteriores | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:73] C1:67 | C2:Concreto jardinera y sardineles  exteriores | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:74] C1:68 | C2:Enchapes fachada | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:75] C1:69 | C2:Colocacion de señaletias | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:76] C1:70 | C2: | C3: | C4:
+[F:TAREO SEMANA 01 DEL 16 AL21  DE FEBRERO DEL 2026_.xlsx] [R:77] C1:TOTAL DE HORAS POR ACTIVIDAD | C2: | C3:70.5 | C4:121.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:3] C1:CLIENTE | C2:INVERSIONES SAURIS SAC | C3: | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:4] C1:PERIODO | C2:2 | C3: | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:5] C1:ITEM | C2:ACTIVIDAD | C3:PARTIDA DE CONTROL | C4:TOTAL DE SEMANA
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:7] C1:1 | C2:Trabajos provisionales almacen | C3:Obras provosionales | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:8] C1:2 | C2:vigia | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:42.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:9] C1:3 | C2:monitor | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:39.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:10] C1:4 | C2:Limpieza de obra | C3:Varios - Obras Provisionales | C4:11.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:11] C1:5 | C2:SNDICATO | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:34
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:12] C1:6 | C2:cerco  perimetrico provicional | C3:Obras provosionales | C4:8.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:13] C1:7 | C2:Trabajos provicionales - oficina staff - Almacen | C3:Caseta para Oficinas, comedor y Cerco perimetrico | C4:8.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:14] C1:8 | C2:Trabajos provicionales - baños | C3:Servicios Higienicos para Staff y Obreros | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:15] C1:9 | C2:Señalizacion de obra | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:8
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:16] C1:10 | C2:Topografia | C3:Topografia | C4:96
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:17] C1:11 | C2:Protecciones colectivas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:18] C1:12 | C2:Limpieza de vecinos | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:19] C1:13 | C2:Traslado de materiales de Almacen | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:20] C1:14 | C2:umedecer terreno | C3:movimientos de tierra | C4:20
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:21] C1:15 | C2:Acarreo Horizontal | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:22] C1:16 | C2:Acarreo Vertical | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:23] C1:17 | C2:Forjado de escaleras en sotano | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:24] C1:18 | C2:Bimastil | C3:Marmol, Granito, Cuarzo | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:25] C1:19 | C2:colocacion bordes pvc  en escaleras | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:26] C1:20 | C2:Asentado de ladrillo remates sotanos | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:27] C1:21 | C2:Copado resanes y limpieza de vigas y columnas de fachada | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:28] C1:22 | C2:Resane en sotanos  pisos y muros | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:29] C1:23 | C2:Capataz de acabados | C3:Gastos de personal | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:30] C1:24 | C2:Encofradoy concreto en ductos en montantes | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:31] C1:25 | C2:resanes en casa vecinas | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:32] C1:26 | C2:resanes piso 16 | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:33] C1:27 | C2:Limpieza en zona de piscina | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:34] C1:28 | C2:Solaqueo de pasosy contrapasos de escalera de evacuacion | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:35] C1:29 | C2:armado y desarmado de andamios | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:36] C1:30 | C2:Limpieza y  acarreo de escombros de departamentos | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:37] C1:31 | C2:Eliminacion de desmonte y escombros | C3:Eliminación de basura y desmonte con cajas ecologicas | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:38] C1:32 | C2:Limpieza de rebabas de piso para enchape | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:39] C1:33 | C2:Picado y forjado de canaletas para mamparas y duchas | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:40] C1:34 | C2:Correccion de centros dicroicos | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:41] C1:35 | C2:fragua en enchapesy sellado  fachada | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:42] C1:36 | C2:Remate de pintura en departamentos | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:43] C1:37 | C2:Remate de pintura en areas comunes | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:44] C1:38 | C2:Instalacion de drywall en departamentos | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:45] C1:39 | C2:Sellado de junta en muros con espuma cortafuego | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:46] C1:40 | C2:Forrado de  manparas y ventana | C3:Vidrios y cristales | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:47] C1:41 | C2:Instalacion de drywall en areas comunes | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:48] C1:42 | C2:Impermeabilizado de retiros de fachada | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:49] C1:43 | C2:Colocacion de topes de puerta | C3:Carpinteria de Madera | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:50] C1:44 | C2:nivelacion de piso gimnacio | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:51] C1:45 | C2:forrado de pisos spc | C3:Otros Formatos de Pisos | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:52] C1:46 | C2:Colocacion de topellantas en sotanos | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:53] C1:47 | C2:Solaqueos en montantes iiee iiss  gas | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:54] C1:48 | C2:Siliconeado de muebles de melamine - cocinas, closet | C3:Carpinteria de Melamina | C4:17
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:55] C1:49 | C2:Tarrajeo de banco de medidores | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:56] C1:50 | C2:dado de concreto acelografo | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:57] C1:51 | C2:nicho para control de riego piso 16 | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:58] C1:52 | C2:Forrado de enchape de baños | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:59] C1:53 | C2:Trazo en fachada para ventanas | C3:Topografia | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:60] C1:54 | C2:Corte de fierro con instalacion de ventanas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:61] C1:55 | C2:Encofrado y concreto  lobby | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:62] C1:56 | C2:Tarrajeos de derrames y resanes en dpts | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:63] C1:57 | C2:Acentado ladrillo  blanco piso 1 | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:64] C1:58 | C2:Tarrajeos derrames  solaqueo techo tecnico | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:65] C1:59 | C2:Tarrajeo muros y derrames piso  1 | C3:Tarrajeo, Revoques y Enlucido | C4:8.5
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:66] C1:60 | C2:Llavero | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:67] C1:61 | C2:Encofrado y concreto muro y meza pet sotano 2 | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:68] C1:62 | C2:Retoque de pintura piloto ventas | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:69] C1:63 | C2:Forrado de inodoros | C3:Aparatos Sanitarios y Accesorios | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:70] C1:64 | C2:Forrado de cerraduras | C3:Cerrajeria | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:71] C1:65 | C2:Colocacion ladrillo adoquines | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:72] C1:66 | C2:concreto rampa buñado exteriores | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:73] C1:67 | C2:Concreto jardinera y sardineles  exteriores | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:74] C1:68 | C2:Enchapes fachada | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:75] C1:69 | C2:Colocacion de señaletias | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:76] C1:70 | C2: | C3: | C4:
+[F:TAREO SEMANA 02 DEL 23 AL28  DE FEBRERO DEL 2026_.xlsx] [R:77] C1:TOTAL DE HORAS POR ACTIVIDAD | C2: | C3:160.5 | C4:294
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:3] C1:CLIENTE | C2:INVERSIONES SAURIS SAC | C3: | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:4] C1:PERIODO | C2:3 | C3: | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:5] C1:ITEM | C2:ACTIVIDAD | C3:PARTIDA DE CONTROL | C4:TOTAL DE SEMANA
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:7] C1:1 | C2:Desmotaje caseta ventas | C3:Obras provosionales | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:8] C1:2 | C2:Vigia | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:46.5
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:9] C1:3 | C2:monitor | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:48
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:10] C1:4 | C2:Limpieza de obra | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:11] C1:5 | C2:SNDICATO | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:14
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:12] C1:6 | C2:cerco  perimetrico provicional | C3:Obras provosionales | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:13] C1:7 | C2:Trabajos provicionales - oficina staff - Almacen | C3:Caseta para Oficinas, comedor y Cerco perimetrico | C4:17.5
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:14] C1:8 | C2:Trabajos provicionales - baños | C3:Servicios Higienicos para Staff y Obreros | C4:17
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:15] C1:9 | C2:Señalizacion de obra | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:18
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:16] C1:10 | C2:Topografia | C3:Topografia | C4:82
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:17] C1:11 | C2:Protecciones colectivas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:11
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:18] C1:12 | C2:Limpieza de vecinos | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:19] C1:13 | C2:Traslado de materiales de Almacen | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:20] C1:14 | C2:Humedecer terreno | C3:movimientos de tierra | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:21] C1:15 | C2:Acarreo Horizontal | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:22] C1:16 | C2:Acarreo Vertical | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:23] C1:17 | C2:Perfilado de muros | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:24] C1:18 | C2:Relleno y nivelacion manual | C3:Manu anclado - estabilizacion | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:25] C1:19 | C2:Colocacion plastico | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:26] C1:20 | C2:Colocacion de teknopol pases de vigas y loza | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:27] C1:21 | C2:Colocacion de tuberia pases de anclaje | C3:Varios estructuras | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:28] C1:22 | C2:Armado y desarmado de andamios | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:29] C1:23 | C2:Capataz de acabados | C3:Gastos de personal | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:30] C1:24 | C2:Armado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:31] C1:25 | C2:Vertido de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:32] C1:26 | C2:Desencofrado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:33] C1:27 | C2:Picado de cachimbas | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:34] C1:28 | C2:curado de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:35] C1:29 | C2:Apoyo a sub contratista | C3:Varios - estructuras | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:36] C1:30 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:37] C1:31 | C2:Eliminacion de desmonte y escombros | C3:Eliminación de basura y desmonte con cajas ecologicas | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:38] C1:32 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:39] C1:33 | C2: | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:40] C1:34 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:41] C1:35 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:42] C1:36 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:43] C1:37 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:44] C1:38 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:45] C1:39 | C2: | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:46] C1:40 | C2: | C3:Vidrios y cristales | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:47] C1:41 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:48] C1:42 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:49] C1:43 | C2: | C3:Carpinteria de Madera | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:50] C1:44 | C2: | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:51] C1:45 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:52] C1:46 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:53] C1:47 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:54] C1:48 | C2: | C3:Carpinteria de Melamina | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:55] C1:49 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:56] C1:50 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:57] C1:51 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:58] C1:52 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:59] C1:53 | C2: | C3:Topografia | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:60] C1:54 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:61] C1:55 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:62] C1:56 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:63] C1:57 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:64] C1:58 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:65] C1:59 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:66] C1:60 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:67] C1:61 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:68] C1:62 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:69] C1:63 | C2: | C3:Aparatos Sanitarios y Accesorios | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:70] C1:64 | C2: | C3:Cerrajeria | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:71] C1:65 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:72] C1:66 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:73] C1:67 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:74] C1:68 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:75] C1:69 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:76] C1:70 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 03 DEL 02 AL07  DE MARZO DEL 2026_.xlsx] [R:77] C1:TOTAL DE HORAS POR ACTIVIDAD | C2: | C3:126.5 | C4:254
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:3] C1:CLIENTE | C2:INVERSIONES SAURIS SAC | C3: | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:4] C1:PERIODO | C2:4 | C3: | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:5] C1:ITEM | C2:ACTIVIDAD | C3:PARTIDA DE CONTROL | C4:TOTAL DE SEMANA
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:7] C1:1 | C2:vestuario | C3:Obras provosionales | C4:4.5
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:8] C1:2 | C2:Vigia | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:17.5
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:9] C1:3 | C2:monitor | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:48
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:10] C1:4 | C2:Limpieza de obra | C3:Varios - Obras Provisionales | C4:4
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:11] C1:5 | C2:SNDICATO | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:18
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:12] C1:6 | C2:cerco  perimetrico provicional | C3:Obras provosionales | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:13] C1:7 | C2:Trabajos provicionales - oficina staff - Almacen | C3:Caseta para Oficinas, comedor y Cerco perimetrico | C4:3
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:14] C1:8 | C2:Trabajos provicionales - baños | C3:Servicios Higienicos para Staff y Obreros | C4:19
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:15] C1:9 | C2:Señalizacion de obra | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:13
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:16] C1:10 | C2:Topografia | C3:Topografia | C4:67.5
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:17] C1:11 | C2:Protecciones colectivas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:39
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:18] C1:12 | C2:Limpieza de vecinos | C3:Varios - Obras Provisionales | C4:2
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:19] C1:13 | C2:Traslado de materiales de Almacen | C3:Traslado Vertical y Horizontal | C4:3
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:20] C1:14 | C2:Humedecer terreno | C3:movimientos de tierra | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:21] C1:15 | C2:Acarreo Horizontal | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:22] C1:16 | C2:Acarreo Vertical | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:23] C1:17 | C2:Perfilado de muros | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:24] C1:18 | C2:Relleno y nivelacion manual | C3:Manu anclado - estabilizacion | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:25] C1:19 | C2:Colocacion plastico | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:26] C1:20 | C2:Colocacion de teknopol pases de vigas y loza | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:27] C1:21 | C2:Colocacion de tuberia pases de anclaje | C3:Varios estructuras | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:28] C1:22 | C2:Armado y desarmado de andamios | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:29] C1:23 | C2:Capataz de acabados | C3:Gastos de personal | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:30] C1:24 | C2:Armado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:31] C1:25 | C2:Vertido de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:32] C1:26 | C2:Desencofrado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:33] C1:27 | C2:Picado de cachimbas | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:34] C1:28 | C2:curado de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:35] C1:29 | C2:Apoyo a sub contratista | C3:Varios - estructuras | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:36] C1:30 | C2:provicionales iiss | C3:Obras provosionales | C4:13
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:37] C1:31 | C2:Eliminacion de desmonte y escombros | C3:Eliminación de basura y desmonte con cajas ecologicas | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:38] C1:32 | C2:Caseta de ventas paso de concreto | C3:Tarrajeo, Revoques y Enlucido | C4:10
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:39] C1:33 | C2: | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:40] C1:34 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:41] C1:35 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:42] C1:36 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:43] C1:37 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:44] C1:38 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:45] C1:39 | C2: | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:46] C1:40 | C2: | C3:Vidrios y cristales | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:47] C1:41 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:48] C1:42 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:49] C1:43 | C2: | C3:Carpinteria de Madera | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:50] C1:44 | C2: | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:51] C1:45 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:52] C1:46 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:53] C1:47 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:54] C1:48 | C2: | C3:Carpinteria de Melamina | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:55] C1:49 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:56] C1:50 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:57] C1:51 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:58] C1:52 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:59] C1:53 | C2: | C3:Topografia | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:60] C1:54 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:61] C1:55 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:62] C1:56 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:63] C1:57 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:64] C1:58 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:65] C1:59 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:66] C1:60 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:67] C1:61 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:68] C1:62 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:69] C1:63 | C2: | C3:Aparatos Sanitarios y Accesorios | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:70] C1:64 | C2: | C3:Cerrajeria | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:71] C1:65 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:72] C1:66 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:73] C1:67 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:74] C1:68 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:75] C1:69 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:76] C1:70 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 04 DEL 09 AL14 DE MARZO DEL 2026_.xlsx] [R:77] C1:TOTAL DE HORAS POR ACTIVIDAD | C2: | C3:135 | C4:261.5
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:3] C1:CLIENTE | C2:INVERSIONES SAURIS SAC | C3: | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:4] C1:PERIODO | C2:5 | C3: | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:5] C1:ITEM | C2:ACTIVIDAD | C3:PARTIDA DE CONTROL | C4:TOTAL DE SEMANA
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:7] C1:1 | C2:vestuario | C3:Obras provosionales | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:8] C1:2 | C2:Vigia | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:40
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:9] C1:3 | C2:monitor | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:34
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:10] C1:4 | C2:Limpieza de obra | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:11] C1:5 | C2:SNDICATO | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:8.5
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:12] C1:6 | C2:cerco  perimetrico provicional | C3:Obras provosionales | C4:18
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:13] C1:7 | C2:Trabajos provicionales - oficina staff - Almacen | C3:Caseta para Oficinas, comedor y Cerco perimetrico | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:14] C1:8 | C2:Trabajos provicionales - baños | C3:Servicios Higienicos para Staff y Obreros | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:15] C1:9 | C2:Señalizacion de obra | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:4.5
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:16] C1:10 | C2:Topografia | C3:Topografia | C4:59.5
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:17] C1:11 | C2:Protecciones colectivas | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:18] C1:12 | C2:Limpieza de vecinos | C3:Varios - Obras Provisionales | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:19] C1:13 | C2:Traslado de materiales de Almacen | C3:Traslado Vertical y Horizontal | C4:13
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:20] C1:14 | C2:Humedecer terreno | C3:movimientos de tierra | C4:9.5
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:21] C1:15 | C2:Acarreo Horizontal | C3:Traslado Vertical y Horizontal | C4:7
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:22] C1:16 | C2:Acarreo Vertical | C3:Traslado Vertical y Horizontal | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:23] C1:17 | C2:Perfilado de muros | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:24] C1:18 | C2:Relleno y nivelacion manual | C3:Manu anclado - estabilizacion | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:25] C1:19 | C2:Colocacion plastico | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:26] C1:20 | C2:Colocacion de teknopol pases de vigas y loza | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:27] C1:21 | C2:Colocacion de tuberia pases de anclaje | C3:Varios estructuras | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:28] C1:22 | C2:Armado y desarmado de andamios | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:29] C1:23 | C2:Capataz de acabados | C3:Gastos de personal | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:30] C1:24 | C2:Armado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:31] C1:25 | C2:Vertido de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:32] C1:26 | C2:Desencofrado de cachimbas | C3:Encofrado muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:33] C1:27 | C2:Picado de cachimbas | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:34] C1:28 | C2:curado de concreto | C3:Concreto muro anclado | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:35] C1:29 | C2:Apoyo a sub contratista | C3:Varios - estructuras | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:36] C1:30 | C2:provicionales iiss | C3:Obras provosionales | C4:8
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:37] C1:31 | C2:Eliminacion de desmonte y escombros | C3:Eliminación de basura y desmonte con cajas ecologicas | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:38] C1:32 | C2:Caseta de ventas paso de concreto | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:39] C1:33 | C2:PROVETAS | C3:Concreto muro anclado | C4:2
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:40] C1:34 | C2: | C3: | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:41] C1:35 | C2: | C3: | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:42] C1:36 | C2: | C3: | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:43] C1:37 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:44] C1:38 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:45] C1:39 | C2: | C3:Muros de Albañileria | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:46] C1:40 | C2: | C3:Vidrios y cristales | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:47] C1:41 | C2: | C3:Drywall y Falso Cielo Raso | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:48] C1:42 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:49] C1:43 | C2: | C3:Carpinteria de Madera | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:50] C1:44 | C2: | C3:Contrapiso y Acabados en Cemento | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:51] C1:45 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:52] C1:46 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:53] C1:47 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:54] C1:48 | C2: | C3:Carpinteria de Melamina | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:55] C1:49 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:56] C1:50 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:57] C1:51 | C2: | C3:varios arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:58] C1:52 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:59] C1:53 | C2: | C3:Topografia | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:60] C1:54 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:61] C1:55 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:62] C1:56 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:63] C1:57 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:64] C1:58 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:65] C1:59 | C2: | C3:Tarrajeo, Revoques y Enlucido | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:66] C1:60 | C2: | C3:Seguridad Industrial (EPP y EPC), Patrimonial | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:67] C1:61 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:68] C1:62 | C2: | C3:Pintura y recubrimiento | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:69] C1:63 | C2: | C3:Aparatos Sanitarios y Accesorios | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:70] C1:64 | C2: | C3:Cerrajeria | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:71] C1:65 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:72] C1:66 | C2: | C3:otros obras exteriores | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:73] C1:67 | C2: | C3:Otros, Obras Exteriores | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:74] C1:68 | C2: | C3:Pisos de enchape ceramico y porcelanato | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:75] C1:69 | C2: | C3:Varios - Arquitectura | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:76] C1:70 | C2: | C3:Muro anclado - estabilizacion | C4:
+[F:TAREO SEMANA 05 DEL 16 AL21 DE MARZO DEL 2026_-DESKTOP-H1AEE4N.xlsx] [R:77] C1:TOTAL DE HORAS POR ACTIVIDAD | C2: | C3:102 | C4:204
