@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}",
+    "start": "serve -s dist -p ${PORT:-3000}",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "@supabase/supabase-js": "^2.99.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "serve": "^14.2.6",
     "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5"
   },
