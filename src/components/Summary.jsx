@@ -217,10 +217,12 @@ export default function Summary({
               <tbody>
                 {Object.entries(activityDailyMatrix.matrix).map(([actId, data]) => {
                   let actTotal = 0
+                  // Ensure name is used, not ID
+                  const displayName = data.nombre || actividades?.find(a => a.id === actId)?.nombre || actId
                   return (
                     <tr key={actId}>
                       <td>
-                        <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{data.nombre}</div>
+                        <div style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '13px' }}>{displayName}</div>
                         <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{data.partida}</div>
                       </td>
                       {activityDailyMatrix.workerIds.map(wId => {

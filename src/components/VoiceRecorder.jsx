@@ -738,37 +738,27 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {registros.map((reg) => (
               <div key={reg.id} className="registro-row">
-                <span className="mono" style={{ fontSize: 11, color: "#3a5a6a", minWidth: 60 }}>
+                <span className="mono" style={{ fontSize: 10, color: "var(--accent-blue)", minWidth: '65px' }}>
                   {reg.timestamp}
                 </span>
-                <span style={{ fontWeight: 600, color: "#e8dcc8", minWidth: 140, fontSize: 14 }}>
-                  {reg.workerNombre}
+                <span style={{ fontWeight: 700, color: "var(--text-main)", minWidth: '120px', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {reg.workerNombre.split(',')[0]}
                 </span>
-                {reg.frenteNombre && (
-                  <span className="frente-badge-sm">
-                    {reg.frenteNombre}
-                  </span>
-                )}
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1 }}>
+                
+                <div style={{ display: "flex", gap: 4, flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
                   {reg.assignments.map((a, i) => (
                     <span key={i} className="hora-badge">
-                      {a.horasNormales > 0 && (
-                        <span style={{ color: "#d4a55a" }}>{a.horasNormales}h</span>
-                      )}
-                      {a.horasNormales > 0 && a.horasExtras > 0 && (
-                        <span style={{ color: "#3a5a6a" }}>+</span>
-                      )}
-                      {a.horasExtras > 0 && (
-                        <span style={{ color: "#e88" }}>{a.horasExtras}hE</span>
-                      )}
-                      <span style={{ color: "#3a5a6a" }}>/</span>
-                      <span style={{ color: "#6a9ab4" }} title={getPartidaNombre(a.partidaId)}>
+                      <span style={{ color: "var(--accent-gold)" }}>{a.horasNormales || 0}h</span>
+                      {a.horasExtras > 0 && <span style={{ color: "#ef4444" }}>+{a.horasExtras}hE</span>}
+                      <span style={{ opacity: 0.3 }}>|</span>
+                      <span style={{ fontSize: '9px', color: "var(--text-dim)" }}>
                         {actividades?.find(act => act.id === a.actividadId)?.nombre || a.actividadId}
                       </span>
                     </span>
                   ))}
                 </div>
-                <button onClick={() => deleteRegistro(reg.id)} className="btn-icon-danger">
+
+                <button onClick={() => deleteRegistro(reg.id)} className="btn-icon-danger" title="Eliminar Tareo">
                   <TrashIcon />
                 </button>
               </div>

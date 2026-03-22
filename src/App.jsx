@@ -72,8 +72,8 @@ function AppContent() {
   const visibleTabs = TABS.filter(t => !t.adminOnly || profile?.role === 'admin')
 
   const getPartidaNombre = (id) => {
-    const p = partidas.find((p) => p.id === id)
-    return p ? `${p.id} - ${p.nombre}` : id
+    const p = partidas.find((p) => String(p.id) === String(id))
+    return p ? p.nombre : id
   }
 
   const getFrenteNombre = (id) => {
