@@ -1,3 +1,5 @@
+import Fuse from "fuse.js"
+
 export function normalize(str) {
   if (!str) return ""
   let s = str.toString()
@@ -37,34 +39,28 @@ function stripFillerWords(text) {
 
 function findBestWorkerMatch(text, workers) {
   const norm = normalize(text)
-  let best = null
-  let bestScore = 0
+  if (!workers || workers.length === 0 || !norm) return null
 
-  for (const w of workers) {
-    const wNorm = normalize(w.nombre)
-    const parts = wNorm.split(/\s+/)
+  const fuse = new Fuse(workers, {
+    keys: ["nombre"],
+    includeScore: true,
+    threshold: 0.4, // Stricter for workers to avoid false positives
+    ignoreLocation: true,
+  })
 
-    if (norm.includes(wNorm)) return { worker: w, score: 100 }
+  const results = fuse.search(norm)
 
-    let score = 0
-    for (const p of parts) {
-      if (p.length > 2 && norm.includes(p)) score += 40
+  if (results.length > 0) {
+    const best = results[0]
+    const score = Math.max(0, 100 - (best.score * 100))
+    let finalScore = score
+    if (norm.includes(normalize(best.item.nombre))) {
+      finalScore = 100
     }
-
-    if (parts.length >= 2) {
-      const firstName = parts[0]
-      const lastName = parts[parts.length - 1]
-      if (norm.includes(firstName) && norm.includes(lastName)) score += 30
-    }
-
-    if (score > bestScore) {
-      bestScore = score
-      best = w
-    }
+    return finalScore >= 35 ? { worker: best.item, score: finalScore } : null
   }
 
-  // Lower threshold (35 instead of 40) for better noise tolerance
-  return bestScore >= 35 ? { worker: best, score: bestScore } : null
+  return null
 }
 
 function findBestFrenteMatch(text, frentes) {
@@ -421,75 +417,26 @@ function findBestActividad(text, actividades) {
   // Remove reserved words that frequently cause false positive fuzzy matches
   normText = normText.replace(/\b(horas|hora|extras|extra|normales|normal|actividad|partida|con|y)\b/g, "").trim()
   
-  if (!normText) return null
-  
-  const tokens = normText.split(/\s+/)
-  
-  // Fuzzy token match using Levenshtein distance
-  let bestScore = 0
-  let bestActividad = null
-  
-  for (const a of actividades) {
-    const aTokens = normalize(a.nombre).split(/\s+/)
-    let score = 0
-    for (const t of tokens) {
-      if (t === normalize(a.id)) {
-        score += 50
-        continue
-      }
-      
-      let maxLen = 0
-      for (const pt of aTokens) {
-        if (t.length < 3 || pt.length < 3) continue
-        
-        const dist = levenshteinDistance(t, pt)
-        // Allow 1 typo for 4-letter words, 2 typos for 5+ letter words
-        const maxDist = t.length > 4 ? 2 : (t.length === 4 ? 1 : 0)
-        
-        if (dist <= maxDist) {
-          maxLen = Math.max(maxLen, t.length)
-        }
-      }
-      score += maxLen
-    }
-    
-    // Add exact substring bonus so "vigia fachada" matches better than "vigia" if they said "vigia fachada"
-    if (normalize(a.nombre).includes(normText) || normText.includes(normalize(a.nombre))) {
-      score += Math.min(normText.length, normalize(a.nombre).length)
-    }
+  if (!normText || !actividades || actividades.length === 0) return null
 
-    if (score > bestScore) {
-      bestScore = score
-      bestActividad = a
+  const fuse = new Fuse(actividades, {
+    keys: ["nombre", "id"],
+    includeScore: true,
+    threshold: 0.5, // Generous threshold to allow catching "seguridad" in "Personal de Seguridad"
+    ignoreLocation: true,
+    minMatchCharLength: 3,
+  })
+
+  const results = fuse.search(normText)
+
+  if (results.length > 0) {
+    // Score <= 0.6 is a decent match in Fuse
+    if (results[0].score <= 0.6) {
+       return results[0].item
     }
   }
-  
-  // A match exists if score is at least 3
-  return bestScore >= 3 ? bestActividad : null
-}
 
-function levenshteinDistance(a, b) {
-  if (a.length === 0) return b.length
-  if (b.length === 0) return a.length
-
-  const matrix = []
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i]
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1]
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
-        )
-      }
-    }
-  }
-  return matrix[b.length][a.length]
+  return null
 }
 
 // Keep the old API for backward compatibility
