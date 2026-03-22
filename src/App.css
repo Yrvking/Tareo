@@ -100,6 +100,108 @@ body {
   border-top: 1px solid var(--border-dim);
 }
 
+/* --- Phase 8: APK Refinement & Overflow Fixes --- */
+
+.app-container {
+  overflow-x: hidden; /* Prevent any accidental horizontal scrolls */
+}
+
+/* Force elements to stay within bounds on narrow mobile */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 12px;
+  }
+  
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+}
+
+/* Single line distribution helper */
+.single-line-dist {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* Badge and Label improvements */
+.pill-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Day Pill enhancements */
+.day-pill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.day-pill.has-hours {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.day-pill.active {
+  background: var(--accent-blue) !important;
+  color: white !important;
+  border-color: var(--accent-blue);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* Custom Checkbox Alignment */
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-blue);
+}
+
+/* Action button pills */
+.btn-pill-sm {
+  background: rgba(106, 154, 180, 0.1);
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pill-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Sidebar item icon fix */
+.sidebar-item svg, .nav-item svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Navigation Pills (Used in Summary) */
 .active-pill {
   background: rgba(37, 99, 235, 0.15) !important;

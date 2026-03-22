@@ -4,6 +4,7 @@ import { INITIAL_ACTIVIDADES } from "./data/actividades"
 import VoiceRecorder from "./components/VoiceRecorder"
 import ManualEntry from "./components/ManualEntry"
 import MobileEntry from "./components/MobileEntry"
+import WeeklyControl from "./components/WeeklyControl"
 import Summary from "./components/Summary"
 import Config from "./components/Config"
 import { fetchRegistros } from "./utils/supabaseClient"
@@ -14,12 +15,14 @@ import {
   PlusIcon,
   ChartIcon,
   SettingsIcon,
-  UsersIcon
+  UsersIcon,
+  LayoutIcon
 } from "./components/Icons"
 import "./App.css"
 
 const TABS = [
   { id: "mobile", label: "Carga Grupal", icon: UsersIcon },
+  { id: "weekly", label: "Control Semanal", icon: LayoutIcon },
   { id: "manual", label: "Manual", icon: PlusIcon },
   { id: "registro", label: "Voz", icon: MicIcon },
   { id: "resumen", label: "Planilla", icon: ChartIcon },
@@ -40,9 +43,8 @@ function AppContent() {
 
   useEffect(() => {
     async function loadData() {
-      // Calcular inicio y fin de semana (Lunes a Domingo)
       const current = new Date(fechaTareo)
-      const day = current.getDay() // 0=Dom, 1=Lun...
+      const day = current.getDay()
       const diffToMonday = current.getDate() - (day === 0 ? 6 : day - 1)
       
       const monday = new Date(current.setDate(diffToMonday))
@@ -69,11 +71,6 @@ function AppContent() {
 
   const visibleTabs = TABS.filter(t => !t.adminOnly || profile?.role === 'admin')
 
-  // Redirigir si pierde permisos de admin
-  if (tab === 'config' && profile?.role !== 'admin') {
-    setTab("mobile")
-  }
-
   const getPartidaNombre = (id) => {
     const p = partidas.find((p) => p.id === id)
     return p ? `${p.id} - ${p.nombre}` : id
@@ -86,7 +83,6 @@ function AppContent() {
 
   return (
     <div className="app-root">
-      {/* --- Sidebar (Desktop) --- */}
       <aside className="sidebar">
         <div className="sidebar-brand">
           <h1 className="title" style={{ fontSize: '24px' }}>TAREADOR</h1>
@@ -118,7 +114,7 @@ function AppContent() {
       </aside>
 
       <div className="app-container">
-        <header className="header" style={{ marginBottom: '32px' }}>
+        <header className="header" style={{ marginBottom: '24px' }}>
           <div className="title-group">
             <h1 className="title">
               {visibleTabs.find(t => t.id === tab)?.label || "TAREADOR"}
@@ -135,8 +131,7 @@ function AppContent() {
           </div>
         </header>
 
-        {/* Views */}
-        <main style={{ paddingBottom: '40px' }}>
+        <main style={{ paddingBottom: '20px' }}>
           {tab === "mobile" && (
             <MobileEntry 
               workers={workers} 
@@ -144,6 +139,18 @@ function AppContent() {
               actividades={actividades} 
               setRegistros={setRegistros} 
               fechaTareo={fechaTareo} 
+            />
+          )}
+
+          {tab === "weekly" && (
+            <WeeklyControl
+              workers={workers}
+              partidas={partidas}
+              actividades={actividades}
+              frentes={frentes}
+              registros={registros}
+              setRegistros={setRegistros}
+              fechaTareo={fechaTareo}
             />
           )}
 
@@ -203,7 +210,6 @@ function AppContent() {
           )}
         </main>
 
-        {/* --- Bottom Navigation (Mobile Only) --- */}
         <nav className="bottom-nav">
           {visibleTabs.map((t) => (
             <button
@@ -215,10 +221,6 @@ function AppContent() {
               <span>{t.label}</span>
             </button>
           ))}
-          <button onClick={logout} className="nav-item" style={{ color: '#ef4444' }}>
-            <span style={{ fontSize: '20px', marginBottom: '2px' }}>⏻</span>
-            <span>Salir</span>
-          </button>
         </nav>
       </div>
     </div>

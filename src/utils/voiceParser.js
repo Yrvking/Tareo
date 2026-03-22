@@ -42,22 +42,39 @@ function findBestWorkerMatch(text, workers) {
   if (!workers || workers.length === 0 || !norm) return null
 
   const fuse = new Fuse(workers, {
-    keys: ["nombre"],
+    keys: ["nombre", "id", "codigo"],
     includeScore: true,
-    threshold: 0.4, // Stricter for workers to avoid false positives
+    threshold: 0.5, // Slightly more relaxed for field voice
     ignoreLocation: true,
+    useExtendedSearch: true
   })
 
+  // Try searching for each word individually if the full phrase fails
   const results = fuse.search(norm)
 
   if (results.length > 0) {
     const best = results[0]
     const score = Math.max(0, 100 - (best.score * 100))
     let finalScore = score
-    if (norm.includes(normalize(best.item.nombre))) {
+
+    // REINFORCEMENT: If any word in the transcript matches a word in the name exactly
+    const transcriptWords = norm.split(/\s+/).filter(w => w.length > 3)
+    const nameNorm = normalize(best.item.nombre)
+    const nameWords = nameNorm.split(/\s+/)
+    
+    const hasExactWordMatch = transcriptWords.some(tw => 
+      nameWords.some(nw => nw === tw)
+    )
+
+    if (hasExactWordMatch) {
+      finalScore = Math.max(finalScore, 80) // Boost if a full word matches
+    }
+
+    if (norm.includes(nameNorm) || nameNorm.includes(norm)) {
       finalScore = 100
     }
-    return finalScore >= 35 ? { worker: best.item, score: finalScore } : null
+
+    return finalScore >= 40 ? { worker: best.item, score: finalScore } : null
   }
 
   return null
@@ -422,7 +439,7 @@ function findBestActividad(text, actividades) {
   const fuse = new Fuse(actividades, {
     keys: ["nombre", "id"],
     includeScore: true,
-    threshold: 0.5, // Generous threshold to allow catching "seguridad" in "Personal de Seguridad"
+    threshold: 0.6, // Slightly more generous for activities
     ignoreLocation: true,
     minMatchCharLength: 3,
   })
@@ -430,9 +447,26 @@ function findBestActividad(text, actividades) {
   const results = fuse.search(normText)
 
   if (results.length > 0) {
-    // Score <= 0.6 is a decent match in Fuse
-    if (results[0].score <= 0.6) {
-       return results[0].item
+    const best = results[0]
+    let finalScore = 1 - best.score // 0 to 1, higher is better
+
+    // REINFORCEMENT: Substring match check
+    const actNameNorm = normalize(best.item.nombre)
+    if (actNameNorm.includes(normText) || normText.includes(actNameNorm)) {
+      finalScore = 1.0
+    }
+
+    // Word count overlap check
+    const transcriptWords = normText.split(/\s+/).filter(w => w.length > 3)
+    const actWords = actNameNorm.split(/\s+/)
+    const commonWords = transcriptWords.filter(tw => actWords.includes(tw))
+    
+    if (commonWords.length > 0) {
+      finalScore = Math.max(finalScore, 0.7 + (commonWords.length * 0.1))
+    }
+
+    if (finalScore >= 0.5) {
+       return best.item
     }
   }
 
