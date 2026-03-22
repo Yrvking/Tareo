@@ -86,11 +86,25 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
           }}>
             <SparklesIcon />
           </div>
-          <div>
-            <div style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '0.5px' }}>TAREADOR AI</div>
-            <div style={{ fontSize: '10px', color: 'var(--green-accent)', fontWeight: '700', textTransform: 'uppercase' }}>En Línea</div>
-          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '18px', color: 'white' }}>Asistente</h3>
+          <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-dim)', fontWeight: 'bold' }}>
+            PROJECT CONTROL AI <span style={{ color: 'var(--accent-blue)' }}>v1.1.4-FINAL</span>
+          </p>
         </div>
+        <button 
+          onClick={() => {
+            if(window.confirm("¿Recargar para aplicar actualizaciones críticas?")) {
+              window.location.reload(true);
+            }
+          }}
+          style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'var(--text-dim)', cursor: 'pointer' }}
+        >
+          FORCE RELOAD (F5)
+        </button>
+      </div>
+          </div>
         <button 
           onClick={() => setMessages([{ role: "assistant", text: "Chat reiniciado. ¿En qué puedo ayudarte ahora?" }])}
           style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
