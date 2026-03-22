@@ -292,17 +292,17 @@ export default function Config({
 
       {/* AI Config */}
       <div className="card">
-        <div className="label" style={{ marginBottom: 16, color: 'var(--accent-blue)' }}>ASISTENTE IA (CERO COSTO)</div>
+        <div className="label" style={{ marginBottom: 16, color: 'var(--accent-blue)' }}>CONFIGURACIÓN DEL ASISTENTE IA</div>
         <p style={{ fontSize: '11px', color: 'var(--accent-blue)', fontWeight: '600', marginBottom: 12 }}>
-          ✨ El Asistente IA ya está pre-configurado y listo para usar. 
+          🚀 El Asistente IA es gratuito. Solo necesitas pegar tu **Gemini API Key** para activarlo.
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <input
             type="password"
-            defaultValue="PRE-CONFIGURADO-GMMN"
+            defaultValue={localStorage.getItem("gemini_api_key") || ""}
             onChange={(e) => {
-              localStorage.setItem("GEMINI_API_KEY", e.target.value)
-              showFeedback("✓ API Key personalizada guardada")
+              localStorage.setItem("gemini_api_key", e.target.value)
+              showFeedback("✓ API Key guardada con éxito")
             }}
             placeholder="Pega una API Key personalizada si deseas cambiarla..."
             className="input-field mono"
