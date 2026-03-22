@@ -25,43 +25,36 @@ function scrubData(context) {
 }
 
 export async function askAssistant(apiKey, userQuery, context) {
-  // Prioridad: 1. API Key de Config, 2. Variable de Entorno de Railway/Vite
   const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
-
   if (!FINAL_KEY) throw new Error("MISSING_KEY");
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
   
-  // Estrategia de Failover con modelos de Nueva Generación
+  // Lista robusta de modelos (incluyendo variantes comunes)
   const modelsToTry = [
-    "gemini-2.0-flash-exp", // Nueva generación (Preview)
-    "gemini-1.5-flash",     // Estable actual
-    "gemini-1.5-pro",      // Pro (fallback de precisión)
-    "gemini-pro"           // Máxima compatibilidad
+    "gemini-1.5-flash", 
+    "gemini-1.5-pro",
+    "gemini-1.0-pro",
+    "gemini-pro",
+    "gemini-2.0-flash-exp"
   ];
   
   const scrubbed = scrubData(context);
 
   const systemPrompt = `
-    Eres el "Asistente Tareador S10", un experto gestor de mano de obra en construcción.
-    Tu misión es analizar los datos del proyecto y responder consultas del Maestro de Obra o Administrador.
+    Eres el "Asistente Tareador S10", experto en construcción.
+    Analiza estos datos anonimizados:
+    - Fecha: ${scrubbed.fecha}
+    - Trabajadores: ${JSON.stringify(scrubbed.workers)}
+    - Tareos: ${JSON.stringify(scrubbed.registros)}
     
-    DATOS DEL PROYECTO (Semana Actual):
-    - Fecha de hoy: ${scrubbed.fecha}
-    - Trabajadores registrados (Anonimizados): ${JSON.stringify(scrubbed.workers)}
-    - Log de Tareos (Historial Filtrado): ${JSON.stringify(scrubbed.registros)}
-    
-    REGLAS DE RESPUESTA:
-    1. Sé extremadamente preciso con los números y nombres.
-    2. Si te preguntan por totales, súmalos tú mismo basándote en el Log de Tareos.
-    3. Responde siempre en Español, de forma profesional y motivadora.
-    4. Usa Markdown (negritas, tablas, listas) para que la información sea fácil de leer en un celular.
-    5. Si te falta información para ser exacto, dilo: "No tengo el registro de ayer para X, pero hoy..."
+    Responde de forma técnica y profesional en Español con Markdown.
   `;
 
   let lastError = null;
   for (const modelName of modelsToTry) {
     try {
+      console.log(`Intentando conectar con modelo: ${modelName}...`);
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent([systemPrompt, userQuery]);
       const response = await result.response;
@@ -69,17 +62,20 @@ export async function askAssistant(apiKey, userQuery, context) {
     } catch (error) {
       lastError = error;
       const errorStr = error.toString();
-      // Si es un error de cuota, no seguir probando otros modelos (la llave está agotada)
+      // Si el error es 404 (No encontrado), pasar al siguiente modelo
+      if (errorStr.includes("404")) {
+        console.warn(`Modelo ${modelName} no disponible (404). Saltando...`);
+        continue;
+      }
+      // Si es error de cuota, abortar (es la llave, no el modelo)
       if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota")) {
         throw new Error("RATE_LIMIT");
       }
-      // Si es 404, intentar el siguiente modelo de la lista
-      console.warn(`Model ${modelName} failed, trying next...`, error);
-      continue;
+      // Otros errores (seguridad, etc) abortar
+      throw error;
     }
   }
 
-  // Si llegamos aquí, todos los modelos fallaron
   throw lastError;
 }
 
