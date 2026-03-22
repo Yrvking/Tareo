@@ -33,6 +33,7 @@ export default function Config({
   const [selectedPartidas, setSelectedPartidas] = useState([])
   const [selectedActividades, setSelectedActividades] = useState([])
   const [isCompactMode, setIsCompactMode] = useState(true)
+  const [tempApiKey, setTempApiKey] = useState(localStorage.getItem("gemini_api_key") || "")
 
   const personalFileRef = useRef(null)
   const partidasFileRef = useRef(null)
@@ -299,15 +300,23 @@ export default function Config({
         <div style={{ display: 'flex', gap: 10 }}>
           <input
             type="password"
-            defaultValue={localStorage.getItem("gemini_api_key") || ""}
-            onChange={(e) => {
-              localStorage.setItem("gemini_api_key", e.target.value)
-              showFeedback("✓ API Key guardada con éxito")
-            }}
-            placeholder="Pega una API Key personalizada si deseas cambiarla..."
+            value={tempApiKey}
+            onChange={(e) => setTempApiKey(e.target.value)}
+            placeholder="Pega tu nueva API Key aquí..."
             className="input-field mono"
             style={{ flex: 1, fontSize: '12px', background: 'rgba(37, 99, 235, 0.05)' }}
           />
+          <button 
+            onClick={() => {
+              if (!tempApiKey.trim()) return
+              localStorage.setItem("gemini_api_key", tempApiKey.trim())
+              showFeedback("✓ ¡Llave guardada! Ahora ve al Asistente")
+            }}
+            className="btn-primary"
+            style={{ background: 'var(--accent-blue)', color: 'white', padding: '0 20px' }}
+          >
+            GUARDAR
+          </button>
         </div>
       </div>
     </div>
