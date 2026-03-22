@@ -15,9 +15,10 @@ export async function askAssistant(apiKey, userQuery, context) {
   }
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
-  // Revertir a gemini-1.5-flash (estable) para evitar el error 404 del alias 'latest'
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+  
+  // Lista de modelos a probar en orden de prioridad (Flash es gratis/rápido)
+  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"];
+  
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
   const slimWorkers = context.workers.map(w => ({ id: w.id, nombre: w.nombre, cat: w.categoria }));
   const slimRegistros = context.registros.map(r => ({
@@ -47,15 +48,26 @@ export async function askAssistant(apiKey, userQuery, context) {
     5. Si te falta información para ser exacto, dilo: "No tengo el registro de ayer para X, pero hoy..."
   `;
 
-  try {
-    const result = await model.generateContent([systemPrompt, userQuery]);
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    const errorStr = error.toString();
-    if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota")) {
-      throw new Error("RATE_LIMIT");
+  let lastError = null;
+  for (const modelName of modelsToTry) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent([systemPrompt, userQuery]);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      lastError = error;
+      const errorStr = error.toString();
+      // Si es un error de cuota, no seguir probando otros modelos (la llave está agotada)
+      if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota")) {
+        throw new Error("RATE_LIMIT");
+      }
+      // Si es 404, intentar el siguiente modelo de la lista
+      console.warn(`Model ${modelName} failed, trying next...`, error);
+      continue;
     }
-    throw error;
   }
+
+  // Si llegamos aquí, todos los modelos fallaron
+  throw lastError;
 }
