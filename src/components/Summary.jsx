@@ -99,13 +99,13 @@ export default function Summary({
         <button 
           onClick={() => setViewType("daily")}
           className={`tab-button ${viewType === "daily" ? "active-pill" : ""}`}
-          style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '13px', background: viewType === 'daily' ? '#64ffda22' : 'transparent', color: viewType === 'daily' ? '#64ffda' : '#8892b0', border: '1px solid ' + (viewType === 'daily' ? '#64ffda' : '#233554') }}>
+        >
           Vista Diaria
         </button>
         <button 
           onClick={() => setViewType("weekly")}
           className={`tab-button ${viewType === "weekly" ? "active-pill" : ""}`}
-          style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '13px', background: viewType === 'weekly' ? '#64ffda22' : 'transparent', color: viewType === 'weekly' ? '#64ffda' : '#8892b0', border: '1px solid ' + (viewType === 'weekly' ? '#64ffda' : '#233554') }}>
+        >
           Vista Semanal
         </button>
       </div>

@@ -86,24 +86,57 @@ function AppContent() {
 
   return (
     <div className="app-root">
+      {/* --- Sidebar (Desktop) --- */}
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <h1 className="title" style={{ fontSize: '24px' }}>TAREADOR</h1>
+          <span className="subtitle" style={{ fontSize: '9px' }}>S10 PROFESSIONAL</span>
+        </div>
+        
+        <nav className="sidebar-nav">
+          {visibleTabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`sidebar-item ${tab === t.id ? "active" : ""}`}
+            >
+              <t.icon />
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div style={{ padding: '0 12px 16px 12px', fontSize: '12px', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {user.email}
+          </div>
+          <button onClick={logout} className="sidebar-item" style={{ color: '#ef4444' }}>
+            <span style={{ fontSize: '18px' }}>⏻</span>
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </aside>
+
       <div className="app-container">
-        <header className="header">
+        <header className="header" style={{ marginBottom: '32px' }}>
           <div className="title-group">
-            <h1 className="title">TAREADOR</h1>
-            <span className="subtitle">PROFESSIONAL S10 ALIGNMENT</span>
+            <h1 className="title">
+              {visibleTabs.find(t => t.id === tab)?.label || "TAREADOR"}
+            </h1>
+            <span className="subtitle">CONTROL DE PROYECTO</span>
           </div>
           <div className="date-display mono">
             <input 
               type="date" 
               value={fechaTareo} 
               onChange={(e) => setFechaTareo(e.target.value)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--accent-gold)', fontWeight: 'bold', fontFamily: 'inherit' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-dim)', padding: '8px 12px', borderRadius: '8px', color: 'var(--accent-gold)', fontWeight: 'bold', fontFamily: 'inherit' }}
             />
           </div>
         </header>
 
         {/* Views */}
-        <div style={{ paddingBottom: '40px' }}>
+        <main style={{ paddingBottom: '40px' }}>
           {tab === "mobile" && (
             <MobileEntry 
               workers={workers} 
@@ -168,9 +201,9 @@ function AppContent() {
               setProjectConfig={setProjectConfig}
             />
           )}
-        </div>
+        </main>
 
-        {/* --- Bottom Navigation --- */}
+        {/* --- Bottom Navigation (Mobile Only) --- */}
         <nav className="bottom-nav">
           {visibleTabs.map((t) => (
             <button

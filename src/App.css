@@ -24,22 +24,157 @@ body {
 .app-root {
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  padding-bottom: 80px; /* Space for bottom nav */
+  background-color: var(--bg-dark);
 }
 
 .app-container {
   width: 100%;
-  max-width: 550px; /* S10 Mobile Focused */
-  padding: 16px;
+  max-width: 1400px; /* Expansive for Desktop */
+  margin: 0 auto;
+  padding: 24px;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
-/* Header Style */
-.header {
-  padding: 12px 0 24px 0;
+/* Sidebar (Desktop Only) */
+.sidebar {
+  display: none; /* Hidden on mobile */
+  width: 260px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-dim);
+  flex-direction: column;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 1001;
+}
+
+.sidebar-brand {
+  margin-bottom: 40px;
+  padding: 0 12px;
+}
+
+.sidebar-nav {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.sidebar-item {
+  display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-item svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.sidebar-item.active {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.sidebar-footer {
+  padding-top: 20px;
+  border-top: 1px solid var(--border-dim);
+}
+
+/* Navigation Pills (Used in Summary) */
+.active-pill {
+  background: rgba(37, 99, 235, 0.15) !important;
+  color: var(--accent-blue) !important;
+  border-color: var(--accent-blue) !important;
+}
+
+/* Sidebar item active state fix */
+.sidebar-item.active svg {
+  color: white;
+}
+
+/* App root adjustment */
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  background-color: var(--bg-dark);
+  overflow-x: hidden;
+}
+
+/* Ensure main content doesn't jump */
+main {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Desktop Adaptive Layouts */
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+  }
+  
+  .bottom-nav {
+    display: none;
+  }
+  
+  .app-root {
+    padding-bottom: 0;
+  }
+
+  .app-container {
+    padding: 40px 60px;
+  }
+
+  .desktop-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr; /* Fixed left, fluid right */
+    gap: 40px;
+    align-items: start;
+  }
+
+  .full-width-pc {
+    grid-column: span 2;
+  }
+  
+  .title {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-container {
+    max-width: 550px;
+    padding-bottom: 120px;
+  }
+  
+  .desktop-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 }
 
 .title-group {

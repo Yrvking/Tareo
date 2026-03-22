@@ -119,116 +119,134 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
 
   return (
     <div className="mobile-entry-container">
-      {/* Group Configuration Card */}
-      <div className="card" style={{ padding: '16px', marginBottom: '16px' }}>
-        <div className="label">CONFIGURACIÓN DE CARGA</div>
-        
-        <div style={{ marginBottom: '12px' }}>
-          <label className="field-label-sm">Actividad / Partida</label>
-          <Select
-            options={actividades.map(a => ({ value: a.id, label: a.nombre }))}
-            value={selectedActivity}
-            onChange={setSelectedActivity}
-            placeholder="Buscar actividad..."
-            styles={selectStyles}
-            isClearable
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <label className="field-label-sm">Frente / Sector</label>
-            <Select
-              options={frentes.map(f => ({ value: f.id, label: f.nombre }))}
-              value={selectedFrente}
-              onChange={setSelectedFrente}
-              placeholder="Frente..."
-              styles={selectStyles}
-              isClearable
-            />
+      <div className="desktop-grid">
+        {/* Left Column: Group Configuration */}
+        <section>
+          <div className="sidebar-brand" style={{ margin: '0 0 16px 0', padding: 0 }}>
+            <span className="label" style={{ color: 'var(--accent-blue)' }}>CONFIGURACIÓN GLOBAL</span>
           </div>
-          <div style={{ width: '80px' }}>
-            <label className="field-label-sm">HN</label>
-            <input 
-              type="number" 
-              value={hn} 
-              onChange={e => setHn(e.target.value)}
-              className="input-field mono"
-              style={{ padding: '8px' }}
-            />
-          </div>
-          <div style={{ width: '80px' }}>
-            <label className="field-label-sm" style={{ color: '#ef4444' }}>HE</label>
-            <input 
-              type="number" 
-              value={he} 
-              onChange={e => setHe(e.target.value)}
-              className="input-field mono"
-              style={{ padding: '8px' }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Worker Search & List */}
-      <div className="search-container">
-        <SearchIcon />
-        <input 
-          type="text" 
-          placeholder="Buscar personal por nombre o categoría..." 
-          className="search-input"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="worker-list-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span className="label" style={{ margin: 0 }}>PERSONAL ({selectedWorkers.length} seleccionados)</span>
-          <button 
-            onClick={() => setSelectedWorkers(selectedWorkers.length === filteredWorkers.length ? [] : filteredWorkers.map(w => w.id))}
-            style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            {selectedWorkers.length === filteredWorkers.length ? "DESELECCIONAR TODO" : "SELECCIONAR TODO"}
-          </button>
-        </div>
-
-        {filteredWorkers.map(w => (
-          <div 
-            key={w.id} 
-            onClick={() => toggleWorker(w.id)}
-            className={`worker-row-selectable ${selectedWorkers.includes(w.id) ? 'selected' : ''}`}
-          >
-            <div className="checkbox-circle">
-              {selectedWorkers.includes(w.id) && <CheckIcon />}
+          
+          <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
+            <div className="label">DETALLES DE LA TAREA</div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label className="field-label-sm">Actividad / Partida</label>
+              <Select
+                options={actividades.map(a => ({ value: a.id, label: `${a.id} - ${a.nombre}` }))}
+                value={selectedActivity}
+                onChange={setSelectedActivity}
+                placeholder="Seleccione actividad..."
+                styles={selectStyles}
+                isClearable
+              />
             </div>
-            <div className="worker-info">
-              <div className="worker-name">{w.nombre}</div>
-              <div className="worker-cat">{w.categoria || "S/CAT"} • {w.id}</div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label className="field-label-sm">Frente / Sector</label>
+              <Select
+                options={frentes.map(f => ({ value: f.id, label: f.nombre }))}
+                value={selectedFrente}
+                onChange={setSelectedFrente}
+                placeholder="Seleccione frente..."
+                styles={selectStyles}
+                isClearable
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <label className="field-label-sm">Horas Normales (HN)</label>
+                <input 
+                  type="number" 
+                  value={hn} 
+                  onChange={e => setHn(e.target.value)}
+                  className="input-field mono"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="field-label-sm" style={{ color: '#ef4444' }}>Horas Extras (HE)</label>
+                <input 
+                  type="number" 
+                  value={he} 
+                  onChange={e => setHe(e.target.value)}
+                  className="input-field mono"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
             </div>
           </div>
-        ))}
 
-        {filteredWorkers.length === 0 && (
-          <div className="empty-state">No se encontraron trabajadores que coincidan.</div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div style={{ marginTop: '20px' }}>
-        {feedback && (
-          <div className={`feedback-banner ${feedback.type}`} style={{ marginBottom: '16px' }}>
-            {feedback.message}
+          <div style={{ marginTop: 'auto' }}>
+            {feedback && (
+              <div className={`feedback-banner ${feedback.type}`} style={{ marginBottom: '16px' }}>
+                {feedback.message}
+              </div>
+            )}
+            <button 
+              onClick={handleRegisterBatch}
+              className="btn-primary" 
+              style={{ width: '100%', padding: '18px', fontSize: '16px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)' }}
+              disabled={selectedWorkers.length === 0}
+            >
+              <UserGroupIcon /> REGISTRAR TAREO GRUPAL
+            </button>
           </div>
-        )}
-        <button 
-          onClick={handleRegisterBatch}
-          className="btn-primary" 
-          style={{ width: '100%', padding: '16px', fontSize: '16px', borderRadius: '14px' }}
-          disabled={selectedWorkers.length === 0}
-        >
-          <UserGroupIcon /> REGISTRAR TAREO GRUPAL
-        </button>
+        </section>
+
+        {/* Right Column: Worker Selection */}
+        <section>
+          <div className="sidebar-brand" style={{ margin: '0 0 16px 0', padding: 0 }}>
+            <span className="label">SELECCIÓN DE PERSONAL</span>
+          </div>
+
+          <div className="search-container" style={{ marginBottom: '16px' }}>
+            <SearchIcon />
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre, código o categoría..." 
+              className="search-input"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="worker-list-container" style={{ maxHeight: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }}>
+              <span className="label" style={{ margin: 0, color: 'var(--text-dim)' }}>
+                {selectedWorkers.length} DE {filteredWorkers.length} SELECCIONADOS
+              </span>
+              <button 
+                onClick={() => setSelectedWorkers(selectedWorkers.length === filteredWorkers.length ? [] : filteredWorkers.map(w => w.id))}
+                style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '11px', fontWeight: '800', cursor: 'pointer', textTransform: 'uppercase' }}
+              >
+                {selectedWorkers.length === filteredWorkers.length ? "Deseleccionar" : "Seleccionar Todo"}
+              </button>
+            </div>
+
+            {filteredWorkers.map(w => (
+              <div 
+                key={w.id} 
+                onClick={() => toggleWorker(w.id)}
+                className={`worker-row-selectable ${selectedWorkers.includes(w.id) ? 'selected' : ''}`}
+              >
+                <div className="checkbox-circle">
+                  {selectedWorkers.includes(w.id) && <CheckIcon />}
+                </div>
+                <div className="worker-info">
+                  <div className="worker-name">{w.nombre}</div>
+                  <div className="worker-cat">{w.categoria || "CARGO NO DEF."} • <span className="mono" style={{ color: 'var(--accent-gold)' }}>{w.id}</span></div>
+                </div>
+              </div>
+            ))}
+
+            {filteredWorkers.length === 0 && (
+              <div className="empty-state" style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                No se encontraron resultados para "{searchQuery}"
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   )
