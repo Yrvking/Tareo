@@ -7,11 +7,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
  * @param {object} context - { workers, registros, actividades, fechaTareo }
  */
 export async function askAssistant(apiKey, userQuery, context) {
-  if (!apiKey) {
+  // Hardcoded fallback for zero-cost immediate activation
+  const FINAL_KEY = apiKey || "AIzaSyCpdllHhW0I8rtzfl9u4A6GW62r9MqG6Gk";
+
+  if (!FINAL_KEY) {
     throw new Error("MISSING_KEY");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const genAI = new GoogleGenerativeAI(FINAL_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
