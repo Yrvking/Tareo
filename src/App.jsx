@@ -31,7 +31,22 @@ function AppContent() {
 
   useEffect(() => {
     async function loadData() {
-      const data = await fetchRegistros(fechaTareo)
+      // Calcular inicio y fin de semana (Lunes a Domingo)
+      const current = new Date(fechaTareo)
+      const day = current.getDay() // 0=Dom, 1=Lun...
+      const diffToMonday = current.getDate() - (day === 0 ? 6 : day - 1)
+      
+      const monday = new Date(current.setDate(diffToMonday))
+      monday.setHours(0, 0, 0, 0)
+      
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+      sunday.setHours(23, 59, 59, 999)
+
+      const startStr = monday.toISOString().split("T")[0]
+      const endStr = sunday.toISOString().split("T")[0]
+      
+      const data = await fetchRegistros(startStr, endStr)
       setRegistros(data)
     }
     if (user) {
@@ -149,6 +164,7 @@ function AppContent() {
             projectConfig={projectConfig}
             getPartidaNombre={getPartidaNombre}
             getFrenteNombre={getFrenteNombre}
+            fechaTareo={fechaTareo}
           />
         )}
 

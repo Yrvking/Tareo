@@ -9,12 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "")
 
-// Función para obtener los registros del día seleccionado o de los últimos días
-export async function fetchRegistros(fecha = null) {
-  let query = supabase.from('registros').select('*').order('created_at', { ascending: false })
+// Función para obtener los registros (por día o rango semanal)
+export async function fetchRegistros(startDate = null, endDate = null) {
+  let query = supabase.from('registros').select('*').order('tareo_date', { ascending: true })
   
-  if (fecha) {
-    query = query.eq('tareo_date', fecha)
+  if (startDate && endDate) {
+    query = query.gte('tareo_date', startDate).lte('tareo_date', endDate)
+  } else if (startDate) {
+    query = query.eq('tareo_date', startDate)
   }
 
   const { data, error } = await query
@@ -24,8 +26,7 @@ export async function fetchRegistros(fecha = null) {
     return []
   }
   
-  // Transform DB format back to App format
-  return data.map(row => ({
+  return (data || []).map(row => ({
     id: row.id,
     workerId: row.worker_id,
     workerNombre: row.worker_nombre,

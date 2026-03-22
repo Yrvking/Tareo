@@ -14,6 +14,7 @@ export default function Config({
   workers, setWorkers,
   partidas, setPartidas,
   frentes, setFrentes,
+  actividades, setActividades,
   tiposHora, setTiposHora,
   projectConfig, setProjectConfig,
 }) {
@@ -270,8 +271,26 @@ export default function Config({
 
       {/* ─── Workers ─── */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="label" style={{ marginBottom: 12 }}>
-          TRABAJADORES ({workers.length})
+        <div className="label" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>TRABAJADORES ({workers.length})</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => {
+                const updated = workers.map(w => {
+                  const cat = w.categoria?.toLowerCase() || "";
+                  let cost = w.costoHora;
+                  if (cat.includes("operario")) cost = 89.30;
+                  else if (cat.includes("oficial")) cost = 69.75;
+                  else if (cat.includes("peon") || cat.includes("peón")) cost = 62.80;
+                  return { ...w, costoHora: cost };
+                });
+                setWorkers(updated);
+                showFeedback("✓ Jornales FTCCP 2026 aplicados");
+              }}
+              style={{ padding: '4px 8px', fontSize: '10px', background: 'rgba(100,255,218,0.1)', color: '#64ffda', border: '1px solid #64ffda', borderRadius: '4px', cursor: 'pointer' }}>
+              Aplicar Jornales 2026
+            </button>
+          </div>
         </div>
 
         {workers.length === 0 ? (
@@ -285,9 +304,8 @@ export default function Config({
                 <tr>
                   <th>Código</th>
                   <th>Nombre</th>
-                  <th>Cat.</th>
-                  <th>S/./h</th>
-                  <th>Ingreso</th>
+                  <th>Categoría</th>
+                  <th>S/./jornal</th>
                   <th></th>
                 </tr>
               </thead>
@@ -296,9 +314,30 @@ export default function Config({
                   <tr key={w.id}>
                     <td className="mono" style={{ color: "#6a9ab4" }}>{w.codigo || w.id}</td>
                     <td style={{ color: "#e8dcc8" }}>{w.nombre}</td>
-                    <td style={{ color: "#8899aa" }}>{w.abrevCategoria || w.categoria || "—"}</td>
-                    <td className="mono" style={{ color: "#d4a55a" }}>{w.costoHora || "—"}</td>
-                    <td style={{ color: "#5a7a8a", fontSize: 11 }}>{w.fechaIngreso || "—"}</td>
+                    <td>
+                      <select 
+                        value={w.categoria?.toLowerCase() || ""}
+                        onChange={(e) => {
+                          const updated = workers.map(x => x.id === w.id ? { ...x, categoria: e.target.value } : x);
+                          setWorkers(updated);
+                        }}
+                        style={{ background: 'transparent', border: 'none', color: '#8899aa', fontSize: '12px' }}>
+                        <option value="operario">Operario</option>
+                        <option value="oficial">Oficial</option>
+                        <option value="peon">Peón</option>
+                      </select>
+                    </td>
+                    <td className="mono" style={{ color: "#d4a55a" }}>
+                      <input 
+                        type="number" 
+                        value={w.costoHora || 0} 
+                        onChange={(e) => {
+                          const updated = workers.map(x => x.id === w.id ? { ...x, costoHora: parseFloat(e.target.value) } : x);
+                          setWorkers(updated);
+                        }}
+                        style={{ width: '60px', background: 'transparent', border: 'none', color: '#d4a55a', textAlign: 'right' }}
+                      />
+                    </td>
                     <td>
                       <button
                         onClick={() => setWorkers(workers.filter(x => x.id !== w.id))}
@@ -330,8 +369,8 @@ export default function Config({
                 id: String(Date.now()),
                 codigo: String(Date.now()),
                 nombre: newWorkerName.trim(),
-                categoria: "Peon",
-                costoHora: 0,
+                categoria: "peon",
+                costoHora: 62.80,
                 fechaIngreso: "",
               }])
               setNewWorkerName("")
