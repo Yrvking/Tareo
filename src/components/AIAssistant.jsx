@@ -36,11 +36,16 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
       })
       setMessages(prev => [...prev, { role: "assistant", text: response }])
     } catch (error) {
+      console.error("AI Assistant Error:", error)
       let errorMsg = "Lo siento, hubo un error al procesar tu consulta."
+      
       if (error.message === "MISSING_KEY") {
-        errorMsg = "⚠️ Por favor, configura tu **Gemini API Key** en la pestaña de **Configuración** para activar el asistente."
+        errorMsg = "⚠️ Por favor, configura tu **Gemini API Key** en la pestaña de **Configuración**."
       } else if (error.message === "RATE_LIMIT") {
-        errorMsg = "⏳ El asistente está tomando un respiro (se alcanzó el límite de 15 consultas/min). Por favor espera 30 segundos y vuelve a intentar."
+        errorMsg = "⏳ Límite alcanzado (15 consultas/min). Espera 30 segundos."
+      } else {
+        // Mostrar el error real para depuración
+        errorMsg = `❌ Error: ${error.message || "Error desconocido en el servidor de Google"}`
       }
       setMessages(prev => [...prev, { role: "assistant", text: errorMsg, isError: true }])
     } finally {
