@@ -177,48 +177,37 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
               isClearable
             />
           </div>
-          <div style={{ flex: 1, minWidth: 70 }}>
-            <label className="field-label-sm" style={{ color: '#64ffda', fontWeight: 'bold' }}>Total HH</label>
+          <div style={{ flex: 1, minWidth: 80 }}>
+            <label className="field-label-sm">Horas Norm.</label>
             <input
               type="number"
               step="0.5"
-              placeholder="Total"
-              onChange={(e) => {
-                const total = parseFloat(e.target.value) || 0;
-                const hn = Math.min(total, cap);
-                const he = Math.max(0, total - cap);
-                const updated = [...manualEntries];
-                updated[idx].horasNormales = hn;
-                updated[idx].horasExtras = he > 0 ? he : "";
-                setManualEntries(updated);
-              }}
-              className="input-field mono"
-              style={{ borderColor: '#64ffda88', background: 'rgba(100,255,218,0.05)' }}
-            />
-          </div>
-          <div style={{ width: 60 }}>
-            <label className="field-label-sm">HN</label>
-            <input
-              type="number"
+              min="0"
+              max="24"
               value={entry.horasNormales}
               onChange={(e) => {
                 const updated = [...manualEntries]
                 updated[idx].horasNormales = e.target.value
                 setManualEntries(updated)
               }}
+              placeholder="0"
               className="input-field mono"
             />
           </div>
-          <div style={{ width: 60 }}>
-            <label className="field-label-sm" style={{ color: "#e88" }}>HE</label>
+          <div style={{ flex: 1, minWidth: 80 }}>
+            <label className="field-label-sm" style={{ color: "#e88" }}>Horas Ext.</label>
             <input
               type="number"
+              step="0.5"
+              min="0"
+              max="24"
               value={entry.horasExtras}
               onChange={(e) => {
                 const updated = [...manualEntries]
                 updated[idx].horasExtras = e.target.value
                 setManualEntries(updated)
               }}
+              placeholder="0"
               className="input-field mono"
             />
           </div>
