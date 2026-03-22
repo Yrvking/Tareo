@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "node server.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,10 +13,8 @@
     "@capacitor/cli": "^7.6.0",
     "@capacitor/core": "^8.2.0",
     "@supabase/supabase-js": "^2.99.3",
-    "express": "^5.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "serve": "^14.2.6",
     "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5"
   },
