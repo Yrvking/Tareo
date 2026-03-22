@@ -1,12 +1,69 @@
 import { useState } from "react"
+import Select from "react-select"
 import { PlusIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
 
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: '#0a192f',
+    borderColor: state.isFocused ? '#64ffda' : '#233554',
+    color: '#e6f1ff',
+    boxShadow: state.isFocused ? '0 0 0 1px rgba(100, 255, 218, 0.2)' : 'none',
+    minHeight: '42px',
+    '&:hover': {
+      borderColor: '#64ffda',
+    }
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: '#112240',
+    border: '1px solid #233554',
+    zIndex: 100
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isFocused ? 'rgba(100, 255, 218, 0.1)' : 'transparent',
+    color: state.isFocused ? '#64ffda' : '#ccd6f6',
+    cursor: 'pointer',
+    '&:active': {
+      backgroundColor: 'rgba(100, 255, 218, 0.2)'
+    }
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: '#e6f1ff'
+  }),
+  input: (base) => ({
+    ...base,
+    color: '#e6f1ff'
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#495670'
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: '#8ab4c8',
+    '&:hover': {
+      color: '#64ffda'
+    }
+  }),
+  indicatorSeparator: (base) => ({
+    ...base,
+    backgroundColor: '#233554'
+  })
+}
+
 export default function ManualEntry({ workers, partidas, actividades, frentes, setRegistros, fechaTareo }) {
-  const [manualWorker, setManualWorker] = useState("")
-  const [manualFrente, setManualFrente] = useState("")
-  const [manualEntries, setManualEntries] = useState([{ actividadId: "", horasNormales: "", horasExtras: "" }])
+  const [manualWorker, setManualWorker] = useState(null)
+  const [manualFrente, setManualFrente] = useState(null)
+  const [manualEntries, setManualEntries] = useState([{ actividad: null, horasNormales: "", horasExtras: "" }])
   const [feedbackMessage, setFeedbackMessage] = useState(null)
+
+  const workerOptions = workers.map(w => ({ value: w.id, label: w.nombre }))
+  const frenteOptions = frentes.map(f => ({ value: f.id, label: `${f.id} - ${f.nombre}` }))
+  const actividadOptions = actividades.map(a => ({ value: a.id, label: a.nombre }))
 
   const showFeedback = (type, message) => {
     setFeedbackMessage({ type, message })
@@ -18,11 +75,11 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       showFeedback("error", "Faltan datos. Requerido: 1) Trabajador")
       return
     }
-    const worker = workers.find((w) => String(w.id) === String(manualWorker))
+    const worker = workers.find((w) => String(w.id) === String(manualWorker.value))
     if (!worker) return
 
     const validEntries = manualEntries.filter(
-      (e) => e.actividadId && (parseFloat(e.horasNormales) > 0 || parseFloat(e.horasExtras) > 0)
+      (e) => e.actividad && (parseFloat(e.horasNormales) > 0 || parseFloat(e.horasExtras) > 0)
     )
 
     if (validEntries.length === 0) {
@@ -30,7 +87,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       return
     }
 
-    const frente = frentes.find((f) => f.id === manualFrente)
+    const frente = manualFrente ? frentes.find((f) => f.id === manualFrente.value) : null
 
     const newReg = {
       id: Date.now(),
@@ -39,9 +96,9 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       frenteId: frente?.id || null,
       frenteNombre: frente?.nombre || null,
       assignments: validEntries.map((e) => {
-        const act = actividades.find(a => a.id === e.actividadId)
+        const act = actividades.find(a => a.id === e.actividad.value)
         return {
-          actividadId: e.actividadId,
+          actividadId: act.id,
           partidaId: act?.partidaId || null,
           horasNormales: parseFloat(e.horasNormales) || 0,
           horasExtras: parseFloat(e.horasExtras) || 0,
@@ -57,8 +114,8 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       if (dbId) newReg.id = dbId
 
       setRegistros((prev) => [...prev, newReg])
-      setManualEntries([{ actividadId: "", horasNormales: "", horasExtras: "" }])
-      setManualWorker("")
+      setManualEntries([{ actividad: null, horasNormales: "", horasExtras: "" }])
+      setManualWorker(null)
       
       showFeedback("success", `✓ Registro guardado para ${worker.nombre}`)
     } catch (e) {
@@ -79,29 +136,25 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ flex: 2, minWidth: 200 }}>
           <label className="field-label">Trabajador</label>
-          <select
+          <Select
+            options={workerOptions}
             value={manualWorker}
-            onChange={(e) => setManualWorker(e.target.value)}
-            className="input-field"
-          >
-            <option value="">Seleccionar trabajador...</option>
-            {workers.map((w) => (
-              <option key={w.id} value={w.id}>{w.nombre}</option>
-            ))}
-          </select>
+            onChange={setManualWorker}
+            placeholder="Buscar trabajador..."
+            styles={selectStyles}
+            isClearable
+          />
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
           <label className="field-label">Frente / Sector</label>
-          <select
+          <Select
+            options={frenteOptions}
             value={manualFrente}
-            onChange={(e) => setManualFrente(e.target.value)}
-            className="input-field"
-          >
-            <option value="">Sin frente</option>
-            {frentes.map((f) => (
-              <option key={f.id} value={f.id}>{f.id} - {f.nombre}</option>
-            ))}
-          </select>
+            onChange={setManualFrente}
+            placeholder="Seleccionar frente..."
+            styles={selectStyles}
+            isClearable
+          />
         </div>
       </div>
 
@@ -109,20 +162,18 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
         <div key={idx} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "end", flexWrap: "wrap" }}>
           <div style={{ flex: 2, minWidth: 160 }}>
             <label className="field-label-sm">Actividad</label>
-            <select
-              value={entry.actividadId}
-              onChange={(e) => {
+            <Select
+              options={actividadOptions}
+              value={entry.actividad}
+              onChange={(selectedOption) => {
                 const updated = [...manualEntries]
-                updated[idx].actividadId = e.target.value
+                updated[idx].actividad = selectedOption
                 setManualEntries(updated)
               }}
-              className="input-field"
-            >
-              <option value="">Seleccionar...</option>
-              {actividades.map((a) => (
-                <option key={a.id} value={a.id}>{a.nombre}</option>
-              ))}
-            </select>
+              placeholder="Buscar actividad..."
+              styles={selectStyles}
+              isClearable
+            />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
             <label className="field-label-sm">Horas Norm.</label>
@@ -162,7 +213,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
             <button
               onClick={() => setManualEntries(manualEntries.filter((_, i) => i !== idx))}
               className="btn-icon-danger"
-              style={{ padding: "10px 4px" }}
+              style={{ padding: "10px 4px", alignSelf: "center", marginBottom: "4px" }}
             >
               <TrashIcon />
             </button>
@@ -172,7 +223,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
 
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button
-          onClick={() => setManualEntries([...manualEntries, { actividadId: "", horasNormales: "", horasExtras: "" }])}
+          onClick={() => setManualEntries([...manualEntries, { actividad: null, horasNormales: "", horasExtras: "" }])}
           className="btn-dashed"
         >
           <PlusIcon /> Otra actividad

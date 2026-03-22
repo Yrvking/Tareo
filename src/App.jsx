@@ -6,16 +6,19 @@ import ManualEntry from "./components/ManualEntry"
 import Summary from "./components/Summary"
 import Config from "./components/Config"
 import { fetchRegistros } from "./utils/supabaseClient"
+import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import Login from "./components/Login"
 import "./App.css"
 
 const TABS = [
   { id: "registro", label: "Registro por Voz" },
   { id: "manual", label: "Ingreso Manual" },
   { id: "resumen", label: "Resumen" },
-  { id: "config", label: "Configuración" },
+  { id: "config", label: "Configuración", adminOnly: true },
 ]
 
-export default function App() {
+function AppContent() {
+  const { user, profile, logout } = useAuth()
   const [tab, setTab] = useState("registro")
   const [workers, setWorkers] = useState(INITIAL_WORKERS)
   const [partidas, setPartidas] = useState(INITIAL_PARTIDAS)
@@ -31,8 +34,10 @@ export default function App() {
       const data = await fetchRegistros(fechaTareo)
       setRegistros(data)
     }
-    loadData()
-  }, [fechaTareo])
+    if (user) {
+      loadData()
+    }
+  }, [fechaTareo, user])
 
   const getPartidaNombre = (id) => {
     const p = partidas.find((p) => p.id === id)
@@ -44,13 +49,47 @@ export default function App() {
     return f ? f.nombre : id
   }
 
+  if (!user) {
+    return <Login />
+  }
+
+  const visibleTabs = TABS.filter(t => !t.adminOnly || profile?.role === 'admin')
+
+  // Redirigir a "registro" o "manual" si estaba en config y le sacan el rol de admin abruptamente
+  if (tab === 'config' && profile?.role !== 'admin') {
+    setTab("registro")
+  }
+
   return (
     <div className="app-root">
       <div className="app-container">
         <div className="header">
-          <h1 className="title">Tareador</h1>
-          <span className="subtitle">CONTROL DE HORAS HOMBRE</span>
-          <div className="date-display" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 className="title">Tareador</h1>
+              <span className="subtitle">CONTROL DE HORAS HOMBRE</span>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <div style={{ fontSize: '13px', color: '#8ab4c8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ 
+                  backgroundColor: profile?.role === 'admin' ? 'rgba(255, 99, 71, 0.2)' : 'rgba(100, 255, 218, 0.2)', 
+                  color: profile?.role === 'admin' ? '#ff6347' : '#64ffda',
+                  padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' 
+                }}>
+                  {profile?.role === 'admin' ? 'ADMIN' : 'USUARIO'}
+                </span>
+                {user.email}
+              </div>
+              <button 
+                onClick={logout} 
+                style={{ background: 'transparent', border: '1px solid #4a6a8a', color: '#8ab4c8', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+          
+          <div className="date-display" style={{ display: "flex", alignItems: "center", gap: 8, marginTop: '15px' }}>
             <label style={{ fontSize: 13, textTransform: "uppercase", color: "#8ab4c8" }}>Fecha:</label>
             <input 
               type="date" 
@@ -63,7 +102,7 @@ export default function App() {
         </div>
 
         <div className="tab-bar">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -113,7 +152,7 @@ export default function App() {
           />
         )}
 
-        {tab === "config" && (
+        {tab === "config" && profile?.role === 'admin' && (
           <Config
             workers={workers}
             setWorkers={setWorkers}
@@ -121,6 +160,8 @@ export default function App() {
             setPartidas={setPartidas}
             frentes={frentes}
             setFrentes={setFrentes}
+            actividades={actividades}
+            setActividades={setActividades}
             tiposHora={tiposHora}
             setTiposHora={setTiposHora}
             projectConfig={projectConfig}
@@ -129,5 +170,13 @@ export default function App() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }

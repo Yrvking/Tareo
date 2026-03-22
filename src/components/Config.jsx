@@ -1,4 +1,5 @@
 import { useState, useRef } from "react"
+import Select from "react-select"
 import { PlusIcon, TrashIcon, UploadIcon } from "./Icons"
 import {
   parsePersonalXLSX,
@@ -19,6 +20,8 @@ export default function Config({
   const [newWorkerName, setNewWorkerName] = useState("")
   const [newPartidaId, setNewPartidaId] = useState("")
   const [newPartidaNombre, setNewPartidaNombre] = useState("")
+  const [newActividadNombre, setNewActividadNombre] = useState("")
+  const [newActividadPartida, setNewActividadPartida] = useState(null)
   const [newFrenteId, setNewFrenteId] = useState("")
   const [newFrenteNombre, setNewFrenteNombre] = useState("")
   const [importFeedback, setImportFeedback] = useState(null)
@@ -389,6 +392,91 @@ export default function Config({
               setNewPartidaNombre("")
             }}
             className="btn-primary"
+          >
+            <PlusIcon /> Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Actividades ─── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="label" style={{ marginBottom: 12 }}>
+          ACTIVIDADES ({actividades?.length || 0})
+        </div>
+
+        {(!actividades || actividades.length === 0) ? (
+          <div className="empty-state" style={{ marginBottom: 12 }}>
+            Sin actividades. Agrega manualmente para comenzar el tareo.
+          </div>
+        ) : (
+          <div style={{ maxHeight: 250, overflowY: "auto", marginBottom: 12 }}>
+            {actividades.map((a) => (
+              <div key={a.id} className="config-item" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <span className="mono" style={{ color: "#6a9ab4", minWidth: 80, fontSize: 12 }}>{a.id}</span>
+                <span style={{ flex: 1, color: "#e8dcc8", fontSize: 13, minWidth: 150 }}>{a.nombre}</span>
+                <span className="mono" style={{ color: "#8ab4c8", fontSize: 11, background: 'rgba(100,255,218,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                  Partida: {a.partidaId}
+                </span>
+                <button onClick={() => setActividades(actividades.filter(x => x.id !== a.id))} className="btn-icon-danger">
+                  <TrashIcon />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <Select
+              options={partidas.map(p => ({ value: p.id, label: `${p.id} - ${p.nombre}` }))}
+              value={newActividadPartida}
+              onChange={setNewActividadPartida}
+              placeholder="Seleccionar Partida Padre..."
+              styles={{
+                control: (base, state) => ({ ...base, backgroundColor: '#0a192f', borderColor: state.isFocused ? '#64ffda' : '#233554', color: '#e6f1ff', minHeight: '40px' }),
+                menu: (base) => ({ ...base, backgroundColor: '#112240', border: '1px solid #233554', zIndex: 100 }),
+                option: (base, state) => ({ ...base, backgroundColor: state.isFocused ? 'rgba(100, 255, 218, 0.1)' : 'transparent', color: state.isFocused ? '#64ffda' : '#ccd6f6' }),
+                singleValue: (base) => ({ ...base, color: '#e6f1ff' }),
+                input: (base) => ({ ...base, color: '#e6f1ff' })
+              }}
+              isClearable
+            />
+          </div>
+          <input
+            type="text"
+            value={newActividadNombre}
+            onChange={(e) => setNewActividadNombre(e.target.value)}
+            placeholder="Nombre de la nueva actividad"
+            className="input-field"
+            style={{ flex: 2, minWidth: 200, height: '40px' }}
+          />
+          <button
+            onClick={() => {
+              if (!newActividadNombre.trim() || !newActividadPartida) {
+                showFeedback("Debe ingresar un nombre y seleccionar una partida", "error")
+                return
+              }
+              // Generar Nomenclatura Única automática ACT-XXX
+              let nextIdNumber = 1;
+              if (actividades && actividades.length > 0) {
+                const maxId = actividades
+                  .map(a => parseInt(a.id.replace('ACT-', '')))
+                  .filter(n => !isNaN(n))
+                  .reduce((a, b) => Math.max(a, b), 0);
+                nextIdNumber = maxId + 1;
+              }
+              const newId = `ACT-${String(nextIdNumber).padStart(3, '0')}`;
+
+              setActividades([...(actividades || []), { 
+                id: newId, 
+                nombre: newActividadNombre.trim(),
+                partidaId: newActividadPartida.value
+              }])
+              setNewActividadNombre("")
+              showFeedback(`✓ Actividad ${newId} generada exitosamente.`)
+            }}
+            className="btn-primary"
+            style={{ height: '40px' }}
           >
             <PlusIcon /> Agregar
           </button>
