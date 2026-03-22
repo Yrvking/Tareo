@@ -31,16 +31,16 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, isTyping])
+  }, [messages, loading])
 
   const handleSend = async () => {
-    if (!input.trim() || isTyping) return
+    if (!input.trim() || loading) return
 
-    const apiKey = localStorage.getItem("GEMINI_API_KEY")
+    const apiKey = localStorage.getItem("gemini_api_key")
     const userMsg = input.trim()
     setInput("")
     setMessages(prev => [...prev, { role: "user", text: userMsg }])
-    setIsTyping(true)
+    setLoading(true)
 
     try {
       const response = await askAssistant(apiKey, userMsg, {
@@ -61,7 +61,7 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
       }
       setMessages(prev => [...prev, { role: "assistant", text: errorMsg, isError: true }])
     } finally {
-      setIsTyping(false)
+      setLoading(false)
     }
   }
 
@@ -165,7 +165,7 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
             </div>
           </div>
         ))}
-        {isTyping && (
+        {loading && (
           <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 6, padding: '12px 18px', background: 'rgba(255,255,255,0.03)', borderRadius: '20px' }}>
             <span className="dot-typing"></span>
             <span className="dot-typing"></span>
@@ -222,7 +222,7 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
           />
           <button 
             onClick={handleSend}
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || loading}
             style={{ 
               width: '40px', 
               height: '40px', 
