@@ -10,37 +10,28 @@ export async function askAssistant(apiKey, userQuery, context) {
   // Prioridad: 1. API Key de Config, 2. Variable de Entorno de Railway/Vite
   const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
 
-  if (!FINAL_KEY) {
-    throw new Error("MISSING_KEY");
-  }
+  if (!FINAL_KEY) throw new Error("MISSING_KEY");
 
-  // Estrategia de Failover (SOLO MODELOS GRATUITOS):
+  const genAI = new GoogleGenerativeAI(FINAL_KEY);
+  
+  // Estrategia de Failover con modelos de Nueva Generación
   const modelsToTry = [
-    "gemini-1.5-flash",    // Mejor opción gratuita (rápida, 15 RPM)
-    "gemini-1.5-pro",      // Pro gratuito (2 RPM)
-    "gemini-pro"           // Versión estándar gratuita (máxima compatibilidad)
+    "gemini-2.0-flash-exp", // Nueva generación (Preview)
+    "gemini-1.5-flash",     // Estable actual
+    "gemini-1.5-pro",      // Pro (fallback de precisión)
+    "gemini-pro"           // Máxima compatibilidad
   ];
   
-  // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
-  const slimWorkers = context.workers.map(w => ({ id: w.id, nombre: w.nombre, cat: w.categoria }));
-  const slimRegistros = context.registros.map(r => ({
-    trabajador: r.workerNombre,
-    fecha: r.date,
-    tareas: r.assignments.map(a => ({
-      act: context.actividades.find(act => act.id === a.actividadId)?.nombre || a.actividadId,
-      hn: a.horasNormales,
-      he: a.horasExtras
-    }))
-  }));
+  const scrubbed = scrubData(context);
 
   const systemPrompt = `
     Eres el "Asistente Tareador S10", un experto gestor de mano de obra en construcción.
     Tu misión es analizar los datos del proyecto y responder consultas del Maestro de Obra o Administrador.
     
     DATOS DEL PROYECTO (Semana Actual):
-    - Fecha de hoy: ${context.fechaTareo}
-    - Trabajadores registrados: ${JSON.stringify(slimWorkers)}
-    - Log de Tareos (Historial): ${JSON.stringify(slimRegistros)}
+    - Fecha de hoy: ${scrubbed.fecha}
+    - Trabajadores registrados (Anonimizados): ${JSON.stringify(scrubbed.workers)}
+    - Log de Tareos (Historial Filtrado): ${JSON.stringify(scrubbed.registros)}
     
     REGLAS DE RESPUESTA:
     1. Sé extremadamente preciso con los números y nombres.
