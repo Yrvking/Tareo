@@ -1,11 +1,29 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
- * Lógica central para interactuar con Gemini 1.5 Flash de forma gratuita.
- * @param {string} apiKey - La llave de Gemini (almacenada en Config).
- * @param {string} userQuery - La pregunta del usuario.
- * @param {object} context - { workers, registros, actividades, fechaTareo }
+ * Capa de Limpieza de Datos (Privacy Scrubbing)
+ * Elimina IDs reales o información sensible antes de subir a la nube.
  */
+function scrubData(context) {
+  if (!context || !context.workers) return { workers: [], registros: [], fecha: "" };
+  return {
+    workers: context.workers.map(w => ({ 
+      id: "anon_" + String(w.id).slice(-4), 
+      nombre: String(w.nombre).split(' ')[0], 
+      cat: w.categoria 
+    })),
+    registros: context.registros.map(r => ({
+      fecha: r.date,
+      tareas: r.assignments.map(a => ({
+        act: context.actividades.find(act => act.id === a.actividadId)?.nombre || "Actividad_Gral",
+        hn: a.horasNormales,
+        he: a.horasExtras
+      }))
+    })),
+    fecha: context.fechaTareo
+  };
+}
+
 export async function askAssistant(apiKey, userQuery, context) {
   // Prioridad: 1. API Key de Config, 2. Variable de Entorno de Railway/Vite
   const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
