@@ -15,7 +15,8 @@ export async function askAssistant(apiKey, userQuery, context) {
   }
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // Forzar v1 para evitar errores de 404 en v1beta con gemini-1.5-flash
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
 
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
   const slimWorkers = context.workers.map(w => ({ id: w.id, nombre: w.nombre, cat: w.categoria }));

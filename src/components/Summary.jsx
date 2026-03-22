@@ -153,10 +153,10 @@ export default function Summary({
                 </tr>
                 <tr>
                   {weekRange.map(d => (
-                    <fragment key={`sub-${d.date}`}>
+                    <React.Fragment key={`sub-${d.date}`}>
                       <th className="sub-th">HN</th>
                       <th className="sub-th">HE</th>
-                    </fragment>
+                    </React.Fragment>
                   ))}
                   <th className="sub-th" style={{ color: 'var(--accent-gold)', minWidth: '60px' }}>T. NORMAL</th>
                   <th className="sub-th" style={{ color: '#ef4444', minWidth: '60px' }}>T. EXTRA</th>
@@ -176,10 +176,10 @@ export default function Summary({
                         const day = data.days[d.date] || { hn: 0, he: 0 }
                         rowTotalHn += day.hn; rowTotalHe += day.he;
                         return (
-                          <fragment key={`${wId}-${d.date}`}>
+                          <React.Fragment key={`${wId}-${d.date}`}>
                             <td className="text-center val-col">{day.hn || '—'}</td>
                             <td className="text-center val-col he-text">{day.he || '—'}</td>
-                          </fragment>
+                          </React.Fragment>
                         )
                       })}
                       <td className="text-center val-col total-col-hn">{rowTotalHn}</td>
