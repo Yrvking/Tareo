@@ -276,17 +276,38 @@ export default function Config({
       </div>
 
       {/* Project Config (Compact) */}
-      <div className="card">
+      <div className="card" style={{ marginBottom: 20 }}>
         <div className="label" style={{ marginBottom: 16 }}>DATOS DEL PROYECTO</div>
         <div className="desktop-grid">
            <div>
              <label className="field-label-sm">Empresa / Obra</label>
-             <input type="text" value={projectConfig.empresa} onChange={e => setProjectConfig({...projectConfig, empresa: e.target.value})} className="input-field" />
+             <input type="text" value={projectConfig.empresa} onChange={e => setProjectConfig({...projectConfig, empresa: e.target.value})} className="input-field" style={{ width: '100%' }} />
            </div>
            <div>
              <label className="field-label-sm">Código Proyecto</label>
-             <input type="text" value={projectConfig.codigoProyecto} onChange={e => setProjectConfig({...projectConfig, codigoProyecto: e.target.value})} className="input-field mono" />
+             <input type="text" value={projectConfig.codigoProyecto} onChange={e => setProjectConfig({...projectConfig, codigoProyecto: e.target.value})} className="input-field mono" style={{ width: '100%' }} />
            </div>
+        </div>
+      </div>
+
+      {/* AI Config */}
+      <div className="card">
+        <div className="label" style={{ marginBottom: 16, color: 'var(--accent-blue)' }}>ASISTENTE IA (CERO COSTO)</div>
+        <p style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: 12 }}>
+          Para activar el asistente inteligente, obtén una <strong>API Key gratuita</strong> en <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>Google AI Studio</a>.
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <input
+            type="password"
+            value={localStorage.getItem("GEMINI_API_KEY") || ""}
+            onChange={(e) => {
+              localStorage.setItem("GEMINI_API_KEY", e.target.value)
+              showFeedback("✓ API Key guardada localmente")
+            }}
+            placeholder="Pega tu Gemini API Key aquí..."
+            className="input-field mono"
+            style={{ flex: 1, fontSize: '12px' }}
+          />
         </div>
       </div>
     </div>

@@ -6,11 +6,13 @@ import ManualEntry from "./components/ManualEntry"
 import MobileEntry from "./components/MobileEntry"
 import WeeklyControl from "./components/WeeklyControl"
 import Summary from "./components/Summary"
+import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
 import { fetchRegistros } from "./utils/supabaseClient"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import Login from "./components/Login"
 import {
+  SparklesIcon,
   MicIcon,
   PlusIcon,
   ChartIcon,
@@ -26,6 +28,7 @@ const TABS = [
   { id: "manual", label: "Manual", icon: PlusIcon },
   { id: "registro", label: "Voz", icon: MicIcon },
   { id: "resumen", label: "Planilla", icon: ChartIcon },
+  { id: "ai", label: "Asistente", icon: SparklesIcon },
   { id: "config", label: "Config", icon: SettingsIcon, adminOnly: true },
 ]
 
@@ -189,6 +192,15 @@ function AppContent() {
               frentes={frentes}
               fechaTareo={fechaTareo}
               setFechaTareo={setFechaTareo}
+            />
+          )}
+
+          {tab === "ai" && (
+            <AIAssistant
+              workers={workers}
+              registros={registros}
+              actividades={actividades}
+              fechaTareo={fechaTareo}
             />
           )}
 
