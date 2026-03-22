@@ -14,14 +14,11 @@ export async function askAssistant(apiKey, userQuery, context) {
     throw new Error("MISSING_KEY");
   }
 
-  const genAI = new GoogleGenerativeAI(FINAL_KEY);
-  
-  // Estrategia de Failover: Probar modelos de nueva generación primero, luego fallbacks estables
+  // Estrategia de Failover (SOLO MODELOS GRATUITOS):
   const modelsToTry = [
-    "gemini-1.5-flash",    // Equilibrio ideal
-    "gemini-1.5-pro",      // Alta precisión
-    "gemini-1.0-pro",      // Máxima compatibilidad
-    "gemini-pro"           // Legacy estable
+    "gemini-1.5-flash",    // Mejor opción gratuita (rápida, 15 RPM)
+    "gemini-1.5-pro",      // Pro gratuito (2 RPM)
+    "gemini-pro"           // Versión estándar gratuita (máxima compatibilidad)
   ];
   
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
