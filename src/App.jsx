@@ -225,7 +225,7 @@ function AppContent() {
 
           {/* Build Version Tag */}
           <div style={{ pointerEvents: 'none', position: 'fixed', bottom: 4, right: 10, fontSize: '8px', color: 'var(--text-dim)', opacity: 0.5, zIndex: 3000 }}>
-            v1.1.2-STABLE-FINAL
+            v1.1.3-STABLE-IMPORT-FIX
           </div>
         </main>
 

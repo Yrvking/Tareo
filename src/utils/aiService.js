@@ -15,8 +15,8 @@ export async function askAssistant(apiKey, userQuery, context) {
   }
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
-  // Usar alias latest para máxima compatibilidad regional
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  // Revertir a gemini-1.5-flash (estable) para evitar el error 404 del alias 'latest'
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
   const slimWorkers = context.workers.map(w => ({ id: w.id, nombre: w.nombre, cat: w.categoria }));
