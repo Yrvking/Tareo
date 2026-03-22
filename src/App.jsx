@@ -192,6 +192,8 @@ function AppContent() {
               frentes={frentes}
               fechaTareo={fechaTareo}
               setFechaTareo={setFechaTareo}
+              getPartidaNombre={getPartidaNombre}
+              getFrenteNombre={getFrenteNombre}
             />
           )}
 
@@ -223,7 +225,7 @@ function AppContent() {
 
           {/* Build Version Tag */}
           <div style={{ pointerEvents: 'none', position: 'fixed', bottom: 4, right: 10, fontSize: '8px', color: 'var(--text-dim)', opacity: 0.5, zIndex: 3000 }}>
-            v1.1.1-STABLE-AI
+            v1.1.2-STABLE-FINAL
           </div>
         </main>
 
