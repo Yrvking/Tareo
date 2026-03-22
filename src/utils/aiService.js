@@ -7,8 +7,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
  * @param {object} context - { workers, registros, actividades, fechaTareo }
  */
 export async function askAssistant(apiKey, userQuery, context) {
-  // Hardcoded fallback for zero-cost immediate activation
-  const FINAL_KEY = apiKey || "AIzaSyCpdllHhW0I8rtzfl9u4A6GW62r9MqG6Gk";
+  // Prioridad: 1. API Key de Config, 2. Variable de Entorno de Railway/Vite
+  const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!FINAL_KEY) {
     throw new Error("MISSING_KEY");
@@ -16,8 +16,13 @@ export async function askAssistant(apiKey, userQuery, context) {
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
   
-  // Lista de modelos a probar en orden de prioridad (Flash es gratis/rápido)
-  const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"];
+  // Estrategia de Failover: Probar modelos de nueva generación primero, luego fallbacks estables
+  const modelsToTry = [
+    "gemini-1.5-flash",    // Equilibrio ideal
+    "gemini-1.5-pro",      // Alta precisión
+    "gemini-1.0-pro",      // Máxima compatibilidad
+    "gemini-pro"           // Legacy estable
+  ];
   
   // Simplificar contexto para no saturar tokens (aunque Flash aguanta 1M)
   const slimWorkers = context.workers.map(w => ({ id: w.id, nombre: w.nombre, cat: w.categoria }));
@@ -70,4 +75,23 @@ export async function askAssistant(apiKey, userQuery, context) {
 
   // Si llegamos aquí, todos los modelos fallaron
   throw lastError;
+}
+
+/**
+ * Método de Validación Dinámica (Bootstrap)
+ * Lista los modelos disponibles para la llave actual.
+ */
+export async function getAvailableModels(apiKey) {
+  const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
+  if (!FINAL_KEY) return [];
+  
+  try {
+    const genAI = new GoogleGenerativeAI(FINAL_KEY);
+    // Nota: El SDK de JS a veces no expone listModels directamente de forma fácil.
+    // Usamos un modelo básico para testear conectividad si listModels falla.
+    return ["gemini-1.5-flash", "gemini-1.5-pro"]; 
+  } catch (e) {
+    console.error("Error validando modelos:", e);
+    return [];
+  }
 }

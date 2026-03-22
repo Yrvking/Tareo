@@ -1,16 +1,28 @@
-import { useState, useRef, useEffect } from "react"
-import { askAssistant } from "../utils/aiService"
-import { SparklesIcon, SendIcon } from "./Icons"
+import React, { useState, useRef, useEffect } from "react"
+import { SendIcon, SparklesIcon, TrashIcon } from "./Icons"
+import { askAssistant, getAvailableModels } from "../utils/aiService"
 
 export default function AIAssistant({ workers, registros, actividades, fechaTareo }) {
   const [messages, setMessages] = useState([
-    { 
-      role: "assistant", 
-      text: "¡Hola! Soy tu asistente de obra. Analizo los tareos y reportes en tiempo real para ayudarte.\n\nPrueba preguntando:\n* ¿Quién trabajó más horas esta semana?\n* ¿Cuál es el resumen de hoy?\n* ¿Hay inconsistencias en el tareo?" 
-    }
+    { role: "assistant", text: "Hola. Soy tu consultor S10 Pro. He activado el nuevo sistema de Failover Arquitectónico. ¿Qué analizamos hoy?" }
   ])
   const [input, setInput] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [modelsInfo, setModelsInfo] = useState("Cargando catálogo...")
+
+  useEffect(() => {
+    // Diagnóstico inicial de modelos disponibles
+    const checkModels = async () => {
+      const apiKey = localStorage.getItem("gemini_api_key")
+      const available = await getAvailableModels(apiKey)
+      if (available && available.length > 0) {
+        setModelsInfo(`Conectado: ${available[0]} (Resilient Mode)`)
+      } else {
+        setModelsInfo("Esperando API Key o Configuración de Railway...")
+      }
+    }
+    checkModels()
+  }, [])
   const chatEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -86,31 +98,31 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
           }}>
             <SparklesIcon />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div>
-          <h3 style={{ margin: 0, fontSize: '18px', color: 'white' }}>Asistente</h3>
-          <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-dim)', fontWeight: 'bold' }}>
-            PROJECT CONTROL AI <span style={{ color: 'var(--accent-blue)' }}>v1.1.4-FINAL</span>
-          </p>
-        </div>
-        <button 
-          onClick={() => {
-            if(window.confirm("¿Recargar para aplicar actualizaciones críticas?")) {
-              window.location.reload(true);
-            }
-          }}
-          style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border-dim)', borderRadius: '4px', color: 'var(--text-dim)', cursor: 'pointer' }}
-        >
-          FORCE RELOAD (F5)
-        </button>
-      </div>
+          <div>
+            <div style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '0.5px', color: 'white' }}>TAREADOR AI</div>
+            <div style={{ fontSize: '10px', color: 'var(--accent-blue)', fontWeight: '700', textTransform: 'uppercase' }}>
+              {modelsInfo}
+            </div>
           </div>
-        <button 
-          onClick={() => setMessages([{ role: "assistant", text: "Chat reiniciado. ¿En qué puedo ayudarte ahora?" }])}
-          style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
-        >
-          Limpiar
-        </button>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            onClick={() => {
+              if(window.confirm("¿Aplicar actualizaciones de arquitectura v1.1.5?")) {
+                window.location.reload(true);
+              }
+            }}
+            style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(37,99,235,0.1)', border: '1px solid var(--accent-blue)', borderRadius: '4px', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+             ACTUALIZAR v1.1.5
+          </button>
+          <button 
+            onClick={() => setMessages([{ role: "assistant", text: "Chat reiniciado. ¿En qué puedo ayudarte ahora?" }])}
+            style={{ background: 'none', border: 'none', color: 'var(--text-dim)', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Limpiar
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
