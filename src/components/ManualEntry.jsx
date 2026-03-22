@@ -1,3 +1,4 @@
+import { useState } from "react"
 import Select from "react-select"
 import { PlusIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
