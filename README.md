@@ -79,6 +79,16 @@ Para registrar historial de correcciones (ediciones y eliminaciones) en la nube:
 
 La app seguira funcionando sin esa tabla, pero no guardara bitacora en la nube hasta crearla.
 
+## Permisos RLS para eliminar/editar registros
+
+Si borras y al recargar vuelven a aparecer, normalmente es por politicas RLS de Supabase en tabla `registros`.
+
+1. Abre Supabase SQL Editor.
+2. Ejecuta [scripts/supabase_registros_policies.sql](scripts/supabase_registros_policies.sql).
+3. Vuelve a probar eliminar y recargar.
+
+Con esto, usuarios autenticados podran leer, insertar, editar y eliminar registros en la nube.
+
 ## Compilar para producción
 
 ```bash

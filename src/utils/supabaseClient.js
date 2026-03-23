@@ -144,6 +144,10 @@ export async function updateRegistro(reg, options = {}) {
     throw error
   }
 
+  if (!data || data.length === 0) {
+    throw new Error('UPDATE_NOT_APPLIED')
+  }
+
   await appendRegistroLog('update', reg.id, beforeData, rowToRegistro(data?.[0] || { id: reg.id, ...row }), options.source || reg.raw)
   return data?.[0]?.id || reg.id
 }
@@ -167,14 +171,19 @@ export async function deleteRegistroById(id, options = {}) {
     beforeData = current ? rowToRegistro(current) : null
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('registros')
     .delete()
     .eq('id', id)
+    .select('id')
 
   if (error) {
     console.error('Error deleteRegistroById:', error)
     throw error
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error('DELETE_NOT_APPLIED')
   }
 
   await appendRegistroLog('delete', id, beforeData, null, options.source || 'delete')
