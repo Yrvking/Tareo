@@ -6,7 +6,7 @@
   --accent-blue: #2563eb;
   --accent-gold: #eab308;
   --text-main: #f8fafc;
-  --text-dim: #94a3b8;
+  --text-dim: #cbd5e1;
   --border-dim: #334155;
   --red-accent: #ef4444;
   --green-accent: #22c55e;
@@ -193,7 +193,7 @@ body {
 }
 
 .frente-badge-sm {
-  font-size: 9px;
+  font-size: 11px;
   padding: 3px 6px;
   background: var(--accent-blue);
   color: white;
@@ -372,8 +372,8 @@ main {
 }
 
 .subtitle {
-  font-size: 10px;
-  letter-spacing: 2.5px;
+  font-size: 12px;
+  letter-spacing: 1.6px;
   color: var(--accent-gold);
   text-transform: uppercase;
   font-weight: 700;
@@ -391,7 +391,7 @@ main {
 }
 
 .label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--accent-gold);
   text-transform: uppercase;
@@ -422,7 +422,7 @@ main {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   gap: 6px;
   cursor: pointer;
@@ -497,7 +497,7 @@ main {
 }
 
 .worker-cat {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   text-transform: uppercase;
 }
@@ -614,12 +614,12 @@ main {
   background: #0f172a;
   color: var(--accent-gold);
   font-weight: 700;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 /* Media Queries */
 @media (max-width: 480px) {
   .app-container { padding: 12px; }
   .card { padding: 16px; }
-  .nav-item span { font-size: 9px; }
+  .nav-item span { font-size: 11px; }
 }

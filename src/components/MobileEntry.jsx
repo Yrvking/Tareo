@@ -130,33 +130,39 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
             <div className="label">DETALLES DE LA TAREA</div>
             
             <div style={{ marginBottom: '16px' }}>
-              <label className="field-label-sm">Actividad / Partida</label>
+              <label className="field-label-sm" htmlFor="mobile-actividad">Actividad / Partida</label>
               <Select
+                inputId="mobile-actividad"
+                aria-label="Actividad o partida"
                 options={actividades.map(a => ({ value: a.id, label: `${a.id} - ${a.nombre}` }))}
                 value={selectedActivity}
                 onChange={setSelectedActivity}
                 placeholder="Seleccione actividad..."
                 styles={selectStyles}
-                isClearable
+                isClearable={false}
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label className="field-label-sm">Frente / Sector</label>
+              <label className="field-label-sm" htmlFor="mobile-frente">Frente / Sector</label>
               <Select
+                inputId="mobile-frente"
+                aria-label="Frente o sector"
                 options={frentes.map(f => ({ value: f.id, label: f.nombre }))}
                 value={selectedFrente}
                 onChange={setSelectedFrente}
                 placeholder="Seleccione frente..."
                 styles={selectStyles}
-                isClearable
+                isClearable={false}
               />
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label className="field-label-sm">Horas Normales (HN)</label>
+                <label className="field-label-sm" htmlFor="mobile-hn">Horas Normales (HN)</label>
                 <input 
+                  id="mobile-hn"
+                  aria-label="Horas normales"
                   type="number" 
                   value={hn} 
                   onChange={e => setHn(e.target.value)}
@@ -165,8 +171,10 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label className="field-label-sm" style={{ color: '#ef4444' }}>Horas Extras (HE)</label>
+                <label className="field-label-sm" htmlFor="mobile-he" style={{ color: '#ef4444' }}>Horas Extras (HE)</label>
                 <input 
+                  id="mobile-he"
+                  aria-label="Horas extras"
                   type="number" 
                   value={he} 
                   onChange={e => setHe(e.target.value)}
@@ -203,6 +211,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
           <div className="search-container" style={{ marginBottom: '16px' }}>
             <SearchIcon />
             <input 
+              aria-label="Buscar personal"
               type="text" 
               placeholder="Buscar por nombre, código o categoría..." 
               className="search-input"
