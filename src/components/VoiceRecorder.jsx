@@ -887,11 +887,11 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
                 <span className="mono" style={{ fontSize: 10, color: "var(--accent-blue)", minWidth: '65px' }}>
                   {reg.timestamp}
                 </span>
-                <span style={{ fontWeight: 700, color: "var(--text-main)", minWidth: '120px', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ fontWeight: 700, color: "var(--text-main)", minWidth: '160px', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {reg.workerNombre.split(',')[0]}
                 </span>
                 
-                <div style={{ display: "flex", gap: 4, flex: 1, overflowX: 'auto', scrollbarWidth: 'none' }}>
+                <div className="registro-assignments">
                   {reg.assignments.map((a, i) => (
                     <span key={i} className="hora-badge">
                       <span style={{ color: "var(--accent-gold)" }}>{a.horasNormales || 0}h</span>

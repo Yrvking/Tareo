@@ -19,6 +19,7 @@ body {
   color: var(--text-main);
   font-family: 'Inter', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.4;
 }
 
 .app-root {
@@ -29,7 +30,7 @@ body {
 
 .app-container {
   width: 100%;
-  max-width: 1400px; /* Expansive for Desktop */
+  max-width: 1760px; /* Wider desktop workspace */
   margin: 0 auto;
   padding: 24px;
   position: relative;
@@ -39,7 +40,7 @@ body {
 /* Sidebar (Desktop Only) */
 .sidebar {
   display: none; /* Hidden on mobile */
-  width: 260px;
+  width: 290px;
   background: var(--bg-card);
   border-right: 1px solid var(--border-dim);
   flex-direction: column;
@@ -167,6 +168,18 @@ body {
 }
 .registro-row::-webkit-scrollbar { display: none; }
 
+.registro-assignments {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.registro-assignments::-webkit-scrollbar {
+  display: none;
+}
+
 .hora-badge {
   display: inline-flex;
   align-items: center;
@@ -213,7 +226,7 @@ body {
   color: var(--text-dim);
   padding: 4px 12px;
   border-radius: 99px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -225,7 +238,7 @@ body {
   color: #ef4444;
   padding: 4px 12px;
   border-radius: 99px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -267,7 +280,7 @@ main {
 }
 
 /* Desktop Adaptive Layouts */
-@media (min-width: 1024px) {
+@media (min-width: 900px) {
   .sidebar {
     display: flex;
   }
@@ -281,13 +294,13 @@ main {
   }
 
   .app-container {
-    padding: 40px 60px;
+    padding: 28px 32px;
   }
 
   .desktop-grid {
     display: grid;
-    grid-template-columns: 380px 1fr; /* Fixed left, fluid right */
-    gap: 40px;
+    grid-template-columns: minmax(320px, 430px) 1fr;
+    gap: 24px;
     align-items: start;
   }
 
@@ -296,7 +309,39 @@ main {
   }
   
   .title {
-    font-size: 32px;
+    font-size: 30px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+
+  .subtitle {
+    font-size: 11px;
+  }
+
+  .worker-name {
+    font-size: 16px;
+  }
+
+  .worker-cat,
+  .hora-badge {
+    font-size: 12px;
+  }
+
+  .mono {
+    font-size: 14px;
+  }
+
+  .registro-row {
+    align-items: flex-start;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .registro-assignments {
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
 }
 

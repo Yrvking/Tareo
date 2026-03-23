@@ -67,7 +67,7 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
 
   return (
     <div className="chat-viewport" style={{ 
-      height: 'calc(100vh - 180px)', 
+      height: 'clamp(560px, calc(100vh - 210px), 860px)', 
       display: 'flex', 
       flexDirection: 'column',
       background: 'var(--bg-dark)',
