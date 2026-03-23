@@ -9,6 +9,7 @@ if (!hasSupabaseConfig) {
 }
 
 export const supabase = hasSupabaseConfig ? createClient(supabaseUrl, supabaseAnonKey) : null
+let appSettingsTableMissing = false
 
 function rowToRegistro(row) {
   return {
@@ -66,6 +67,60 @@ async function appendRegistroLog(action, registroId, beforeData = null, afterDat
   if (error) {
     console.warn('No se pudo guardar log en registros_logs:', error.message)
   }
+}
+
+function shouldSilenceAppSettings(error) {
+  const message = String(error?.message || "")
+  return error?.code === "42P01" || message.includes("app_settings") || message.includes("does not exist")
+}
+
+export async function fetchAppSettings(settingKey = "catalogs") {
+  if (!supabase || appSettingsTableMissing) return null
+
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("payload, updated_at")
+    .eq("setting_key", settingKey)
+    .maybeSingle()
+
+  if (error) {
+    if (shouldSilenceAppSettings(error)) {
+      appSettingsTableMissing = true
+      console.warn("No se encontró la tabla app_settings. Se usará almacenamiento local.", error.message)
+      return null
+    }
+    console.warn("No se pudo leer app_settings:", error.message)
+    return null
+  }
+
+  return data?.payload || null
+}
+
+export async function saveAppSettings(payload, settingKey = "catalogs") {
+  if (!supabase || appSettingsTableMissing) return false
+
+  const { error } = await supabase
+    .from("app_settings")
+    .upsert(
+      [{
+        setting_key: settingKey,
+        payload,
+        updated_at: new Date().toISOString()
+      }],
+      { onConflict: "setting_key" }
+    )
+
+  if (error) {
+    if (shouldSilenceAppSettings(error)) {
+      appSettingsTableMissing = true
+      console.warn("No se encontró la tabla app_settings. Se conservará solo almacenamiento local.", error.message)
+      return false
+    }
+    console.warn("No se pudo guardar app_settings:", error.message)
+    return false
+  }
+
+  return true
 }
 
 // Función para obtener los registros (por día o rango semanal)

@@ -89,6 +89,16 @@ Si borras y al recargar vuelven a aparecer, normalmente es por politicas RLS de 
 
 Con esto, usuarios autenticados podran leer, insertar, editar y eliminar registros en la nube.
 
+## Persistencia colaborativa de catalogos y configuracion
+
+Para compartir trabajadores, partidas, actividades, frentes y configuracion del proyecto entre dispositivos:
+
+1. Abre Supabase SQL Editor.
+2. Ejecuta [scripts/supabase_app_settings.sql](scripts/supabase_app_settings.sql).
+3. Recarga la app.
+
+Si no ejecutas este script, la app seguira funcionando con almacenamiento local en cada dispositivo.
+
 ## Compilar para producción
 
 ```bash

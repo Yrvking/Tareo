@@ -21,6 +21,7 @@ import { selectStyles } from "../utils/selectTheme"
 export default function Config({
   workers, setWorkers,
   partidas, setPartidas,
+  frentes, setFrentes,
   actividades, setActividades,
   tiposHora, setTiposHora,
   projectConfig, setProjectConfig,
@@ -29,6 +30,8 @@ export default function Config({
   const [newWorkerName, setNewWorkerName]       = useState("")
   const [newPartidaId, setNewPartidaId]         = useState("")
   const [newPartidaNombre, setNewPartidaNombre] = useState("")
+  const [newFrenteId, setNewFrenteId]           = useState("")
+  const [newFrenteNombre, setNewFrenteNombre]   = useState("")
   const [newActId, setNewActId]                 = useState("")
   const [newActNombre, setNewActNombre]         = useState("")
   const [newActPartida, setNewActPartida]       = useState(null)
@@ -41,6 +44,7 @@ export default function Config({
   // ── Estado: selección para borrado masivo ────────────────────────────────────
   const [selectedWorkers,    setSelectedWorkers]    = useState([])
   const [selectedPartidas,   setSelectedPartidas]   = useState([])
+  const [selectedFrentes,    setSelectedFrentes]    = useState([])
   const [selectedActividades, setSelectedActividades] = useState([])
 
   // ── Varios ──────────────────────────────────────────────────────────────────
@@ -151,6 +155,11 @@ export default function Config({
     setPartidas(prev => prev.filter(p => !selectedPartidas.includes(p.id)))
     setSelectedPartidas([])
     showFeedback("Partidas eliminadas")
+  }
+  const deleteSelectedFrentes = () => {
+    setFrentes(prev => prev.filter(f => !selectedFrentes.includes(f.id)))
+    setSelectedFrentes([])
+    showFeedback("Frentes eliminados")
   }
   const deleteSelectedActividades = () => {
     setActividades(prev => prev.filter(a => !selectedActividades.includes(a.id)))
@@ -361,6 +370,68 @@ export default function Config({
         </div>
       </div>
 
+      {/* ── Frentes / Sectores ──────────────────────────────────────────────── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span>FRENTES / SECTORES ({frentes.length})</span>
+          {selectedFrentes.length > 0 && (
+            <button onClick={deleteSelectedFrentes} className="btn-pill-danger">
+              ELIMINAR ({selectedFrentes.length})
+            </button>
+          )}
+        </div>
+
+        <div style={{ maxHeight: 220, overflowY: 'auto', marginBottom: 12, border: '1px solid var(--border-dim)', borderRadius: 8 }}>
+          {frentes.map(f => (
+            <div key={f.id} style={{
+              display: 'flex', alignItems: 'center',
+              padding: '8px 10px',
+              borderBottom: '1px solid rgba(51,65,85,0.5)',
+              gap: 12,
+            }}>
+              <span className="mono" style={{ color: 'var(--accent-gold)', width: 72, fontSize: 11, flexShrink: 0 }}>{f.id}</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{f.nombre}</span>
+              <input
+                type="checkbox"
+                checked={selectedFrentes.includes(f.id)}
+                onChange={() => setSelectedFrentes(prev => prev.includes(f.id) ? prev.filter(id => id !== f.id) : [...prev, f.id])}
+              />
+            </div>
+          ))}
+          {frentes.length === 0 && <div className="empty-state">No hay frentes registrados.</div>}
+        </div>
+
+        <div style={{ display: "flex", gap: 10, flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            value={newFrenteId}
+            onChange={e => setNewFrenteId(e.target.value.toUpperCase())}
+            placeholder="Código"
+            className="input-field mono"
+            style={{ width: 110 }}
+          />
+          <input
+            type="text"
+            value={newFrenteNombre}
+            onChange={e => setNewFrenteNombre(e.target.value)}
+            placeholder="Nombre del frente o sector..."
+            className="input-field"
+            style={{ flex: 1, minWidth: 180 }}
+          />
+          <button
+            onClick={() => {
+              if (!newFrenteId.trim() || !newFrenteNombre.trim()) return
+              setFrentes(prev => [...prev, { id: newFrenteId.trim(), nombre: newFrenteNombre.trim() }])
+              setNewFrenteId("")
+              setNewFrenteNombre("")
+            }}
+            className="btn-primary"
+          >
+            <PlusIcon /> AGREGAR
+          </button>
+        </div>
+      </div>
+
       {/* ── Actividades ──────────────────────────────────────────────────────── */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -519,15 +590,29 @@ export default function Config({
         <div className="label" style={{ marginBottom: 12 }}>DATOS DEL PROYECTO</div>
         <div className="desktop-grid">
           <div>
-            <label className="field-label-sm">Empresa / Obra</label>
+            <label className="field-label-sm">Empresa</label>
             <input type="text" value={projectConfig.empresa}
               onChange={e => setProjectConfig({...projectConfig, empresa: e.target.value})}
               className="input-field" style={{ width: '100%' }} />
           </div>
           <div>
+            <label className="field-label-sm">Obra</label>
+            <input type="text" value={projectConfig.obra}
+              onChange={e => setProjectConfig({...projectConfig, obra: e.target.value})}
+              className="input-field" style={{ width: '100%' }} />
+          </div>
+        </div>
+        <div className="desktop-grid" style={{ marginTop: 12 }}>
+          <div>
             <label className="field-label-sm">Código Proyecto (S10)</label>
             <input type="text" value={projectConfig.codigoProyecto}
               onChange={e => setProjectConfig({...projectConfig, codigoProyecto: e.target.value})}
+              className="input-field mono" style={{ width: '100%' }} />
+          </div>
+          <div>
+            <label className="field-label-sm">Código Nómina</label>
+            <input type="text" value={projectConfig.codigoNomina}
+              onChange={e => setProjectConfig({...projectConfig, codigoNomina: e.target.value})}
               className="input-field mono" style={{ width: '100%' }} />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { INITIAL_WORKERS, INITIAL_PARTIDAS, INITIAL_FRENTES, INITIAL_TIPOS_HORA, DEFAULT_PROJECT_CONFIG } from "./data/defaults"
 import { INITIAL_ACTIVIDADES } from "./data/actividades"
 import VoiceRecorder from "./components/VoiceRecorder"
@@ -10,8 +10,8 @@ import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
 import Help from "./components/Help"
 import Dashboard from "./components/Dashboard"
-import { fetchRegistros } from "./utils/supabaseClient"
-import { getWeekRange } from "./utils/dateUtils"
+import { fetchAppSettings, fetchRegistros, saveAppSettings } from "./utils/supabaseClient"
+import { getTodayLocalDate, getWeekRange } from "./utils/dateUtils"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import Login from "./components/Login"
 import {
@@ -27,18 +27,40 @@ import {
 } from "./components/Icons"
 import "./App.css"
 
-const WORKERS_STORAGE_KEY = "tareador_workers"
+const STORAGE_KEYS = {
+  workers: "tareador_workers",
+  partidas: "tareador_partidas",
+  actividades: "tareador_actividades",
+  frentes: "tareador_frentes",
+  tiposHora: "tareador_tipos_hora",
+  projectConfig: "tareador_project_config",
+}
 
-function loadWorkersFromStorage() {
+function loadArrayFromStorage(key, fallback) {
   try {
-    const raw = localStorage.getItem(WORKERS_STORAGE_KEY)
-    if (!raw) return INITIAL_WORKERS
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
 
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : INITIAL_WORKERS
+    return Array.isArray(parsed) ? parsed : fallback
   } catch (error) {
-    console.warn("No se pudo leer workers desde localStorage:", error)
-    return INITIAL_WORKERS
+    console.warn(`No se pudo leer ${key} desde localStorage:`, error)
+    return fallback
+  }
+}
+
+function loadProjectConfigFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.projectConfig)
+    if (!raw) return DEFAULT_PROJECT_CONFIG
+
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object"
+      ? { ...DEFAULT_PROJECT_CONFIG, ...parsed }
+      : DEFAULT_PROJECT_CONFIG
+  } catch (error) {
+    console.warn("No se pudo leer projectConfig desde localStorage:", error)
+    return DEFAULT_PROJECT_CONFIG
   }
 }
 
@@ -56,19 +78,80 @@ const TABS = [
 
 function AppContent() {
   const { user, profile, logout } = useAuth()
+  const cloudHydratedRef = useRef(false)
   const [tab, setTab] = useState("dashboard")
-  const [workers, setWorkers] = useState(() => loadWorkersFromStorage())
-  const [partidas, setPartidas] = useState(INITIAL_PARTIDAS)
-  const [actividades, setActividades] = useState(INITIAL_ACTIVIDADES)
-  const [frentes, setFrentes] = useState(INITIAL_FRENTES)
-  const [tiposHora, setTiposHora] = useState(INITIAL_TIPOS_HORA)
-  const [projectConfig, setProjectConfig] = useState(DEFAULT_PROJECT_CONFIG)
+  const [workers, setWorkers] = useState(() => loadArrayFromStorage(STORAGE_KEYS.workers, INITIAL_WORKERS))
+  const [partidas, setPartidas] = useState(() => loadArrayFromStorage(STORAGE_KEYS.partidas, INITIAL_PARTIDAS))
+  const [actividades, setActividades] = useState(() => loadArrayFromStorage(STORAGE_KEYS.actividades, INITIAL_ACTIVIDADES))
+  const [frentes, setFrentes] = useState(() => loadArrayFromStorage(STORAGE_KEYS.frentes, INITIAL_FRENTES))
+  const [tiposHora, setTiposHora] = useState(() => loadArrayFromStorage(STORAGE_KEYS.tiposHora, INITIAL_TIPOS_HORA))
+  const [projectConfig, setProjectConfig] = useState(() => loadProjectConfigFromStorage())
   const [registros, setRegistros] = useState([])
-  const [fechaTareo, setFechaTareo] = useState(new Date().toISOString().split("T")[0])
+  const [fechaTareo, setFechaTareo] = useState(() => getTodayLocalDate())
 
   useEffect(() => {
-    localStorage.setItem(WORKERS_STORAGE_KEY, JSON.stringify(workers))
-  }, [workers])
+    localStorage.setItem(STORAGE_KEYS.workers, JSON.stringify(workers))
+    localStorage.setItem(STORAGE_KEYS.partidas, JSON.stringify(partidas))
+    localStorage.setItem(STORAGE_KEYS.actividades, JSON.stringify(actividades))
+    localStorage.setItem(STORAGE_KEYS.frentes, JSON.stringify(frentes))
+    localStorage.setItem(STORAGE_KEYS.tiposHora, JSON.stringify(tiposHora))
+    localStorage.setItem(STORAGE_KEYS.projectConfig, JSON.stringify(projectConfig))
+  }, [workers, partidas, actividades, frentes, tiposHora, projectConfig])
+
+  useEffect(() => {
+    let active = true
+
+    if (!user) {
+      cloudHydratedRef.current = true
+      return () => {
+        active = false
+      }
+    }
+
+    cloudHydratedRef.current = false
+
+    async function hydrateCatalogs() {
+      const remotePayload = await fetchAppSettings("catalogs")
+      if (!active || !remotePayload || typeof remotePayload !== "object") {
+        cloudHydratedRef.current = true
+        return
+      }
+
+      if (Array.isArray(remotePayload.workers)) setWorkers(remotePayload.workers)
+      if (Array.isArray(remotePayload.partidas)) setPartidas(remotePayload.partidas)
+      if (Array.isArray(remotePayload.actividades)) setActividades(remotePayload.actividades)
+      if (Array.isArray(remotePayload.frentes)) setFrentes(remotePayload.frentes)
+      if (Array.isArray(remotePayload.tiposHora)) setTiposHora(remotePayload.tiposHora)
+      if (remotePayload.projectConfig && typeof remotePayload.projectConfig === "object") {
+        setProjectConfig({ ...DEFAULT_PROJECT_CONFIG, ...remotePayload.projectConfig })
+      }
+
+      cloudHydratedRef.current = true
+    }
+
+    hydrateCatalogs()
+
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user || !cloudHydratedRef.current) return
+
+    const timeoutId = setTimeout(() => {
+      saveAppSettings({
+        workers,
+        partidas,
+        actividades,
+        frentes,
+        tiposHora,
+        projectConfig,
+      }, "catalogs")
+    }, 700)
+
+    return () => clearTimeout(timeoutId)
+  }, [workers, partidas, actividades, frentes, tiposHora, projectConfig, user])
 
   useEffect(() => {
     async function loadData() {
@@ -155,6 +238,7 @@ function AppContent() {
             <Dashboard
               registros={registros}
               workers={workers}
+              frentes={frentes}
               actividades={actividades}
               partidas={partidas}
               projectConfig={projectConfig}
@@ -217,6 +301,8 @@ function AppContent() {
               partidas={partidas}
               actividades={actividades}
               frentes={frentes}
+              tiposHora={tiposHora}
+              projectConfig={projectConfig}
               fechaTareo={fechaTareo}
               setFechaTareo={setFechaTareo}
               getPartidaNombre={getPartidaNombre}

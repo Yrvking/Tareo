@@ -1,7 +1,7 @@
 import { useState } from "react"
-import { SearchIcon, PlusIcon, TrashIcon, CheckIcon } from "./Icons"
+import { SearchIcon, CheckIcon } from "./Icons"
 import Select from "react-select"
-import { insertRegistro, updateRegistro } from "../utils/supabaseClient"
+import { insertRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
 import { getWeekRange } from "../utils/dateUtils"
 
@@ -28,13 +28,17 @@ export default function WeeklyControl({
     (w.codigo || w.id).toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const getDayRecords = (workerId, date) => (
+    registros.filter(r => String(r.workerId) === String(workerId) && r.date === date)
+  )
+
   const getDayTotal = (workerId, date) => {
-    const reg = registros.find(r => r.workerId === workerId && r.date === date)
-    if (!reg) return { hn: 0, he: 0 }
-    return reg.assignments.reduce((sum, a) => ({
-      hn: sum.hn + (a.horasNormales || 0),
-      he: sum.he + (a.horasExtras || 0)
-    }), { hn: 0, he: 0 })
+    return getDayRecords(workerId, date).reduce((regSum, reg) => (
+      reg.assignments.reduce((sum, a) => ({
+        hn: sum.hn + (a.horasNormales || 0),
+        he: sum.he + (a.horasExtras || 0)
+      }), regSum)
+    ), { hn: 0, he: 0 })
   }
 
   const handleSaveDay = async () => {
@@ -42,41 +46,27 @@ export default function WeeklyControl({
 
     const { workerId, date } = selectedDay
     const worker = workers.find(w => w.id === workerId)
-    
-    // Check if record exists for that day
-    const existingIdx = registros.findIndex(r => r.workerId === workerId && r.date === date)
-    let updatedReg = existingIdx >= 0 ? JSON.parse(JSON.stringify(registros[existingIdx])) : {
+    if (!worker) return
+
+    const newReg = {
       workerId,
       workerNombre: worker.nombre,
       date,
       frenteId: null,
       frenteNombre: null,
-      assignments: [],
+      assignments: [{
+        actividadId: newActivity.value,
+        partidaId: newActivity.partidaId,
+        horasNormales: parseFloat(newHn) || 0,
+        horasExtras: parseFloat(newHe) || 0
+      }],
       timestamp: new Date().toLocaleTimeString("es-PE")
     }
 
-    updatedReg.assignments.push({
-      actividadId: newActivity.value,
-      partidaId: newActivity.partidaId,
-      horasNormales: parseFloat(newHn) || 0,
-      horasExtras: parseFloat(newHe) || 0
-    })
-
     try {
-      if (existingIdx >= 0 && updatedReg.id) {
-        await updateRegistro(updatedReg, { source: "weekly_control_edit" })
-      } else {
-        const dbId = await insertRegistro(updatedReg)
-        if (dbId) updatedReg.id = dbId
-      }
-      
-      if (existingIdx >= 0) {
-        const newRegs = [...registros]
-        newRegs[existingIdx] = updatedReg
-        setRegistros(newRegs)
-      } else {
-        setRegistros(prev => [...prev, updatedReg])
-      }
+      const dbId = await insertRegistro(newReg)
+      if (dbId) newReg.id = dbId
+      setRegistros(prev => [...prev, newReg])
       
       setSelectedDay(null)
       setNewActivity(null)
@@ -117,10 +107,29 @@ export default function WeeklyControl({
                 </span>
               </div>
               <div className="mono" style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>SEM </span>
-                <span style={{ fontSize: 15, color: 'var(--accent-blue)', fontWeight: 800 }}>
-                  {weekDays.reduce((sum, d) => sum + getDayTotal(w.id, d.date).hn, 0)}h
-                </span>
+                {(() => {
+                  const weekTotals = weekDays.reduce((sum, d) => {
+                    const current = getDayTotal(w.id, d.date)
+                    return {
+                      hn: sum.hn + current.hn,
+                      he: sum.he + current.he
+                    }
+                  }, { hn: 0, he: 0 })
+
+                  return (
+                    <>
+                      <div>
+                        <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>SEM </span>
+                        <span style={{ fontSize: 15, color: 'var(--accent-blue)', fontWeight: 800 }}>
+                          {weekTotals.hn + weekTotals.he}h
+                        </span>
+                      </div>
+                      {weekTotals.he > 0 && (
+                        <div style={{ fontSize: 10, color: 'var(--red-accent)' }}>HE {weekTotals.he}h</div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </div>
 
@@ -162,6 +171,34 @@ export default function WeeklyControl({
                 <div className="label" style={{ marginBottom: 12, color: 'var(--accent-blue)' }}>
                   AGREGAR TAREA: {weekDays.find(d => d.date === selectedDay.date)?.label} {weekDays.find(d => d.date === selectedDay.date)?.dayNum}
                 </div>
+
+                {(() => {
+                  const dayRecords = getDayRecords(w.id, selectedDay.date)
+                  const dayAssignments = dayRecords.flatMap(reg => reg.assignments || [])
+
+                  if (dayAssignments.length === 0) return null
+
+                  return (
+                    <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-dim)' }}>
+                      <div className="field-label-sm" style={{ marginBottom: 8 }}>
+                        REGISTROS EXISTENTES ({dayRecords.length})
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {dayAssignments.map((assignment, index) => {
+                          const actividad = actividades.find(a => a.id === assignment.actividadId)
+                          const total = (assignment.horasNormales || 0) + (assignment.horasExtras || 0)
+                          return (
+                            <span key={`${assignment.actividadId}-${index}`} className="hora-badge">
+                              <span style={{ color: 'var(--accent-blue)' }}>{total}h</span>
+                              <span style={{ opacity: 0.35 }}>|</span>
+                              <span>{actividad?.nombre || assignment.actividadId}</span>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
                 
                 <div style={{ marginBottom: 12 }}>
                   <label className="field-label-sm">Actividad</label>
@@ -187,7 +224,7 @@ export default function WeeklyControl({
 
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={handleSaveDay} className="btn-primary" style={{ flex: 1 }}>
-                    <CheckIcon /> GUARDAR DÍA
+                    <CheckIcon /> AGREGAR REGISTRO
                   </button>
                   <button onClick={() => setSelectedDay(null)} className="btn-pill-sm" style={{ padding: '0 16px' }}>
                     CANCELAR

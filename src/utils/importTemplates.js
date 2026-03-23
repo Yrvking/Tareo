@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { getTodayLocalDate } from "./dateUtils"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTIVIDADES — Plantilla de importación
@@ -82,7 +83,7 @@ export function downloadTareoTemplate(workers = [], actividades = [], fechaTareo
     "HORAS_EXTRAS",
   ]
 
-  const today = fechaTareo || new Date().toISOString().split("T")[0]
+  const today = fechaTareo || getTodayLocalDate()
   const w0 = workers[0] || {}
   const a0 = actividades[0] || {}
   const exRow = [

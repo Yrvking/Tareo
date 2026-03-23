@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { MicIcon, CheckIcon, TrashIcon } from "./Icons"
-import { parseContinuousVoice, detectCorrection } from "../utils/voiceParser"
+import { parseContinuousVoice } from "../utils/voiceParser"
 import { insertRegistro, updateRegistro, deleteRegistroById, fetchRegistros } from "../utils/supabaseClient"
 import { getWeekRange } from "../utils/dateUtils"
 

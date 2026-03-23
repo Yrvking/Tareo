@@ -9,6 +9,20 @@ export function parseLocalDate(dateStr) {
 }
 
 /**
+ * Formatea una fecha a "YYYY-MM-DD" usando la zona local.
+ */
+export function formatLocalDate(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+export function getTodayLocalDate() {
+  return formatLocalDate(new Date())
+}
+
+/**
  * Retorna el rango de la semana (Lun-Sab) para una fecha dada.
  * @param {string} dateStr - "YYYY-MM-DD"
  * @returns {{ dates: string[], monday: Date }}
@@ -23,7 +37,7 @@ export function getWeekRange(dateStr) {
   const dates = []
   for (let i = 0; i < 6; i++) {
     const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)
-    dates.push(d.toISOString().split('T')[0])
+    dates.push(formatLocalDate(d))
   }
 
   return { dates, monday }

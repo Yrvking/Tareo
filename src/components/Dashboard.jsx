@@ -1,309 +1,260 @@
-import { useMemo } from "react"
-import { getWeekRange } from "../utils/dateUtils"
+import { useMemo, useState } from "react"
+import { getWeekRange, parseLocalDate } from "../utils/dateUtils"
 
-export default function Dashboard({
-  registros, workers, actividades, partidas, projectConfig, fechaTareo
-}) {
+const DAY_LABELS = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB"]
+
+export default function Dashboard({ registros, workers, frentes = [], actividades, partidas, projectConfig, fechaTareo }) {
+  const [view, setView] = useState("operativo")
+  const [search, setSearch] = useState("")
+  const [frenteFilter, setFrenteFilter] = useState("")
+  const [categoriaFilter, setCategoriaFilter] = useState("")
+  const [actividadFilter, setActividadFilter] = useState("")
+  const [onlyExtras, setOnlyExtras] = useState(false)
+  const [detail, setDetail] = useState(null)
+
   const { dates } = useMemo(() => getWeekRange(fechaTareo), [fechaTareo])
-  const DAY_LABELS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"]
+  const workerMap = useMemo(() => new Map(workers.map(w => [String(w.id), w])), [workers])
+  const activityMap = useMemo(() => new Map(actividades.map(a => [String(a.id), a])), [actividades])
+  const partidaMap = useMemo(() => new Map(partidas.map(p => [String(p.id), p])), [partidas])
+  const frenteMap = useMemo(() => new Map(frentes.map(f => [String(f.id), f])), [frentes])
 
-  // ── Aggregate all data from registros ──────────────────────────────────────
-  const stats = useMemo(() => {
-    let totalHN = 0, totalHE = 0, totalCosto = 0
-    const workerMap = {}   // workerId → { nombre, categoria, costoHora, hn, he }
-    const actMap = {}      // actividadId → { nombre, partidaNombre, hn, he }
-    const dayMap = {}      // date → { hn, he }
-
-    dates.forEach(d => { dayMap[d] = { hn: 0, he: 0 } })
-
+  const categorias = useMemo(() => Array.from(new Set(workers.map(w => cleanCategory(w.categoria)))).sort((a, b) => a.localeCompare(b, "es")), [workers])
+  const frenteOptions = useMemo(() => {
+    const list = frentes.map(f => ({ value: String(f.id), label: `${f.id} - ${f.nombre}` }))
     registros.forEach(reg => {
-      const w = workers.find(x => x.id === reg.workerId)
-      const costoHora = w?.costoHora || 0
+      const key = String(reg.frenteId || reg.frenteNombre || "")
+      const label = reg.frenteId ? `${reg.frenteId} - ${reg.frenteNombre || frenteMap.get(String(reg.frenteId))?.nombre || "Sin nombre"}` : reg.frenteNombre
+      if (key && !list.some(item => item.value === key)) list.push({ value: key, label })
+    })
+    return list
+  }, [frentes, registros, frenteMap])
 
-      if (!workerMap[reg.workerId]) {
-        workerMap[reg.workerId] = {
-          nombre: reg.workerNombre,
-          categoria: w?.categoria || "—",
-          costoHora,
-          hn: 0, he: 0
-        }
-      }
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return registros.filter(reg => {
+      const worker = workerMap.get(String(reg.workerId))
+      const categoria = cleanCategory(worker?.categoria)
+      const frenteId = String(reg.frenteId || "")
+      const frenteName = reg.frenteNombre || frenteMap.get(frenteId)?.nombre || "Sin frente"
+      const hitFrente = !frenteFilter || frenteFilter === frenteId || frenteFilter === frenteName
+      const hitCategoria = !categoriaFilter || categoria === categoriaFilter
+      const hitActividad = !actividadFilter || reg.assignments?.some(asg => String(asg.actividadId) === actividadFilter)
+      const hitExtras = !onlyExtras || reg.assignments?.some(asg => (asg.horasExtras || 0) > 0)
+      if (!hitFrente || !hitCategoria || !hitActividad || !hitExtras) return false
+      if (!term) return true
+      const text = [
+        reg.workerNombre, worker?.codigo, worker?.categoria, frenteId, frenteName,
+        ...(reg.assignments || []).flatMap(asg => {
+          const act = activityMap.get(String(asg.actividadId))
+          const partidaId = String(act?.partidaId || asg.partidaId || "")
+          return [act?.nombre, partidaMap.get(partidaId)?.nombre, partidaId]
+        })
+      ].filter(Boolean).join(" ").toLowerCase()
+      return text.includes(term)
+    })
+  }, [registros, search, frenteFilter, categoriaFilter, actividadFilter, onlyExtras, workerMap, activityMap, partidaMap, frenteMap])
 
+  const stats = useMemo(() => {
+    const dayMap = Object.fromEntries(dates.map(date => [date, { hn: 0, he: 0, workers: new Set() }]))
+    const workerStats = new Map()
+    const activityStats = new Map()
+    const frenteStats = new Map()
+    const categoriaStats = new Map()
+    const partidaStats = new Map()
+    let totalHN = 0, totalHE = 0, totalCosto = 0, assignments = 0
+
+    filtered.forEach(reg => {
+      const worker = workerMap.get(String(reg.workerId))
+      const categoria = cleanCategory(worker?.categoria)
+      const frenteId = String(reg.frenteId || reg.frenteNombre || "Sin frente")
+      const frenteName = reg.frenteNombre || frenteMap.get(String(reg.frenteId || ""))?.nombre || "Sin frente"
       reg.assignments?.forEach(asg => {
-        const hn = asg.horasNormales || 0
-        const he = asg.horasExtras || 0
-
+        const hn = Number(asg.horasNormales) || 0
+        const he = Number(asg.horasExtras) || 0
+        const total = hn + he
+        if (!total) return
+        assignments += 1
         totalHN += hn
         totalHE += he
-        totalCosto += (hn + he) * costoHora
-
-        workerMap[reg.workerId].hn += hn
-        workerMap[reg.workerId].he += he
-
+        totalCosto += total * (worker?.costoHora || 0)
         if (dayMap[reg.date]) {
           dayMap[reg.date].hn += hn
           dayMap[reg.date].he += he
+          dayMap[reg.date].workers.add(String(reg.workerId))
         }
-
-        const actId = asg.actividadId
-        if (actId) {
-          if (!actMap[actId]) {
-            const act = actividades.find(a => a.id === actId)
-            const partida = act ? partidas.find(p => p.id === act.partidaId) : null
-            actMap[actId] = {
-              nombre: act?.nombre || actId,
-              partidaNombre: partida?.nombre || "—",
-              hn: 0, he: 0
-            }
-          }
-          actMap[actId].hn += hn
-          actMap[actId].he += he
-        }
+        bump(workerStats, String(reg.workerId), { id: String(reg.workerId), nombre: reg.workerNombre, categoria, costoHora: worker?.costoHora || 0, hn: 0, he: 0 }, hn, he)
+        const act = activityMap.get(String(asg.actividadId))
+        const partId = String(act?.partidaId || asg.partidaId || "SIN_PARTIDA")
+        bump(activityStats, String(asg.actividadId), { id: String(asg.actividadId), nombre: act?.nombre || asg.actividadId, partidaId: partId, partidaNombre: partidaMap.get(partId)?.nombre || "Sin partida", hn: 0, he: 0 }, hn, he)
+        bump(frenteStats, frenteId, { id: frenteId, nombre: frenteName, hn: 0, he: 0 }, hn, he)
+        bump(categoriaStats, categoria, { id: categoria, nombre: categoria, hn: 0, he: 0 }, hn, he)
+        bump(partidaStats, partId, { id: partId, nombre: partidaMap.get(partId)?.nombre || "Sin partida", hn: 0, he: 0 }, hn, he)
       })
     })
 
-    const workerList = Object.values(workerMap).sort((a, b) => (b.hn + b.he) - (a.hn + a.he))
-    const actList = Object.values(actMap).sort((a, b) => (b.hn + b.he) - (a.hn + a.he))
-    const dayList = dates.map((d, i) => ({ label: DAY_LABELS[i], date: d, ...dayMap[d] }))
-    const maxDayHoras = Math.max(...dayList.map(d => d.hn + d.he), 1)
-
-    const diasConRegistro = dates.filter(d => dayMap[d].hn + dayMap[d].he > 0).length
-    const workersActivos = workerList.length
-
-    // Category breakdown
-    const catMap = {}
-    workerList.forEach(w => {
-      const cat = w.categoria.replace(/^\d+\s*/, "") // strip leading "003 " etc.
-      if (!catMap[cat]) catMap[cat] = { hn: 0, he: 0, count: 0 }
-      catMap[cat].hn += w.hn
-      catMap[cat].he += w.he
-      catMap[cat].count++
+    const dayList = dates.map((date, index) => {
+      const value = dayMap[date] || { hn: 0, he: 0, workers: new Set() }
+      return { date, label: DAY_LABELS[index], dayNum: parseLocalDate(date).getDate(), hn: value.hn, he: value.he, total: value.hn + value.he, workers: value.workers.size }
     })
-    const catList = Object.entries(catMap).map(([cat, v]) => ({ cat, ...v, total: v.hn + v.he })).sort((a, b) => b.total - a.total)
+    const workerList = toList(workerStats).map(item => ({ ...item, total: item.hn + item.he, costo: (item.hn + item.he) * item.costoHora }))
+    const activityList = toList(activityStats).map(item => ({ ...item, total: item.hn + item.he }))
+    const frenteList = toList(frenteStats).map(item => ({ ...item, total: item.hn + item.he }))
+    const categoriaList = toList(categoriaStats).map(item => ({ ...item, total: item.hn + item.he }))
+    const partidaList = toList(partidaStats).map(item => ({ ...item, total: item.hn + item.he }))
+    const totalHoras = totalHN + totalHE
+    const diasConRegistro = dayList.filter(day => day.total > 0).length
+    const busiestDay = [...dayList].sort((a, b) => b.total - a.total)[0] || null
+    const topActividad = activityList[0] || null
+    const alerts = []
+    if (dayList.some(day => day.total === 0)) alerts.push({ tone: "warn", title: "Cobertura", text: `Dias sin registro: ${dayList.filter(day => day.total === 0).map(day => day.label).join(", ")}` })
+    if (totalHE > 0) alerts.push({ tone: "info", title: "Horas extra", text: `${fmtHours(totalHE)} horas extra acumuladas (${Math.round((totalHE / Math.max(totalHoras, 1)) * 100)}%)` })
+    if (topActividad && totalHoras > 0 && topActividad.total / totalHoras >= 0.35) alerts.push({ tone: "accent", title: "Concentracion", text: `${topActividad.nombre} concentra ${Math.round((topActividad.total / totalHoras) * 100)}% de las horas` })
+    if (!alerts.length) alerts.push({ tone: "ok", title: "Estado", text: "No se detectaron alertas con los filtros actuales." })
+    return { totalHN, totalHE, totalHoras, totalCosto, diasConRegistro, assignments, dayList, workerList, activityList, frenteList, categoriaList, partidaList, busiestDay, topActividad, heRatio: totalHE / Math.max(totalHoras, 1), avgHours: totalHoras / Math.max(workerList.length, 1), alerts, maxDay: Math.max(...dayList.map(day => day.total), 1) }
+  }, [filtered, dates, workerMap, activityMap, partidaMap, frenteMap])
 
-    return {
-      totalHN, totalHE, totalCosto,
-      diasConRegistro, workersActivos,
-      workerList, actList: actList.slice(0, 8), dayList, maxDayHoras,
-      catList
-    }
-  }, [registros, workers, actividades, partidas, dates])
+  const detailRows = useMemo(() => buildDetailRows(detail, filtered, activityMap, partidaMap, workerMap), [detail, filtered, activityMap, partidaMap, workerMap])
 
-  const fmt = (n) => n.toFixed(1).replace(/\.0$/, "")
-  const fmtCurrency = (n) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-  const totalHoras = stats.totalHN + stats.totalHE
-
-  const CAT_COLORS = [
-    "var(--accent-blue)",
-    "var(--accent-gold)",
-    "var(--green-accent)",
-    "#a855f7",
-    "#f97316",
-  ]
+  const openDetail = (type, key, label) => setDetail({ type, key, label })
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <div className="dashboard-shell">
+      <div className="dashboard-hero">
+        <div>
+          <div className="dashboard-eyebrow">Dashboard semanal</div>
+          <h2 className="dashboard-title-main">{projectConfig?.obra || "Control del proyecto"}</h2>
+          <p className="dashboard-copy">{projectConfig?.empresa || "Proyecto"} · {filtered.length} registros filtrados · {stats.assignments} asignaciones</p>
+        </div>
+        <div className="dashboard-view-toggle">
+          <button className={`btn-pill-sm ${view === "operativo" ? "active-pill" : ""}`} onClick={() => setView("operativo")}>Vista Operativa</button>
+          <button className={`btn-pill-sm ${view === "ejecutivo" ? "active-pill" : ""}`} onClick={() => setView("ejecutivo")}>Vista Ejecutiva</button>
+        </div>
+      </div>
 
-      {/* Project info bar */}
-      {projectConfig?.obra && (
-        <div style={{
-          background: "var(--bg-card)", border: "1px solid var(--border-dim)",
-          borderRadius: "var(--radius-md)", padding: "10px 16px",
-          fontSize: "13px", color: "var(--text-dim)", display: "flex", gap: "24px", flexWrap: "wrap"
-        }}>
-          <span><span style={{ color: "var(--text-muted)", marginRight: 6 }}>Empresa:</span><strong style={{ color: "var(--text-main)" }}>{projectConfig.empresa}</strong></span>
-          <span><span style={{ color: "var(--text-muted)", marginRight: 6 }}>Obra:</span><strong style={{ color: "var(--accent-gold)" }}>{projectConfig.obra}</strong></span>
+      <div className="dash-card dashboard-toolbar">
+        <div className="dashboard-filter-grid">
+          <label className="dashboard-filter-field"><span>Buscar</span><input className="input-field" value={search} onChange={e => setSearch(e.target.value)} placeholder="Trabajador, actividad, frente..." /></label>
+          <label className="dashboard-filter-field"><span>Frente</span><select className="input-field" value={frenteFilter} onChange={e => setFrenteFilter(e.target.value)}><option value="">Todos</option>{frenteOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          <label className="dashboard-filter-field"><span>Categoria</span><select className="input-field" value={categoriaFilter} onChange={e => setCategoriaFilter(e.target.value)}><option value="">Todas</option>{categorias.map(option => <option key={option} value={option}>{option}</option>)}</select></label>
+          <label className="dashboard-filter-field"><span>Actividad</span><select className="input-field" value={actividadFilter} onChange={e => setActividadFilter(e.target.value)}><option value="">Todas</option>{actividades.map(option => <option key={option.id} value={option.id}>{option.id} - {option.nombre}</option>)}</select></label>
+        </div>
+        <div className="dashboard-toolbar-actions">
+          <button className={`btn-pill-sm ${onlyExtras ? "active-pill" : ""}`} onClick={() => setOnlyExtras(value => !value)}>Solo con HE</button>
+          <button className="btn-pill-sm" onClick={() => { setSearch(""); setFrenteFilter(""); setCategoriaFilter(""); setActividadFilter(""); setOnlyExtras(false) }}>Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div className="dashboard-kpi-grid">
+        <Metric label="Horas totales" value={fmtHours(stats.totalHoras)} sub={`${fmtHours(stats.totalHN)} N · ${fmtHours(stats.totalHE)} E`} tone="blue" onClick={() => stats.busiestDay && openDetail("day", stats.busiestDay.date, `${stats.busiestDay.label} ${stats.busiestDay.dayNum}`)} />
+        <Metric label="Costo estimado" value={fmtCurrency(stats.totalCosto)} sub="Mano de obra filtrada" tone="green" />
+        <Metric label="Trabajadores activos" value={String(stats.workerList.length)} sub={`${fmtHours(stats.avgHours)} promedio`} tone="gold" onClick={() => stats.workerList[0] && openDetail("worker", stats.workerList[0].id, stats.workerList[0].nombre)} />
+        <Metric label="Cobertura" value={`${stats.diasConRegistro}/6`} sub={stats.busiestDay ? `Pico ${stats.busiestDay.label}: ${fmtHours(stats.busiestDay.total)}` : "Sin actividad"} tone="neutral" />
+        <Metric label="Ratio HE" value={`${Math.round(stats.heRatio * 100)}%`} sub={stats.totalHE ? `${fmtHours(stats.totalHE)} HE` : "Sin extras"} tone="alert" onClick={() => openDetail("extras", "extras", "Horas extra")} />
+        <Metric label="Actividad lider" value={stats.topActividad?.nombre || "Sin actividad"} sub={stats.topActividad ? fmtHours(stats.topActividad.total) : "0"} tone="indigo" onClick={() => stats.topActividad && openDetail("activity", stats.topActividad.id, stats.topActividad.nombre)} />
+      </div>
+
+      {view === "operativo" && (
+        <>
+          <div className="dashboard-main-grid">
+            <div className="dash-card">
+              <div className="dashboard-section-title">Horas por dia</div>
+              <div className="dashboard-chart">{stats.dayList.map(day => <button key={day.date} className="dashboard-chart-col" onClick={() => openDetail("day", day.date, `${day.label} ${day.dayNum}`)}><span className="dashboard-chart-value">{day.total ? fmtHours(day.total) : ""}</span><div className="dashboard-chart-bar-wrap"><div className="dashboard-chart-bar"><div style={{ height: `${Math.max((day.total / stats.maxDay) * 100, day.total ? 8 : 4)}px`, background: "var(--accent-blue)" }} /></div></div><span className="dashboard-chart-label">{day.label}</span><span className="dashboard-chart-sub">{day.workers} trab.</span></button>)}</div>
+            </div>
+            <div className="dash-card">
+              <div className="dashboard-section-title">Alertas</div>
+              <div className="dashboard-alert-list">{stats.alerts.map(alert => <div key={alert.title} className={`dashboard-alert dashboard-alert-${alert.tone}`}><div className="dashboard-alert-title">{alert.title}</div><div className="dashboard-alert-description">{alert.text}</div></div>)}</div>
+            </div>
+          </div>
+
+          <div className="dashboard-main-grid">
+            <ListCard title="Top actividades" items={stats.activityList.slice(0, 8)} onOpen={item => openDetail("activity", item.id, item.nombre)} />
+            <ListCard title="Top trabajadores" items={stats.workerList.slice(0, 10)} onOpen={item => openDetail("worker", item.id, item.nombre)} formatSub={item => `${item.categoria} · ${fmtCurrency(item.costo)}`} />
+          </div>
+
+          <div className="dashboard-main-grid">
+            <ListCard title="Frentes" items={stats.frenteList.slice(0, 8)} onOpen={item => openDetail("frente", item.id, item.nombre)} />
+            <ListCard title="Categorias" items={stats.categoriaList.slice(0, 8)} onOpen={item => openDetail("category", item.id, item.nombre)} />
+          </div>
+        </>
+      )}
+
+      {view === "ejecutivo" && (
+        <div className="dashboard-main-grid">
+          <div className="dash-card dashboard-executive-card">
+            <div className="dashboard-section-title">Resumen ejecutivo</div>
+            <div className="dashboard-executive-copy">
+              <p>La semana acumula <strong>{fmtHours(stats.totalHoras)}</strong> en <strong>{stats.workerList.length}</strong> trabajadores activos.</p>
+              <p>El costo estimado es <strong>{fmtCurrency(stats.totalCosto)}</strong> y la actividad dominante es <strong>{stats.topActividad?.nombre || "Sin actividad"}</strong>.</p>
+              <p>La mejor lectura diaria la aporta <strong>{stats.busiestDay?.label || "-"}</strong> con <strong>{fmtHours(stats.busiestDay?.total || 0)}</strong>.</p>
+            </div>
+          </div>
+          <div className="dash-card">
+            <div className="dashboard-section-title">Palancas ejecutivas</div>
+            <ListCard title="Partidas criticas" items={stats.partidaList.slice(0, 6)} onOpen={item => openDetail("partida", item.id, `${item.id} - ${item.nombre}`)} compact />
+            <ListCard title="Dias comparados" items={stats.dayList} onOpen={item => openDetail("day", item.date, `${item.label} ${item.dayNum}`)} formatName={item => `${item.label} ${item.dayNum}`} compact />
+          </div>
         </div>
       )}
 
-      {/* ── KPI Cards ─────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "14px" }}>
-        <KpiCard label="Horas Semana" value={fmt(totalHoras)} sub={`${fmt(stats.totalHN)} N + ${fmt(stats.totalHE)} E`} color="var(--accent-blue)" icon="⏱" />
-        <KpiCard label="Trabajadores" value={stats.workersActivos} sub="activos esta semana" color="var(--accent-gold)" icon="👷" />
-        <KpiCard label="Costo Estimado" value={fmtCurrency(stats.totalCosto)} sub="mano de obra" color="var(--green-accent)" icon="💰" />
-        <KpiCard label="Cobertura" value={`${stats.diasConRegistro}/6`} sub="días con registro" color="#a855f7" icon="📅" />
+      <div className="dash-card">
+        <div className="dashboard-section-title">Drill-down</div>
+        {!detail && <div className="dashboard-empty">Selecciona una tarjeta o una fila para ver el detalle.</div>}
+        {detail && (
+          <div className="dashboard-detail">
+            <div className="dashboard-detail-head">
+              <div><div className="dashboard-detail-title">{detail.label}</div><div className="dashboard-detail-subtitle">{detailRows.length} filas detalladas</div></div>
+              <button className="btn-pill-sm" onClick={() => setDetail(null)}>Limpiar detalle</button>
+            </div>
+            <div className="dashboard-table-list">
+              {detailRows.length === 0 && <div className="dashboard-empty">No hay filas para esta seleccion.</div>}
+              {detailRows.slice(0, 18).map((row, index) => <div key={`${row.primary}-${index}`} className="dashboard-list-row dashboard-list-row-static"><div><div className="dashboard-list-title">{row.primary}</div><div className="dashboard-list-subtitle">{row.secondary}</div></div><div className="dashboard-list-metric"><strong>{fmtHours(row.total)}</strong><span>{fmtHours(row.hn)} N · {fmtHours(row.he)} E</span></div></div>)}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* ── Body Grid ─────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-
-        {/* Horas por día */}
-        <div className="dash-card">
-          <SectionTitle>Horas por Día</SectionTitle>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", height: "110px", marginTop: "12px" }}>
-            {stats.dayList.map(day => {
-              const total = day.hn + day.he
-              const heightPct = total > 0 ? Math.max((total / stats.maxDayHoras) * 100, 6) : 0
-              const heHeightPct = total > 0 ? (day.he / total) * heightPct : 0
-              const hnHeightPct = heightPct - heHeightPct
-              return (
-                <div key={day.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                  <span style={{ fontSize: "10px", color: "var(--text-muted)", fontFamily: "monospace" }}>
-                    {total > 0 ? fmt(total) : ""}
-                  </span>
-                  <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: "70%", display: "flex", flexDirection: "column", borderRadius: "3px 3px 0 0", overflow: "hidden" }}>
-                      {heHeightPct > 0 && (
-                        <div style={{ height: `${heHeightPct}px`, background: "var(--accent-gold)", opacity: 0.85 }} title={`Extras: ${fmt(day.he)}h`} />
-                      )}
-                      {hnHeightPct > 0 && (
-                        <div style={{ height: `${hnHeightPct}px`, background: "var(--accent-blue)" }} title={`Normales: ${fmt(day.hn)}h`} />
-                      )}
-                      {heightPct === 0 && (
-                        <div style={{ height: "4px", background: "var(--border-dim)", borderRadius: "2px" }} />
-                      )}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "10px", color: total > 0 ? "var(--text-dim)" : "var(--text-muted)" }}>{day.label}</span>
-                </div>
-              )
-            })}
-          </div>
-          <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-            <Legend color="var(--accent-blue)" label="Normales" />
-            <Legend color="var(--accent-gold)" label="Extras" />
-          </div>
-        </div>
-
-        {/* Categorías */}
-        <div className="dash-card">
-          <SectionTitle>Por Categoría</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-            {stats.catList.length === 0 && <EmptyMsg />}
-            {stats.catList.map((cat, i) => (
-              <div key={cat.cat}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                  <span style={{ color: "var(--text-dim)" }}>{cat.cat}</span>
-                  <span style={{ color: CAT_COLORS[i % CAT_COLORS.length], fontFamily: "monospace", fontWeight: 600 }}>
-                    {fmt(cat.total)}h &nbsp;<span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({cat.count} trab.)</span>
-                  </span>
-                </div>
-                <div style={{ background: "var(--border-dim)", borderRadius: "99px", height: "6px" }}>
-                  <div style={{
-                    height: "6px", borderRadius: "99px",
-                    background: CAT_COLORS[i % CAT_COLORS.length],
-                    width: `${totalHoras > 0 ? (cat.total / totalHoras) * 100 : 0}%`,
-                    transition: "width 0.4s ease"
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Actividades + Trabajadores ─────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-
-        {/* Top Actividades */}
-        <div className="dash-card">
-          <SectionTitle>Top Actividades <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: "12px" }}>semana</span></SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
-            {stats.actList.length === 0 && <EmptyMsg />}
-            {stats.actList.map((act, i) => {
-              const total = act.hn + act.he
-              const maxAct = stats.actList[0] ? stats.actList[0].hn + stats.actList[0].he : 1
-              return (
-                <div key={i}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "3px" }}>
-                    <span style={{ color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }} title={act.nombre}>
-                      {act.nombre}
-                    </span>
-                    <span style={{ fontFamily: "monospace", color: "var(--accent-gold)", fontWeight: 600, flexShrink: 0 }}>{fmt(total)}h</span>
-                  </div>
-                  <div style={{ background: "var(--border-dim)", borderRadius: "99px", height: "5px" }}>
-                    <div style={{
-                      height: "5px", borderRadius: "99px",
-                      background: i === 0 ? "var(--accent-blue)" : "var(--accent-blue)",
-                      opacity: 1 - i * 0.09,
-                      width: `${(total / maxAct) * 100}%`
-                    }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Trabajadores */}
-        <div className="dash-card">
-          <SectionTitle>Trabajadores <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: "12px" }}>semana</span></SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "10px", overflowY: "auto", maxHeight: "220px" }}>
-            {stats.workerList.length === 0 && <EmptyMsg />}
-            {stats.workerList.map((w, i) => {
-              const total = w.hn + w.he
-              const costo = total * w.costoHora
-              return (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  padding: "6px 8px", borderRadius: "var(--radius-sm)",
-                  background: i === 0 ? "rgba(37,99,235,0.08)" : "transparent",
-                  borderBottom: "1px solid var(--border-dim)"
-                }}>
-                  <span style={{
-                    fontSize: "11px", fontWeight: 700, color: "var(--text-muted)",
-                    width: "18px", textAlign: "right", flexShrink: 0
-                  }}>{i + 1}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "12px", color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {w.nombre.split(",")[0]}
-                    </div>
-                    <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                      {w.categoria.replace(/^\d+\s*/, "")}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: "12px", fontFamily: "monospace", color: "var(--accent-blue)", fontWeight: 600 }}>
-                      {fmt(w.hn)}<span style={{ color: "var(--text-muted)", fontSize: "10px" }}>N</span>
-                      {w.he > 0 && <> +{fmt(w.he)}<span style={{ color: "var(--accent-gold)", fontSize: "10px" }}>E</span></>}
-                    </div>
-                    <div style={{ fontSize: "10px", color: "var(--green-accent)" }}>{fmtCurrency(costo)}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
     </div>
   )
 }
 
-// ── Small sub-components ───────────────────────────────────────────────────
-
-function KpiCard({ label, value, sub, color, icon }) {
-  return (
-    <div style={{
-      background: "var(--bg-card)", border: "1px solid var(--border-dim)",
-      borderRadius: "var(--radius-md)", padding: "16px",
-      borderTop: `3px solid ${color}`
-    }}>
-      <div style={{ fontSize: "20px", marginBottom: "4px" }}>{icon}</div>
-      <div style={{ fontSize: "26px", fontWeight: 800, color, fontFamily: "monospace", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{label}</div>
-      <div style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "2px" }}>{sub}</div>
-    </div>
-  )
+function Metric({ label, value, sub, tone, onClick }) {
+  return <button className={`dashboard-metric-card dashboard-tone-${tone} ${onClick ? "is-clickable" : ""}`} onClick={onClick}><span className="dashboard-metric-label">{label}</span><strong className="dashboard-metric-value">{value}</strong><span className="dashboard-metric-sub">{sub}</span></button>
 }
 
-function SectionTitle({ children }) {
-  return (
-    <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent-gold)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-      {children}
-    </div>
-  )
+function ListCard({ title, items, onOpen, formatName, formatSub, compact = false }) {
+  const max = items[0]?.total || items[0]?.hn + items[0]?.he || 0
+  return <div className="dash-card"><div className="dashboard-section-title">{title}</div><div className="dashboard-table-list">{!items.length && <div className="dashboard-empty">Sin datos para los filtros actuales.</div>}{items.map(item => { const total = item.total ?? (item.hn + item.he); return <button key={item.id || item.date || item.nombre} className="dashboard-list-row" onClick={() => onOpen(item)}><div><div className="dashboard-list-title">{formatName ? formatName(item) : item.nombre}</div><div className="dashboard-list-subtitle">{formatSub ? formatSub(item) : `${fmtHours(item.hn)} N · ${fmtHours(item.he)} E`}</div></div><div className="dashboard-list-metric"><strong>{fmtHours(total)}</strong>{!compact && <span>{max ? Math.round((total / max) * 100) : 0}% del lider</span>}</div></button> })}</div></div>
 }
 
-function Legend({ color, label }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "var(--text-muted)" }}>
-      <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: color }} />
-      {label}
-    </div>
-  )
+function buildDetailRows(detail, registros, activityMap, partidaMap, workerMap) {
+  if (!detail) return []
+  const rows = []
+  registros.forEach(reg => {
+    const worker = workerMap.get(String(reg.workerId))
+    reg.assignments?.forEach(asg => {
+      const act = activityMap.get(String(asg.actividadId))
+      const partidaId = String(act?.partidaId || asg.partidaId || "SIN_PARTIDA")
+      const match = detail.type === "day" ? reg.date === detail.key
+        : detail.type === "worker" ? String(reg.workerId) === String(detail.key)
+        : detail.type === "activity" ? String(asg.actividadId) === String(detail.key)
+        : detail.type === "frente" ? String(reg.frenteId || reg.frenteNombre || "Sin frente") === String(detail.key)
+        : detail.type === "category" ? cleanCategory(worker?.categoria) === detail.key
+        : detail.type === "partida" ? partidaId === String(detail.key)
+        : detail.type === "extras" ? (asg.horasExtras || 0) > 0
+        : false
+      if (!match) return
+      const hn = Number(asg.horasNormales) || 0
+      const he = Number(asg.horasExtras) || 0
+      const total = hn + he
+      if (!total) return
+      rows.push({ primary: `${shortName(reg.workerNombre)} · ${act?.nombre || asg.actividadId}`, secondary: [reg.date, partidaMap.get(partidaId)?.nombre || "Sin partida", reg.frenteNombre || "Sin frente"].filter(Boolean).join(" · "), hn, he, total })
+    })
+  })
+  return rows.sort((a, b) => b.total - a.total)
 }
 
-function EmptyMsg() {
-  return <div style={{ color: "var(--text-muted)", fontSize: "12px", textAlign: "center", padding: "16px 0" }}>Sin registros esta semana</div>
-}
+function bump(map, key, seed, hn, he) { const current = map.get(key) || seed; current.hn += hn; current.he += he; map.set(key, current) }
+function toList(map) { return Array.from(map.values()).sort((a, b) => (b.hn + b.he) - (a.hn + a.he)) }
+function cleanCategory(value) { return String(value || "").replace(/^\d+\s*/, "").trim() || "Sin categoria" }
+function shortName(value) { return String(value || "").split(",")[0] || "Sin nombre" }
+function fmtHours(value) { return Number(value || 0).toFixed(1).replace(/\.0$/, "") }
+function fmtCurrency(value) { return `S/ ${Number(value || 0).toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { DownloadIcon, FileIcon } from "./Icons"
 import { exportDatabaseXLSX } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
@@ -16,6 +16,13 @@ export default function Summary({
   const [exportSemana, setExportSemana] = useState(getWeekNumber(today))
   const [exportAnio, setExportAnio] = useState(today.getFullYear())
   const [exportFeedback, setExportFeedback] = useState(null)
+
+  useEffect(() => {
+    if (!fechaTareo) return
+    const selected = new Date(`${fechaTareo}T12:00:00`)
+    setExportSemana(getWeekNumber(selected))
+    setExportAnio(selected.getFullYear())
+  }, [fechaTareo])
 
   // --- Date Helpers ---
   const weekRange = useMemo(() => {
@@ -127,6 +134,16 @@ export default function Summary({
     }
   }
 
+  const handleExportDatabase = () => {
+    try {
+      exportDatabaseXLSX(registros, workers, partidas, actividades)
+      setExportFeedback("✓ Base de datos exportada a Excel.")
+      setTimeout(() => setExportFeedback(null), 5000)
+    } catch (err) {
+      setExportFeedback(`Error: ${err.message}`)
+    }
+  }
+
   return (
     <div className="summary-container">
       {/* View Selectors - High Density */}
@@ -143,7 +160,14 @@ export default function Summary({
         <div className="card full-width-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="card-header-dark" style={{ display: 'flex', justifyContent: 'space-between', padding: '16px' }}>
             <span className="label">REPORTE DE TAREO DE PERSONAL OBRERO</span>
-            <button onClick={handleExportS10} className="btn-export-sm">EXPORTAR S10</button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={handleExportDatabase} className="btn-export-sm" style={{ background: 'var(--border-dim)' }}>
+                <FileIcon /> EXPORTAR BD
+              </button>
+              <button onClick={handleExportS10} className="btn-export-sm">
+                <DownloadIcon /> EXPORTAR S10
+              </button>
+            </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="report-table">
@@ -409,6 +433,9 @@ export default function Summary({
         .he-text { color: #ef4444; font-size: 11px; }
         .text-center { text-align: center; }
         .btn-export-sm {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           padding: 4px 12px;
           background: var(--accent-blue);
           border: none;

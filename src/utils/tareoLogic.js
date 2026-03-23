@@ -1,3 +1,5 @@
+import { parseLocalDate } from "./dateUtils"
+
 /**
  * Lógica de Tareo para Construcción Civil Perú (Regímen 48h Semanales)
  * Distribución: Lun-Vie (8.5h) + Sáb (5.5h) = 48h
@@ -5,7 +7,7 @@
 
 export const getNormalHourCap = (dateString) => {
   if (!dateString) return 8.5;
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   const day = date.getDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sáb
   
   if (day === 0) return 0; // Domingo

@@ -1,6 +1,18 @@
 export default function Help() {
   const sections = [
     {
+      icon: "📈",
+      title: "Dashboard",
+      subtitle: "Vista operativa y ejecutiva con filtros",
+      items: [
+        "Es la pantalla inicial del sistema y resume la semana activa seleccionada.",
+        "Puedes filtrar por trabajador, frente, categoría, actividad o mostrar solo registros con horas extra.",
+        "La Vista Operativa muestra horas por día, top actividades, frentes, categorías y trabajadores.",
+        "La Vista Ejecutiva resume costos, cobertura, concentración operativa y comparativos semanales.",
+        "Haz clic en una tarjeta, barra o fila para abrir el drill-down con el detalle real de asignaciones.",
+      ]
+    },
+    {
       icon: "👥",
       title: "Carga Grupal",
       subtitle: "Registra horas para varios trabajadores a la vez",
@@ -53,8 +65,8 @@ export default function Help() {
       subtitle: "Reportes y exportación a S10",
       items: [
         "Vista Semana por Trabajador: tabla con HN y HE por día, total semanal y valor en soles.",
-        "Vista Diaria por Actividad: matriz de actividades vs trabajadores para un día específico.",
-        "Vista Semanal por Actividad: total de horas por actividad en la semana.",
+        "Vista Tareo por Actividad: matriz semanal de actividades vs días.",
+        "Vista Resumen Semanal: consolidado por actividad o por partida de control.",
         "Botón Exportar S10: genera el archivo .XLS en el formato requerido por el software S10.",
         "Botón Exportar DB: descarga toda la base de datos en Excel para respaldo.",
       ]
@@ -80,7 +92,8 @@ export default function Help() {
         "Importar Partidas Modelo: carga una plantilla de partidas estándar si no tienes el presupuesto S10.",
         "Trabajadores: agrega o elimina trabajadores manualmente. Ingresa nombre y selecciona categoría.",
         "Partidas y Actividades: define las partidas de control y sus actividades asociadas.",
-        "Frentes: crea los sectores o frentes de obra (ej: FRENTE 1, SECTOR A).",
+        "Frentes: crea los sectores o frentes de obra (ej: FRENTE 1, SECTOR A) para usarlos en los registros y filtros del dashboard.",
+        "Datos del Proyecto: edita empresa, obra, código de proyecto y código de nómina para exportaciones y dashboard.",
         "API Key Gemini: pega tu clave de Google AI Studio para habilitar el Asistente IA.",
       ]
     },

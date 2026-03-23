@@ -213,7 +213,7 @@ function detectHourType(segment) {
 /**
  * Detect correction commands in voice text.
  */
-export function detectCorrection(text, workers, partidas) {
+export function detectCorrection(text, workers, actividades) {
   const norm = normalize(text)
 
   // ─── ACTION COMMANDS ───
@@ -511,12 +511,11 @@ function findBestActividad(text, actividades) {
 }
 
 // Keep the old API for backward compatibility
-export function parseVoiceCommand(text, workers, partidas) {
+export function parseVoiceCommand(text, workers, actividades = []) {
   const workerMatch = findBestWorkerMatch(text, workers)
   if (!workerMatch) return { error: "No se identificó al trabajador", raw: text }
 
-  const norm = normalize(text)
-  const assignments = extractAssignments(norm, partidas)
+  const assignments = extractAssignmentsWithActivity(text, actividades)
 
   return {
     worker: workerMatch.worker,

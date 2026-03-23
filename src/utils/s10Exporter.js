@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { formatLocalDate } from "./dateUtils"
 
 const DAY_NAMES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
@@ -81,7 +82,7 @@ export function generateWeeklyXLS({
     dayDate.setDate(weekStart.getDate() + dayIdx)
     const dayName = DAY_NAMES[dayIdx]
     const dateStr = formatDate(dayDate)
-    const dayDateStr = dayDate.toISOString().split("T")[0]
+    const dayDateStr = formatLocalDate(dayDate)
 
     const dayRegistros = registros.filter(r => r.date === dayDateStr)
     const sheetData = []
