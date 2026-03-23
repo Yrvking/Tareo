@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react"
 import Select from "react-select"
 import { SearchIcon, CheckIcon, PlusIcon, UserGroupIcon, TrashIcon } from "./Icons"
-import { insertRegistro } from "../utils/supabaseClient"
+import { insertRegistro, fetchRegistros } from "../utils/supabaseClient"
+import { getWeekRange } from "../utils/dateUtils"
 import { getNormalHourCap } from "../utils/tareoLogic"
 import { selectStyles } from "../utils/selectTheme"
 
@@ -73,6 +74,13 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
         console.error("Error batch save", e)
       }
     }
+
+    // Re-sincronizar desde Supabase para que Planilla refleje los nuevos registros
+    try {
+      const { dates } = getWeekRange(fechaTareo)
+      const fresh = await fetchRegistros(dates[0], dates[dates.length - 1])
+      setRegistros(fresh)
+    } catch { /* no bloquear feedback si el re-fetch falla */ }
 
     showFeedback("success", `✓ Se registraron ${successCount} trabajadores`)
     setSelectedWorkers([])

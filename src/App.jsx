@@ -41,14 +41,14 @@ function loadWorkersFromStorage() {
 }
 
 const TABS = [
-  { id: "mobile", label: "Carga Grupal", icon: UsersIcon },
-  { id: "weekly", label: "Control Semanal", icon: LayoutIcon },
-  { id: "manual", label: "Manual", icon: PlusIcon },
-  { id: "registro", label: "Voz", icon: MicIcon },
-  { id: "resumen", label: "Planilla", icon: ChartIcon },
-  { id: "ai", label: "Asistente", icon: SparklesIcon },
-  { id: "ayuda", label: "Ayuda", icon: HelpIcon },
-  { id: "config", label: "Config", icon: SettingsIcon, adminOnly: true },
+  { id: "mobile",    label: "Carga Grupal",    mobileLabel: "Carga",    icon: UsersIcon },
+  { id: "weekly",    label: "Control Semanal", mobileLabel: "Semanal",  icon: LayoutIcon },
+  { id: "manual",    label: "Manual",          mobileLabel: "Manual",   icon: PlusIcon },
+  { id: "registro",  label: "Voz",             mobileLabel: "Voz",      icon: MicIcon },
+  { id: "resumen",   label: "Planilla",        mobileLabel: "Planilla", icon: ChartIcon },
+  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon },
+  { id: "ayuda",     label: "Ayuda",           mobileLabel: "Ayuda",    icon: HelpIcon, hideInBottomNav: true },
+  { id: "config",    label: "Config",          mobileLabel: "Config",   icon: SettingsIcon, adminOnly: true },
 ]
 
 function AppContent() {
@@ -245,14 +245,14 @@ function AppContent() {
         </main>
 
         <nav className="bottom-nav">
-          {visibleTabs.map((t) => (
+          {visibleTabs.filter(t => !t.hideInBottomNav).map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`nav-item ${tab === t.id ? "active" : ""}`}
             >
               <t.icon />
-              <span>{t.label}</span>
+              <span>{t.mobileLabel || t.label}</span>
             </button>
           ))}
         </nav>

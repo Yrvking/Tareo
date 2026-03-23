@@ -181,7 +181,18 @@ export async function deleteRegistroById(id, options = {}) {
     throw error
   }
 
-  // No lanzar error si no retorna filas: con RLS el RETURNING puede ser vacío
-  // incluso en un delete exitoso. Solo fallamos si hay un error explícito de Supabase.
+  // Verificar que la fila realmente se eliminó (RLS puede silenciar el DELETE)
+  const { data: stillExists } = await supabase
+    .from('registros')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (stillExists) {
+    const err = new Error('El registro no se pudo eliminar. Verifica los permisos en Supabase (RLS).')
+    err.code = 'DELETE_BLOCKED'
+    throw err
+  }
+
   await appendRegistroLog('delete', id, beforeData, null, options.source || 'delete')
 }

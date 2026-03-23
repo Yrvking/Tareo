@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { MicIcon, CheckIcon, TrashIcon } from "./Icons"
 import { parseContinuousVoice, detectCorrection } from "../utils/voiceParser"
-import { insertRegistro, updateRegistro, deleteRegistroById } from "../utils/supabaseClient"
+import { insertRegistro, updateRegistro, deleteRegistroById, fetchRegistros } from "../utils/supabaseClient"
+import { getWeekRange } from "../utils/dateUtils"
 
 export default function VoiceRecorder({ workers, partidas, actividades, frentes, registros, setRegistros, getPartidaNombre, getFrenteNombre, fechaTareo }) {
   const [isListening, setIsListening] = useState(false)
@@ -617,11 +618,16 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
 
     try {
       await deleteRegistroById(reg.id, { beforeData: reg, source: "voice_list_delete" })
-      setRegistros((prev) => prev.filter((r) => r.id !== reg.id))
-      setSelectedRegistroIds(prev => prev.filter(id => id !== reg.id))
+      const { dates } = getWeekRange(fechaTareo)
+      const fresh = await fetchRegistros(dates[0], dates[dates.length - 1])
+      setRegistros(fresh)
+      setSelectedRegistroIds([])
       setFeedbackMessage({ type: "success", message: `Registro eliminado: ${reg.workerNombre}`, timeout: 3000 })
     } catch (e) {
-      setFeedbackMessage({ type: "error", message: "No se pudo eliminar en la nube.", timeout: 4000 })
+      const { dates } = getWeekRange(fechaTareo)
+      const fresh = await fetchRegistros(dates[0], dates[dates.length - 1])
+      setRegistros(fresh)
+      setFeedbackMessage({ type: "error", message: e.message || "No se pudo eliminar en la nube.", timeout: 5000 })
     }
   }
 
@@ -644,16 +650,16 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       }
     }
 
-    if (success > 0) {
-      setRegistros(prev => prev.filter(r => !selectedRegistroIds.includes(r.id)))
-    }
-
+    // Re-sync desde Supabase para reflejar el estado real
+    const { dates } = getWeekRange(fechaTareo)
+    const fresh = await fetchRegistros(dates[0], dates[dates.length - 1])
+    setRegistros(fresh)
     clearRegistroSelection()
 
     if (failed === 0) {
       setFeedbackMessage({ type: "success", message: `Se eliminaron ${success} registros.`, timeout: 3500 })
     } else {
-      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}.`, timeout: 4500 })
+      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}. Verifica permisos Supabase.`, timeout: 5000 })
     }
   }
 
