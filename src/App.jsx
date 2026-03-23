@@ -22,6 +22,21 @@ import {
 } from "./components/Icons"
 import "./App.css"
 
+const WORKERS_STORAGE_KEY = "tareador_workers"
+
+function loadWorkersFromStorage() {
+  try {
+    const raw = localStorage.getItem(WORKERS_STORAGE_KEY)
+    if (!raw) return INITIAL_WORKERS
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : INITIAL_WORKERS
+  } catch (error) {
+    console.warn("No se pudo leer workers desde localStorage:", error)
+    return INITIAL_WORKERS
+  }
+}
+
 const TABS = [
   { id: "mobile", label: "Carga Grupal", icon: UsersIcon },
   { id: "weekly", label: "Control Semanal", icon: LayoutIcon },
@@ -35,7 +50,7 @@ const TABS = [
 function AppContent() {
   const { user, profile, logout } = useAuth()
   const [tab, setTab] = useState("mobile")
-  const [workers, setWorkers] = useState(INITIAL_WORKERS)
+  const [workers, setWorkers] = useState(() => loadWorkersFromStorage())
   const [partidas, setPartidas] = useState(INITIAL_PARTIDAS)
   const [actividades, setActividades] = useState(INITIAL_ACTIVIDADES)
   const [frentes, setFrentes] = useState(INITIAL_FRENTES)
@@ -43,6 +58,10 @@ function AppContent() {
   const [projectConfig, setProjectConfig] = useState(DEFAULT_PROJECT_CONFIG)
   const [registros, setRegistros] = useState([])
   const [fechaTareo, setFechaTareo] = useState(new Date().toISOString().split("T")[0])
+
+  useEffect(() => {
+    localStorage.setItem(WORKERS_STORAGE_KEY, JSON.stringify(workers))
+  }, [workers])
 
   useEffect(() => {
     async function loadData() {
