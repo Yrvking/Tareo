@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { MicIcon, CheckIcon, TrashIcon } from "./Icons"
 import { parseContinuousVoice, detectCorrection } from "../utils/voiceParser"
-import { insertRegistro } from "../utils/supabaseClient"
+import { insertRegistro, updateRegistro, deleteRegistroById } from "../utils/supabaseClient"
 
 export default function VoiceRecorder({ workers, partidas, actividades, frentes, registros, setRegistros, getPartidaNombre, getFrenteNombre, fechaTareo }) {
   const [isListening, setIsListening] = useState(false)
@@ -13,6 +13,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const [currentWorker, setCurrentWorker] = useState(null)
   const [currentFrente, setCurrentFrente] = useState(null)
   const [sessionAssignments, setSessionAssignments] = useState([])
+  const [editingRegistroId, setEditingRegistroId] = useState(null)
   const [sessionTime, setSessionTime] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
@@ -44,7 +45,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     if (!currentWorker || sessionAssignments.length === 0) return
 
     const newReg = {
-      id: Date.now(),
+      id: editingRegistroId || Date.now(),
       workerId: currentWorker.id,
       workerNombre: currentWorker.nombre,
       frenteId: currentFrente?.id || null,
@@ -56,15 +57,71 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     }
     
     try {
-      const dbId = await insertRegistro(newReg)
-      if (dbId) newReg.id = dbId
-      
-      setRegistros(prev => [...prev, newReg])
+      if (editingRegistroId) {
+        await updateRegistro(newReg, { source: "voice_edit" })
+        setRegistros(prev => [...prev, newReg])
+      } else {
+        const dbId = await insertRegistro(newReg)
+        if (dbId) newReg.id = dbId
+        setRegistros(prev => [...prev, newReg])
+      }
+
       setSessionAssignments([])
+      setEditingRegistroId(null)
     } catch (e) {
       setFeedbackMessage({ type: "error", message: "Error guardando en la Nube", timeout: 5000 })
     }
-  }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo])
+  }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo, editingRegistroId])
+
+  const startEditingRegistro = useCallback((targetReg) => {
+    if (!targetReg) return
+
+    const worker = workers.find(w => String(w.id) === String(targetReg.workerId))
+    if (!worker) {
+      setFeedbackMessage({ type: "error", message: "No se encontró trabajador para este registro.", timeout: 4000 })
+      return
+    }
+
+    setCurrentWorker(worker)
+    setSessionAssignments(JSON.parse(JSON.stringify(targetReg.assignments || [])))
+    setEditingRegistroId(targetReg.id)
+
+    if (targetReg.frenteId) {
+      const fr = frentes.find(f => String(f.id) === String(targetReg.frenteId))
+      setCurrentFrente(fr || null)
+    } else {
+      setCurrentFrente(null)
+    }
+
+    setRegistros(prev => prev.filter(r => r.id !== targetReg.id))
+    setFeedbackMessage({
+      type: "success",
+      message: `✎ Editando ${worker.nombre}. Corrija y pulse Registrar.`,
+      timeout: 5000
+    })
+  }, [workers, frentes, setRegistros])
+
+  const handleAssignmentChange = (idx, field, value) => {
+    setSessionAssignments(prev => {
+      const updated = [...prev]
+      const current = { ...(updated[idx] || {}) }
+
+      if (field === "actividadId") {
+        const act = actividades?.find(a => String(a.id) === String(value))
+        current.actividadId = value
+        current.partidaId = act?.partidaId || current.partidaId || null
+      } else {
+        current[field] = parseFloat(value) || 0
+      }
+
+      updated[idx] = current
+      return updated
+    })
+  }
+
+  const removeSessionAssignment = (idx) => {
+    setSessionAssignments(prev => prev.filter((_, i) => i !== idx))
+  }
 
   const handleCorrection = useCallback((correction) => {
     switch (correction.type) {
@@ -125,23 +182,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         }
 
         if (targetReg) {
-          // Load the record into the current session for editing
-          const worker = workers.find(w => String(w.id) === String(targetReg.workerId))
-          if (worker) {
-            setCurrentWorker(worker)
-            setSessionAssignments([...targetReg.assignments])
-            if (targetReg.frenteId) {
-              const fr = frentes.find(f => f.id === targetReg.frenteId)
-              if (fr) setCurrentFrente(fr)
-            }
-            // Remove the old record (it will be re-committed when done)
-            setRegistros(prev => prev.filter(r => r.id !== targetReg.id))
-            setFeedbackMessage({
-              type: "success",
-              message: `✎ Editando registro de ${worker.nombre}. Modifique y diga \"registrar\" para guardar.`,
-              timeout: 5000
-            })
-          }
+          startEditingRegistro(targetReg)
         } else {
           setFeedbackMessage({
             type: "info",
@@ -157,7 +198,6 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         if (targetReg) {
           const worker = workers.find(w => String(w.id) === String(targetReg.workerId))
           if (worker) {
-            setCurrentWorker(worker)
             let updatedAssignments = JSON.parse(JSON.stringify(targetReg.assignments))
             
             if (correction.newHours !== null) {
@@ -174,13 +214,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
               }
             }
             
-            setSessionAssignments(updatedAssignments)
-            if (targetReg.frenteId) {
-              const fr = frentes.find(f => String(f.id) === String(targetReg.frenteId))
-              if (fr) setCurrentFrente(fr)
-            }
-            
-            setRegistros(prev => prev.filter(r => r.id !== targetReg.id))
+            startEditingRegistro({ ...targetReg, assignments: updatedAssignments })
             
             let msg = `✎ Editando registro de ${worker.nombre}.`
             if (correction.newHours !== null) {
@@ -207,12 +241,22 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       case "delete_last": {
         if (registros.length > 0) {
           const last = registros[registros.length - 1]
-          setRegistros(prev => prev.slice(0, -1))
-          setFeedbackMessage({
-            type: "success",
-            message: `Eliminado registro de ${last.workerNombre}`,
-            timeout: 3000
-          })
+          deleteRegistroById(last.id, { beforeData: last, source: "voice_delete_last" })
+            .then(() => {
+              setRegistros(prev => prev.slice(0, -1))
+              setFeedbackMessage({
+                type: "success",
+                message: `Eliminado registro de ${last.workerNombre}`,
+                timeout: 3000
+              })
+            })
+            .catch(() => {
+              setFeedbackMessage({
+                type: "error",
+                message: "No se pudo eliminar en la nube.",
+                timeout: 4000
+              })
+            })
         } else if (sessionAssignments.length > 0) {
           setSessionAssignments(prev => prev.slice(0, -1))
           setFeedbackMessage({
@@ -305,7 +349,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       default:
         break
     }
-  }, [registros, workers, frentes, sessionAssignments, currentWorker, commitCurrentWorker, setRegistros, actividades])
+  }, [registros, workers, frentes, sessionAssignments, currentWorker, commitCurrentWorker, setRegistros, actividades, startEditingRegistro])
 
   const handleFinalTranscript = useCallback((text) => {
     const result = parseContinuousVoice(text, workers, actividades, frentes, currentWorker)
@@ -498,6 +542,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     setCurrentWorker(null)
     setCurrentFrente(null)
     setSessionAssignments([])
+    setEditingRegistroId(null)
     setSessionTime(0)
     sessionStartRef.current = null
     setIsPaused(false)
@@ -523,6 +568,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     setCurrentWorker(null)
     setCurrentFrente(null)
     setSessionAssignments([])
+    setEditingRegistroId(null)
     setSessionTime(0)
     sessionStartRef.current = null
   }, [currentWorker, sessionAssignments, commitCurrentWorker])
@@ -554,7 +600,15 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     }
   }, [currentWorker, sessionAssignments, commitCurrentWorker])
 
-  const deleteRegistro = (id) => setRegistros((prev) => prev.filter((r) => r.id !== id))
+  const deleteRegistro = async (reg) => {
+    try {
+      await deleteRegistroById(reg.id, { beforeData: reg, source: "voice_list_delete" })
+      setRegistros((prev) => prev.filter((r) => r.id !== reg.id))
+      setFeedbackMessage({ type: "success", message: `Registro eliminado: ${reg.workerNombre}`, timeout: 3000 })
+    } catch (e) {
+      setFeedbackMessage({ type: "error", message: "No se pudo eliminar en la nube.", timeout: 4000 })
+    }
+  }
 
   // Auto-clear feedback messages
   useEffect(() => {
@@ -642,23 +696,38 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
             <>
               <div style={{ marginTop: 12 }}>
                 <span className="label" style={{ fontSize: 10 }}>ASIGNACIONES:</span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
                   {sessionAssignments.map((a, i) => (
-                    <span key={i} className="assignment-badge">
-                      {a.horasNormales > 0 && (
-                        <span style={{ color: "#d4a55a" }}>{a.horasNormales}h</span>
-                      )}
-                      {a.horasNormales > 0 && a.horasExtras > 0 && (
-                        <span style={{ color: "#5a7a8a" }}> + </span>
-                      )}
-                      {a.horasExtras > 0 && (
-                        <span style={{ color: "#e88" }}>{a.horasExtras}hE</span>
-                      )}
-                      <span style={{ color: "#5a7a8a" }}> → </span>
-                      <span style={{ color: "#8ab4c8" }} title={getPartidaNombre(a.partidaId)}>
-                        {actividades?.find(act => act.id === a.actividadId)?.nombre || a.actividadId}
-                      </span>
-                    </span>
+                    <div key={i} className="assignment-badge" style={{ display: 'grid', gridTemplateColumns: '1.8fr 0.6fr 0.6fr auto', gap: 8, alignItems: 'center' }}>
+                      <select
+                        value={a.actividadId}
+                        onChange={(e) => handleAssignmentChange(i, "actividadId", e.target.value)}
+                        style={{ background: 'var(--bg-dark)', color: 'var(--text-main)', border: '1px solid var(--border-dim)', borderRadius: 6, padding: '6px 8px' }}
+                      >
+                        {actividades?.map(act => (
+                          <option key={act.id} value={act.id}>{act.nombre}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={a.horasNormales || 0}
+                        onChange={(e) => handleAssignmentChange(i, "horasNormales", e.target.value)}
+                        style={{ background: 'var(--bg-dark)', color: 'var(--accent-gold)', border: '1px solid var(--border-dim)', borderRadius: 6, padding: '6px 8px' }}
+                      />
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={a.horasExtras || 0}
+                        onChange={(e) => handleAssignmentChange(i, "horasExtras", e.target.value)}
+                        style={{ background: 'var(--bg-dark)', color: '#e88', border: '1px solid var(--border-dim)', borderRadius: 6, padding: '6px 8px' }}
+                      />
+                      <button onClick={() => removeSessionAssignment(i)} className="btn-icon-danger" title="Quitar actividad">
+                        <TrashIcon />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -758,7 +827,10 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
                   ))}
                 </div>
 
-                <button onClick={() => deleteRegistro(reg.id)} className="btn-icon-danger" title="Eliminar Tareo">
+                <button onClick={() => startEditingRegistro(reg)} className="btn-pill-sm" title="Editar Tareo" style={{ marginRight: 6 }}>
+                  Editar
+                </button>
+                <button onClick={() => deleteRegistro(reg)} className="btn-icon-danger" title="Eliminar Tareo">
                   <TrashIcon />
                 </button>
               </div>

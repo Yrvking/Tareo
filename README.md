@@ -69,6 +69,16 @@ Si viste este error:
 
 ya está corregido en el proyecto. Ahora el sistema consulta el catálogo real de modelos disponibles y usa solo modelos compatibles con `generateContent`.
 
+## Auditoria de cambios de tareo (logs)
+
+Para registrar historial de correcciones (ediciones y eliminaciones) en la nube:
+
+1. Abre Supabase SQL Editor.
+2. Ejecuta el script [scripts/supabase_registros_logs.sql](scripts/supabase_registros_logs.sql).
+3. Vuelve a desplegar o recarga la app.
+
+La app seguira funcionando sin esa tabla, pero no guardara bitacora en la nube hasta crearla.
+
 ## Compilar para producción
 
 ```bash

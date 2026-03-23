@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { SearchIcon, PlusIcon, TrashIcon, CheckIcon } from "./Icons"
 import Select from "react-select"
-import { insertRegistro } from "../utils/supabaseClient"
+import { insertRegistro, updateRegistro } from "../utils/supabaseClient"
 
 export default function WeeklyControl({ 
   workers, partidas, actividades, frentes, 
@@ -69,8 +69,12 @@ export default function WeeklyControl({
     })
 
     try {
-      const dbId = await insertRegistro(updatedReg)
-      if (dbId) updatedReg.id = dbId
+      if (existingIdx >= 0 && updatedReg.id) {
+        await updateRegistro(updatedReg, { source: "weekly_control_edit" })
+      } else {
+        const dbId = await insertRegistro(updatedReg)
+        if (dbId) updatedReg.id = dbId
+      }
       
       if (existingIdx >= 0) {
         const newRegs = [...registros]
