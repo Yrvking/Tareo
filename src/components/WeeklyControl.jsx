@@ -3,6 +3,7 @@ import { SearchIcon, PlusIcon, TrashIcon, CheckIcon } from "./Icons"
 import Select from "react-select"
 import { insertRegistro, updateRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
+import { getWeekRange } from "../utils/dateUtils"
 
 export default function WeeklyControl({ 
   workers, partidas, actividades, frentes, 
@@ -14,21 +15,13 @@ export default function WeeklyControl({
   const [newHn, setNewHn] = useState(0)
   const [newHe, setNewHe] = useState(0)
 
-  // Calculate current week range (Mon-Sat)
-  const baseDate = new Date(fechaTareo)
-  const day = baseDate.getDay() 
-  const diffToMonday = baseDate.getDate() - (day === 0 ? 6 : day - 1)
-  const weekDays = []
+  // Calculate current week range (Mon-Sat) — usando hora local para evitar bug UTC
   const dayNamesShort = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"]
-  
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(new Date(fechaTareo).setDate(diffToMonday + i))
-    weekDays.push({
-      date: d.toISOString().split("T")[0],
-      label: dayNamesShort[i],
-      dayNum: d.getDate()
-    })
-  }
+  const { dates: weekDates } = getWeekRange(fechaTareo)
+  const weekDays = weekDates.map((date, i) => {
+    const d = new Date(date + "T12:00:00")
+    return { date, label: dayNamesShort[i], dayNum: d.getDate() }
+  })
 
   const filteredWorkers = workers.filter(w => 
     w.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -107,53 +100,57 @@ export default function WeeklyControl({
         />
       </div>
 
-      <div className="worker-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {filteredWorkers.slice(0, 15).map(w => (
-          <div key={w.id} className="worker-weekly-card card">
-            <div className="worker-card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div>
-                <div className="worker-name" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-main)' }}>
+      <div className="worker-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filteredWorkers.slice(0, 50).map(w => (
+          <div key={w.id} className="worker-weekly-card card" style={{ marginBottom: 0, padding: '12px 16px' }}>
+            {/* Header: nombre + meta en una sola fila */}
+            <div className="worker-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
                   {w.nombre}
-                </div>
-                <div className="worker-cat" style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.5px' }}>
-                  {w.categoria?.toUpperCase() || "PEÓN"} • <span className="mono" style={{ color: 'var(--accent-gold)' }}>{w.codigo || w.id}</span>
-                </div>
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                  {w.categoria?.toUpperCase() || "PEÓN"}
+                </span>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--accent-gold)', whiteSpace: 'nowrap' }}>
+                  {w.codigo || w.id}
+                </span>
               </div>
-              <div className="worker-total-week mono" style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>TOTAL SEMANA</div>
-                <div style={{ fontSize: 16, color: 'var(--accent-blue)', fontWeight: 800 }}>
+              <div className="mono" style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>SEM </span>
+                <span style={{ fontSize: 15, color: 'var(--accent-blue)', fontWeight: 800 }}>
                   {weekDays.reduce((sum, d) => sum + getDayTotal(w.id, d.date).hn, 0)}h
-                </div>
+                </span>
               </div>
             </div>
 
-            <div className="week-grid-compact" style={{ display: 'flex', gap: 4, width: '100%', overflowX: 'auto', paddingBottom: 4 }}>
+            <div className="week-grid-compact" style={{ display: 'flex', gap: 4, width: '100%', overflowX: 'auto', paddingBottom: 2 }}>
               {weekDays.map(day => {
                 const totals = getDayTotal(w.id, day.date)
                 const isActive = selectedDay?.workerId === w.id && selectedDay?.date === day.date
                 const hasHours = totals.hn > 0 || totals.he > 0
-                
+
                 return (
-                  <button 
+                  <button
                     key={day.date}
                     onClick={() => setSelectedDay({ workerId: w.id, date: day.date })}
-                    className={`day-pill ${isActive ? 'active' : ''} ${hasHours ? 'has-hours' : ''}`}
-                    style={{ 
-                      flex: 1, 
-                      minWidth: '50px',
-                      background: isActive ? 'var(--accent-blue)' : (hasHours ? 'rgba(37, 99, 235, 0.1)' : 'var(--bg-card)'),
-                      border: '1px solid ' + (isActive ? 'var(--accent-blue)' : 'var(--border-dim)'),
-                      borderRadius: '12px',
-                      padding: '8px 4px',
+                    style={{
+                      flex: 1,
+                      minWidth: '46px',
+                      background: isActive ? 'var(--accent-blue)' : (hasHours ? 'rgba(37, 99, 235, 0.1)' : 'rgba(255,255,255,0.03)'),
+                      border: '1px solid ' + (isActive ? 'var(--accent-blue)' : (hasHours ? 'rgba(37,99,235,0.3)' : 'var(--border-dim)')),
+                      borderRadius: '8px',
+                      padding: '5px 2px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.15s',
+                      textAlign: 'center'
                     }}
                   >
                     <div style={{ fontSize: 9, color: isActive ? 'white' : 'var(--text-dim)', fontWeight: 700 }}>{day.label} {day.dayNum}</div>
-                    <div className="mono" style={{ fontSize: 13, fontWeight: 800, color: isActive ? 'white' : (hasHours ? 'var(--text-main)' : 'var(--text-dim)') }}>
-                      {totals.hn || '0'}
+                    <div className="mono" style={{ fontSize: 12, fontWeight: 800, color: isActive ? 'white' : (hasHours ? 'var(--text-main)' : 'var(--text-dim)') }}>
+                      {totals.hn || '—'}
                     </div>
-                    {totals.he > 0 && <div className="mono" style={{ fontSize: 9, color: isActive ? 'white' : '#ef4444' }}>+{totals.he}</div>}
+                    {totals.he > 0 && <div className="mono" style={{ fontSize: 9, color: isActive ? 'white' : 'var(--red-accent)' }}>+{totals.he}</div>}
                   </button>
                 )
               })}

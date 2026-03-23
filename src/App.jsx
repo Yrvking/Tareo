@@ -8,7 +8,9 @@ import WeeklyControl from "./components/WeeklyControl"
 import Summary from "./components/Summary"
 import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
+import Help from "./components/Help"
 import { fetchRegistros } from "./utils/supabaseClient"
+import { getWeekRange } from "./utils/dateUtils"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import Login from "./components/Login"
 import {
@@ -18,7 +20,8 @@ import {
   ChartIcon,
   SettingsIcon,
   UsersIcon,
-  LayoutIcon
+  LayoutIcon,
+  HelpIcon
 } from "./components/Icons"
 import "./App.css"
 
@@ -44,6 +47,7 @@ const TABS = [
   { id: "registro", label: "Voz", icon: MicIcon },
   { id: "resumen", label: "Planilla", icon: ChartIcon },
   { id: "ai", label: "Asistente", icon: SparklesIcon },
+  { id: "ayuda", label: "Ayuda", icon: HelpIcon },
   { id: "config", label: "Config", icon: SettingsIcon, adminOnly: true },
 ]
 
@@ -65,20 +69,9 @@ function AppContent() {
 
   useEffect(() => {
     async function loadData() {
-      const current = new Date(fechaTareo)
-      const day = current.getDay()
-      const diffToMonday = current.getDate() - (day === 0 ? 6 : day - 1)
-      
-      const monday = new Date(current.setDate(diffToMonday))
-      monday.setHours(0, 0, 0, 0)
-      
-      const sunday = new Date(monday)
-      sunday.setDate(monday.getDate() + 6)
-      sunday.setHours(23, 59, 59, 999)
-
-      const startStr = monday.toISOString().split("T")[0]
-      const endStr = sunday.toISOString().split("T")[0]
-      
+      const { dates } = getWeekRange(fechaTareo)
+      const startStr = dates[0]
+      const endStr = dates[dates.length - 1]
       const data = await fetchRegistros(startStr, endStr)
       setRegistros(data)
     }
@@ -225,6 +218,8 @@ function AppContent() {
               fechaTareo={fechaTareo}
             />
           )}
+
+          {tab === "ayuda" && <Help />}
 
           {tab === "config" && profile?.role === 'admin' && (
             <Config

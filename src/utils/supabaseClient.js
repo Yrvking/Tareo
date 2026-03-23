@@ -171,20 +171,17 @@ export async function deleteRegistroById(id, options = {}) {
     beforeData = current ? rowToRegistro(current) : null
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('registros')
     .delete()
     .eq('id', id)
-    .select('id')
 
   if (error) {
     console.error('Error deleteRegistroById:', error)
     throw error
   }
 
-  if (!data || data.length === 0) {
-    throw new Error('DELETE_NOT_APPLIED')
-  }
-
+  // No lanzar error si no retorna filas: con RLS el RETURNING puede ser vacío
+  // incluso en un delete exitoso. Solo fallamos si hay un error explícito de Supabase.
   await appendRegistroLog('delete', id, beforeData, null, options.source || 'delete')
 }

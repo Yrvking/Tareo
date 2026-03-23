@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react"
 import { DownloadIcon, FileIcon } from "./Icons"
 import { exportDatabaseXLSX } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
+import { getWeekRange } from "../utils/dateUtils"
 
 export default function Summary({
   registros, workers, partidas, frentes,
@@ -17,20 +18,12 @@ export default function Summary({
 
   // --- Date Helpers ---
   const weekRange = useMemo(() => {
-    const current = new Date(fechaTareo)
-    const day = current.getDay()
-    const diffToMonday = current.getDate() - (day === 0 ? 6 : day - 1)
-    const week = []
+    const { dates } = getWeekRange(fechaTareo)
     const dayNamesShort = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"]
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(new Date(fechaTareo).setDate(diffToMonday + i))
-      week.push({
-        date: d.toISOString().split("T")[0],
-        label: dayNamesShort[i],
-        dayNum: d.getDate()
-      })
-    }
-    return week
+    return dates.map((date, i) => {
+      const d = new Date(date + "T12:00:00") // noon to avoid DST edge cases
+      return { date, label: dayNamesShort[i], dayNum: d.getDate() }
+    })
   }, [fechaTareo])
 
   // --- Data Aggregation ---
