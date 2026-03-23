@@ -1,79 +1,102 @@
 import * as XLSX from "xlsx"
 
-export function getSummary(registros) {
-  const summary = {}
-  for (const reg of registros) {
-    if (!summary[reg.workerId]) {
-      summary[reg.workerId] = {
-        nombre: reg.workerNombre,
-        partidasNormales: {},
-        partidasExtras: {},
-        totalNormales: 0,
-        totalExtras: 0,
-      }
-    }
-    for (const a of reg.assignments) {
-      const hn = a.horasNormales || 0
-      const he = a.horasExtras || 0
-
-      if (!summary[reg.workerId].partidasNormales[a.partidaId]) {
-        summary[reg.workerId].partidasNormales[a.partidaId] = 0
-      }
-      if (!summary[reg.workerId].partidasExtras[a.partidaId]) {
-        summary[reg.workerId].partidasExtras[a.partidaId] = 0
-      }
-
-      summary[reg.workerId].partidasNormales[a.partidaId] += hn
-      summary[reg.workerId].partidasExtras[a.partidaId] += he
-      summary[reg.workerId].totalNormales += hn
-      summary[reg.workerId].totalExtras += he
-    }
-  }
-  return summary
+function getIsoDay(dateString) {
+  const dateObj = dateString ? new Date(`${dateString}T12:00:00`) : new Date()
+  const dayIndex = dateObj.getDay()
+  return dayIndex === 0 ? 7 : dayIndex
 }
 
-export function getUniquePartidas(registros) {
-  return [...new Set(registros.flatMap((r) => r.assignments.map((a) => a.partidaId)))]
+function buildWorkerMap(workers = []) {
+  const map = new Map()
+  for (const worker of workers) {
+    const keys = [worker.id, worker.codigo].filter(Boolean)
+    for (const key of keys) {
+      map.set(String(key), worker)
+    }
+  }
+  return map
+}
+
+export function getAccountingExportIssues(registros = [], workers = []) {
+  const workerMap = buildWorkerMap(workers)
+  const seen = new Map()
+
+  for (const reg of registros) {
+    const worker = workerMap.get(String(reg.workerId))
+    if (!worker) {
+      seen.set(String(reg.workerId), {
+        nombre: reg.workerNombre || reg.workerId,
+        missing: ["Trabajador no encontrado en catálogo"],
+      })
+      continue
+    }
+
+    const missing = []
+    if (!String(worker.dni || "").trim()) missing.push("DNI")
+    if (!String(worker.categoria || "").trim()) missing.push("Categoría")
+    if (!String(worker.fechaIngreso || "").trim()) missing.push("Fecha de Ingreso")
+
+    if (missing.length > 0) {
+      seen.set(String(worker.codigo || worker.id), {
+        nombre: worker.nombre || reg.workerNombre || worker.codigo || worker.id,
+        missing,
+      })
+    }
+  }
+
+  return Array.from(seen.values())
 }
 
 export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
-  // We want a flat database: Worker, Frente, Sector, Elemento, Actividad, Partida, Lunes(N/E), Martes(N/E)...
-  
-  // First, group records by: workerId + frenteNombre + actividadId
-  const db = {}
-  
-  registros.forEach(reg => {
-    // Determine the day of week. Assuming reg.date is YYYY-MM-DD
-    const dateObj = reg.date ? new Date(reg.date + "T00:00:00") : new Date()
-    const dayIndex = dateObj.getDay() // 0 = Sun, 1 = Mon ...
-    
-    // Convert Sunday (0) to 7 for easier array mapping where Mon=1
-    const isoDay = dayIndex === 0 ? 7 : dayIndex
+  const issues = getAccountingExportIssues(registros, workers)
+  if (issues.length > 0) {
+    const detail = issues
+      .slice(0, 8)
+      .map((issue) => `${issue.nombre}: ${issue.missing.join(", ")}`)
+      .join(" | ")
+    throw new Error(`No se puede exportar a contabilidad. Faltan datos obligatorios en trabajadores: ${detail}${issues.length > 8 ? "..." : ""}`)
+  }
 
-    reg.assignments.forEach(a => {
-      const key = `${reg.workerId}|${reg.frenteNombre || ""}|${a.actividadId}`
+  const workerMap = buildWorkerMap(workers)
+  const actividadMap = new Map(actividades.map((a) => [String(a.id), a]))
+  const partidaMap = new Map(partidas.map((p) => [String(p.id), p]))
+  const db = {}
+
+  registros.forEach((reg) => {
+    const isoDay = getIsoDay(reg.date)
+
+    reg.assignments.forEach((assignment) => {
+      const key = `${reg.workerId}|${reg.frenteNombre || ""}|${assignment.actividadId}|${assignment.partidaId || ""}`
       if (!db[key]) {
         db[key] = {
           workerId: reg.workerId,
+          workerNombre: reg.workerNombre,
           frente: reg.frenteNombre || "",
-          actividadId: a.actividadId,
-          partidaId: a.partidaId,
-          daysNormal: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 },
-          daysExtra: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 }
+          actividadId: assignment.actividadId,
+          partidaId: assignment.partidaId,
+          daysNormal: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
+          daysExtra: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 },
         }
       }
-      db[key].daysNormal[isoDay] += (a.horasNormales || 0)
-      db[key].daysExtra[isoDay] += (a.horasExtras || 0)
+
+      db[key].daysNormal[isoDay] += (assignment.horasNormales || 0)
+      db[key].daysExtra[isoDay] += (assignment.horasExtras || 0)
     })
   })
 
-  const sheetData = []
-  
-  // Headers
-  sheetData.push([
-    "DNI/Código", "Trabajador", "Categoría", 
-    "Frente", "Sector", "Elemento", 
-    "Actividad", "Partida de Control",
+  const sheetData = [[
+    "DNI",
+    "Código",
+    "Trabajador",
+    "Categoría",
+    "Fecha Ingreso",
+    "Costo Hora",
+    "Frente",
+    "Sector",
+    "Elemento",
+    "Actividad",
+    "Código Partida de Control",
+    "Partida de Control",
     "Lunes HN", "Lunes HE",
     "Martes HN", "Martes HE",
     "Miércoles HN", "Miércoles HE",
@@ -81,29 +104,35 @@ export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
     "Viernes HN", "Viernes HE",
     "Sábado HN", "Sábado HE",
     "Domingo HN", "Domingo HE",
-    "Total HN", "Total HE", "Total General"
-  ])
+    "Total HN",
+    "Total HE",
+    "Total General",
+    "Costo Total",
+  ]]
 
-  Object.values(db).forEach(row => {
-    const worker = workers.find(w => String(w.id) === String(row.workerId) || String(w.codigo) === String(row.workerId))
-    const act = actividades.find(a => a.id === row.actividadId)
-    const pc = partidas.find(p => p.id === row.partidaId) || partidas.find(p => p.id === act?.partidaId)
-    
-    const actName = act ? act.nombre : row.actividadId
-    const pcName = pc ? `${pc.id} - ${pc.nombre}` : row.partidaId
-
-    const totalHN = Object.values(row.daysNormal).reduce((a,b)=>a+b, 0)
-    const totalHE = Object.values(row.daysExtra).reduce((a,b)=>a+b, 0)
+  Object.values(db).forEach((row) => {
+    const worker = workerMap.get(String(row.workerId))
+    const actividad = actividadMap.get(String(row.actividadId))
+    const partidaId = row.partidaId || actividad?.partidaId || ""
+    const partida = partidaMap.get(String(partidaId))
+    const totalHN = Object.values(row.daysNormal).reduce((a, b) => a + b, 0)
+    const totalHE = Object.values(row.daysExtra).reduce((a, b) => a + b, 0)
+    const totalGeneral = totalHN + totalHE
+    const costoHora = Number(worker?.costoHora || 0)
 
     sheetData.push([
+      worker?.dni || "",
       worker?.codigo || worker?.id || row.workerId,
-      worker?.nombre || row.workerId,
+      worker?.nombre || row.workerNombre || row.workerId,
       worker?.categoria || worker?.abrevCategoria || "",
+      worker?.fechaIngreso || "",
+      costoHora,
       row.frente,
-      "", // Sector (Empty for now)
-      "", // Elemento (Empty for now)
-      actName,
-      pcName,
+      "",
+      "",
+      actividad?.nombre || row.actividadId,
+      partida?.id || partidaId,
+      partida ? partida.nombre : partidaId,
       row.daysNormal[1] || 0, row.daysExtra[1] || 0,
       row.daysNormal[2] || 0, row.daysExtra[2] || 0,
       row.daysNormal[3] || 0, row.daysExtra[3] || 0,
@@ -111,23 +140,21 @@ export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
       row.daysNormal[5] || 0, row.daysExtra[5] || 0,
       row.daysNormal[6] || 0, row.daysExtra[6] || 0,
       row.daysNormal[7] || 0, row.daysExtra[7] || 0,
-      totalHN, totalHE, totalHN + totalHE
+      totalHN,
+      totalHE,
+      totalGeneral,
+      Number((totalGeneral * costoHora).toFixed(2)),
     ])
   })
 
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.aoa_to_sheet(sheetData)
-  
-  // Adjust column widths roughly
   ws["!cols"] = [
-    { wch: 12 }, { wch: 35 }, { wch: 12 }, 
-    { wch: 20 }, { wch: 15 }, { wch: 15 },
-    { wch: 30 }, { wch: 40 },
-    { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, 
-    { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, 
-    { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, 
-    { wch: 8 }, { wch: 8 },
-    { wch: 10 }, { wch: 10 }, { wch: 12 }
+    { wch: 14 }, { wch: 12 }, { wch: 34 }, { wch: 18 }, { wch: 14 }, { wch: 12 },
+    { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 30 }, { wch: 18 }, { wch: 36 },
+    { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+    { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+    { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 },
   ]
 
   XLSX.utils.book_append_sheet(wb, ws, "BaseDatosTareo")
@@ -135,7 +162,6 @@ export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
   const wbOut = XLSX.write(wb, { bookType: "xlsx", type: "array" })
   const blob = new Blob([wbOut], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
   const url = URL.createObjectURL(blob)
-  
   const a = document.createElement("a")
   a.href = url
   a.download = `BD_Tareo_${new Date().toISOString().split("T")[0]}.xlsx`

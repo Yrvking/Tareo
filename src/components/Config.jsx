@@ -6,7 +6,9 @@ import {
   parsePartidasFromXLS,
   parsePartidasProyectoXLS,
   parseTipoHoraFromXLS,
+  parseResumenTareo,
   mergeWorkers,
+  mergeWorkerCosts,
   readFileAsArrayBuffer,
 } from "../utils/s10Importer"
 import {
@@ -51,6 +53,12 @@ export default function Config({
       required: "Descripción",
       optional: "Código, Abreviatura",
     },
+    {
+      title: "Consolidado de costos",
+      detail: "Actualiza el costo hora desde el consolidado S10 sin importar el orden de columnas.",
+      required: "Código, Apellidos y Nombres",
+      optional: "Costo HH Normal, Costo HH Extra60, Costo HH Extra100, Código Partida de Control, Partida de Control",
+    },
   ]
 
   // ── Estado: forms de agregar ────────────────────────────────────────────────
@@ -84,6 +92,7 @@ export default function Config({
   const personalFileRef   = useRef(null)
   const partidasFileRef   = useRef(null)
   const modeloFileRef     = useRef(null)
+  const costosFileRef     = useRef(null)
   const actividadesFileRef = useRef(null)
   const tareoFileRef      = useRef(null)
 
@@ -147,6 +156,21 @@ export default function Config({
 
       showFeedback(`✓ Modelo ${file.name} cargado.`)
     } catch (err) { showFeedback(`Error: ${err.message}`, "error") }
+    e.target.value = ""
+  }
+
+  const handleImportCostos = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const buffer = await readFileAsArrayBuffer(file)
+      const imported = parseResumenTareo(buffer)
+      const updatedWorkers = mergeWorkerCosts(workers, imported)
+      setWorkers(updatedWorkers)
+      showFeedback(`✓ Costos actualizados desde ${file.name}.`)
+    } catch (err) {
+      showFeedback(`Error: ${err.message}`, "error")
+    }
     e.target.value = ""
   }
 
@@ -260,6 +284,9 @@ export default function Config({
           <button onClick={() => modeloFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
             <UploadIcon /> Modelo TMO
           </button>
+          <button onClick={() => costosFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
+            <UploadIcon /> Consolidado Costos
+          </button>
         </div>
         <div style={{ marginTop: 10 }}>
           <label style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -301,6 +328,7 @@ export default function Config({
         <input ref={personalFileRef}  type="file" hidden onChange={handleImportPersonal} accept=".xlsx,.xls" />
         <input ref={partidasFileRef}  type="file" hidden onChange={handleImportPartidas} accept=".xlsx,.xls" />
         <input ref={modeloFileRef}    type="file" hidden onChange={handleImportModelo}   accept=".xlsx,.xls" />
+        <input ref={costosFileRef}    type="file" hidden onChange={handleImportCostos}   accept=".xlsx,.xls" />
       </div>
 
       {/* ── Importar Tareo desde Excel ────────────────────────────────────────── */}
