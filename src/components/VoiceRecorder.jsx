@@ -14,6 +14,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const [currentFrente, setCurrentFrente] = useState(null)
   const [sessionAssignments, setSessionAssignments] = useState([])
   const [editingRegistroId, setEditingRegistroId] = useState(null)
+  const [selectedRegistroIds, setSelectedRegistroIds] = useState([])
   const [sessionTime, setSessionTime] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
@@ -600,13 +601,59 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     }
   }, [currentWorker, sessionAssignments, commitCurrentWorker])
 
+  const toggleRegistroSelection = (id) => {
+    setSelectedRegistroIds(prev => (
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    ))
+  }
+
+  const clearRegistroSelection = () => {
+    setSelectedRegistroIds([])
+  }
+
   const deleteRegistro = async (reg) => {
+    const confirmed = window.confirm(`¿Seguro que deseas eliminar el registro de ${reg.workerNombre}?`)
+    if (!confirmed) return
+
     try {
       await deleteRegistroById(reg.id, { beforeData: reg, source: "voice_list_delete" })
       setRegistros((prev) => prev.filter((r) => r.id !== reg.id))
+      setSelectedRegistroIds(prev => prev.filter(id => id !== reg.id))
       setFeedbackMessage({ type: "success", message: `Registro eliminado: ${reg.workerNombre}`, timeout: 3000 })
     } catch (e) {
       setFeedbackMessage({ type: "error", message: "No se pudo eliminar en la nube.", timeout: 4000 })
+    }
+  }
+
+  const deleteSelectedRegistros = async () => {
+    if (selectedRegistroIds.length === 0) return
+
+    const confirmed = window.confirm(`¿Seguro que deseas eliminar ${selectedRegistroIds.length} registros seleccionados?`)
+    if (!confirmed) return
+
+    let success = 0
+    let failed = 0
+    const selected = registros.filter(r => selectedRegistroIds.includes(r.id))
+
+    for (const reg of selected) {
+      try {
+        await deleteRegistroById(reg.id, { beforeData: reg, source: "voice_bulk_delete" })
+        success++
+      } catch {
+        failed++
+      }
+    }
+
+    if (success > 0) {
+      setRegistros(prev => prev.filter(r => !selectedRegistroIds.includes(r.id)))
+    }
+
+    clearRegistroSelection()
+
+    if (failed === 0) {
+      setFeedbackMessage({ type: "success", message: `Se eliminaron ${success} registros.`, timeout: 3500 })
+    } else {
+      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}.`, timeout: 4500 })
     }
   }
 
@@ -796,8 +843,31 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
 
       {/* Registros del día */}
       <div style={{ marginTop: 20 }}>
-        <div className="label" style={{ marginBottom: 10 }}>
-          REGISTROS DEL DÍA ({registros.length})
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+          <div className="label">
+            REGISTROS DEL DÍA ({registros.length})
+          </div>
+          {registros.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                onClick={() => {
+                  if (selectedRegistroIds.length === registros.length) clearRegistroSelection()
+                  else setSelectedRegistroIds(registros.map(r => r.id))
+                }}
+                className="btn-pill-sm"
+              >
+                {selectedRegistroIds.length === registros.length ? "Deseleccionar" : "Seleccionar todo"}
+              </button>
+              <button
+                onClick={deleteSelectedRegistros}
+                className="btn-pill-danger"
+                disabled={selectedRegistroIds.length === 0}
+                style={{ opacity: selectedRegistroIds.length === 0 ? 0.5 : 1, cursor: selectedRegistroIds.length === 0 ? "not-allowed" : "pointer" }}
+              >
+                Eliminar seleccionados ({selectedRegistroIds.length})
+              </button>
+            </div>
+          )}
         </div>
         {registros.length === 0 ? (
           <div className="empty-state">
@@ -807,6 +877,13 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {registros.map((reg) => (
               <div key={reg.id} className="registro-row">
+                <input
+                  type="checkbox"
+                  checked={selectedRegistroIds.includes(reg.id)}
+                  onChange={() => toggleRegistroSelection(reg.id)}
+                  style={{ marginRight: 8 }}
+                  title="Seleccionar registro"
+                />
                 <span className="mono" style={{ fontSize: 10, color: "var(--accent-blue)", minWidth: '65px' }}>
                   {reg.timestamp}
                 </span>
