@@ -1,28 +1,17 @@
 import * as XLSX from "xlsx"
 
-/**
- * Map day index to Spanish day name
- */
 const DAY_NAMES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
-/**
- * Get the Monday of a given ISO week number + year.
- */
 function getWeekStartDate(year, weekNum) {
-  // ISO week: Jan 4 is always in week 1
   const jan4 = new Date(year, 0, 4)
-  const dayOfWeek = jan4.getDay() || 7 // Mon=1 ... Sun=7
+  const dayOfWeek = jan4.getDay() || 7
   const mondayW1 = new Date(jan4)
   mondayW1.setDate(jan4.getDate() - dayOfWeek + 1)
-  // Add (weekNum - 1) * 7 days
   const result = new Date(mondayW1)
   result.setDate(mondayW1.getDate() + (weekNum - 1) * 7)
   return result
 }
 
-/**
- * Format date as dd/mm/yyyy
- */
 function formatDate(date) {
   const dd = String(date.getDate()).padStart(2, "0")
   const mm = String(date.getMonth() + 1).padStart(2, "0")
@@ -30,9 +19,6 @@ function formatDate(date) {
   return `${dd}/${mm}/${yyyy}`
 }
 
-/**
- * Get current ISO week number from a date
- */
 export function getWeekNumber(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
   const dayNum = d.getUTCDay() || 7
@@ -42,16 +28,17 @@ export function getWeekNumber(date) {
 }
 
 /**
- * Generate S10-compatible weekly XLS file.
+ * Genera el XLS semanal compatible con S10 (formato TMO exacto).
  *
- * @param {Object} params
- * @param {Array} params.registros - All daily registrations for the week
- * @param {Array} params.workers - Workers list with S10 fields
- * @param {Array} params.partidas - Partidas de control
- * @param {Array} params.tiposHora - Tipos de hora
- * @param {number} params.semana - Week number
- * @param {number} params.anio - Year
- * @param {Object} params.projectConfig - { empresa, obra, codigoProyecto, codigoNomina }
+ * Estructura por hoja día:
+ *   Fila 1: código tipo "N" en col AA(26), "Hora normal" en AB(27)
+ *   Fila 2: empresa(A), "Tareo de Mano de Obra"(F), "Día Fecha"(N), E60(AA), Hora+60%(AB)
+ *   Fila 3: "OBRA:"(A), obra(B), E100(AA), Hora+100%(AB)
+ *   Fila 4: DM(AA), Descanso médico(AB), nota reservada(BA=52)
+ *   Fila 5: leyenda tipo(A), "<Intermedio>"(BA=52)
+ *   Fila 6: encabezados grupo — Cat, Código, Nombre, Rot 1-5, GR, Tareo Día
+ *   Fila 7: sub-encabezados — P.C., Horas, (gap), Tipo  ×5
+ *   Filas 8+: una fila por trabajador, <Obrero> en col AY(50), <Fin> en BA(52) del último
  */
 export function generateWeeklyXLS({
   registros,
@@ -69,163 +56,181 @@ export function generateWeeklyXLS({
     codigoNomina = "002",
   } = projectConfig
 
+  // Mapa código partida → "código nombre" (formato dropdown S10)
+  const partidaMap = new Map(partidas.map(p => [p.id, `${p.id} ${p.nombre}`]))
+
+  // Códigos de tipo hora en formato S10 "CÓDIGO DESCRIPCION"
+  const tipoNormalCode = (() => {
+    const t = tiposHora.find(t => t.codigo === "0" || t.abreviatura === "N")
+    return t ? `${t.codigo} ${t.descripcion}` : "0 NRO HRS NORMALES"
+  })()
+  const tipoE60Code = (() => {
+    const t = tiposHora.find(t => t.codigo === "1" || t.abreviatura === "E60")
+    return t ? `${t.codigo} ${t.descripcion}` : "1 NRO HRS EXTRAS AL 60%"
+  })()
+  const tipoE100Code = (() => {
+    const t = tiposHora.find(t => t.codigo === "2" || t.abreviatura === "E100")
+    return t ? `${t.codigo} ${t.descripcion}` : "2 NRO HRS EXTRAS AL 100%"
+  })()
+
   const wb = XLSX.utils.book_new()
   const weekStart = getWeekStartDate(anio, semana)
 
-  // Create 7 day sheets
   for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
     const dayDate = new Date(weekStart)
     dayDate.setDate(weekStart.getDate() + dayIdx)
     const dayName = DAY_NAMES[dayIdx]
     const dateStr = formatDate(dayDate)
-    const dayDateStr = dayDate.toISOString().split("T")[0] // yyyy-mm-dd for matching
+    const dayDateStr = dayDate.toISOString().split("T")[0]
 
-    // Filter registros for this day
-    const dayRegistros = registros.filter((r) => {
-      if (!r.date) return false
-      return r.date === dayDateStr
-    })
-
-    // Build the sheet data
+    const dayRegistros = registros.filter(r => r.date === dayDateStr)
     const sheetData = []
 
-    // Row 1: Header
-    const row1 = new Array(53).fill("")
-    row1[0] = empresa
-    row1[5] = "Tareo de Mano de Obra"
-    row1[12] = `${dayName} ${dateStr}`
-    sheetData.push(row1)
+    // ── Fila 1 (índice 0): leyenda tipo N ─────────────────────────────────────
+    const r0 = new Array(53).fill("")
+    r0[26] = "N"
+    r0[27] = "Hora normal"
+    sheetData.push(r0)
 
-    // Row 2: Obra
-    const row2 = new Array(53).fill("")
-    row2[0] = "OBRA:"
-    row2[1] = obra
-    sheetData.push(row2)
+    // ── Fila 2 (índice 1): empresa, título, fecha, E60 ────────────────────────
+    const r1 = new Array(53).fill("")
+    r1[0] = empresa
+    r1[5] = "Tareo de Mano de Obra"
+    r1[13] = `${dayName} ${dateStr}`
+    r1[26] = "E60"
+    r1[27] = "Hora + 60%"
+    sheetData.push(r1)
 
-    // Row 3: Empty
-    sheetData.push(new Array(53).fill(""))
+    // ── Fila 3 (índice 2): obra, E100 ─────────────────────────────────────────
+    const r2 = new Array(53).fill("")
+    r2[0] = "OBRA:"
+    r2[1] = obra
+    r2[26] = "E100"
+    r2[27] = "Hora + 100%"
+    sheetData.push(r2)
 
-    // Row 4: Type legend
-    const row4 = new Array(53).fill("")
-    row4[0] = "Tipo: N (Normal), E60 (Extra al 60%), E100 (Extra al 100%), DM (Descanso Médico)"
-    sheetData.push(row4)
+    // ── Fila 4 (índice 3): DM, nota variables reservadas ──────────────────────
+    const r3 = new Array(53).fill("")
+    r3[26] = "DM"
+    r3[27] = "Descanso médico"
+    r3[52] = "Las siguiente variables son reservadas"
+    sheetData.push(r3)
 
-    // Row 5: Column headers - Rotación groups
-    const row5 = new Array(53).fill("")
-    row5[0] = "Cat"
-    row5[1] = "Código"
-    row5[2] = "Nombre"
-    // 13 rotaciones, each with 4 columns: P.C. | Horas | (gap) | Tipo
-    for (let r = 0; r < 13; r++) {
-      const base = 3 + r * 4
-      row5[base] = `Rotación ${r + 1}`
+    // ── Fila 5 (índice 4): leyenda tipo, marcador Intermedio ──────────────────
+    const r4 = new Array(53).fill("")
+    r4[0] = "Tipo: N (Normal), E?? (Extra), DM (Descanso médico)"
+    r4[52] = "<Intermedio>"
+    sheetData.push(r4)
+
+    // ── Fila 6 (índice 5): encabezados de grupo ───────────────────────────────
+    const r5 = new Array(53).fill("")
+    r5[0] = "Cat"
+    r5[1] = "Código"
+    r5[2] = "Nombre"
+    // 5 rotaciones × 4 columnas empezando en col D (índice 3)
+    for (let rot = 0; rot < 5; rot++) {
+      r5[3 + rot * 4] = `Rotación ${rot + 1}`
     }
-    sheetData.push(row5)
+    r5[23] = "GR"
+    r5[24] = "Tareo Día"
+    sheetData.push(r5)
 
-    // Row 6: Sub-headers
-    const row6 = new Array(53).fill("")
-    for (let r = 0; r < 13; r++) {
-      const base = 3 + r * 4
-      row6[base] = "P.C."
-      row6[base + 1] = "Horas"
-      row6[base + 2] = ""
-      row6[base + 3] = "Tipo"
+    // ── Fila 7 (índice 6): sub-encabezados por rotación ───────────────────────
+    const r6 = new Array(53).fill("")
+    for (let rot = 0; rot < 5; rot++) {
+      const base = 3 + rot * 4
+      r6[base]     = "P.C."
+      r6[base + 1] = "Horas"
+      r6[base + 2] = ""
+      r6[base + 3] = "Tipo"
     }
-    sheetData.push(row6)
+    sheetData.push(r6)
 
-    // Worker rows
-    for (const w of workers) {
+    // ── Filas de trabajadores (índice 7+) ──────────────────────────────────────
+    for (let wIdx = 0; wIdx < workers.length; wIdx++) {
+      const w = workers[wIdx]
+      const isLast = wIdx === workers.length - 1
       const row = new Array(53).fill("")
-      row[0] = w.categoria || w.abrevCategoria || ""
+
+      row[0] = w.categoria || ""
       row[1] = w.codigo || w.id || ""
       row[2] = w.nombre || ""
 
-      // Find registros for this worker on this day
       const workerDayRegs = dayRegistros.filter(
-        (r) => String(r.workerId) === String(w.id) || String(r.workerId) === String(w.codigo)
+        r => String(r.workerId) === String(w.id) || String(r.workerId) === String(w.codigo)
       )
 
-      // Fill rotaciones from assignments
       let rotIdx = 0
       for (const reg of workerDayRegs) {
         for (const a of reg.assignments) {
-          if (rotIdx >= 13) break
+          if (rotIdx >= 5) break
 
-          const base = 3 + rotIdx * 4
-          row[base] = a.partidaId || ""
+          const pcValue = partidaMap.get(a.partidaId) || a.partidaId || ""
 
-          // Normal hours
           if (a.horasNormales > 0) {
+            const base = 3 + rotIdx * 4
+            row[base]     = pcValue
             row[base + 1] = a.horasNormales
-            row[base + 3] = "N"
+            row[base + 3] = tipoNormalCode
             rotIdx++
           }
 
-          // Extra hours as separate rotation
-          if (a.horasExtras > 0 && rotIdx < 13) {
-            if (a.horasNormales > 0) {
-              // New rotation for extras
-              const base2 = 3 + rotIdx * 4
-              row[base2] = a.partidaId || ""
-              row[base2 + 1] = a.horasExtras
-              row[base2 + 3] = "E60"
-              rotIdx++
-            } else {
-              row[base + 1] = a.horasExtras
-              row[base + 3] = "E60"
-              rotIdx++
-            }
-          }
-
-          if (a.horasNormales === 0 && a.horasExtras === 0) {
+          if (a.horasExtras > 0 && rotIdx < 5) {
+            const base = 3 + rotIdx * 4
+            row[base]     = pcValue
+            row[base + 1] = a.horasExtras
+            row[base + 3] = tipoE60Code
             rotIdx++
           }
         }
       }
 
+      row[23] = "1.0"           // GR
+      row[50] = "<Obrero>"      // col AY
+      if (isLast) row[52] = "<Fin>"  // col BA, solo en el último
+
       sheetData.push(row)
     }
 
-    // Create worksheet
     const ws = XLSX.utils.aoa_to_sheet(sheetData)
 
-    // Set column widths
+    // Anchos de columna
     ws["!cols"] = [
-      { wch: 10 }, // Cat
-      { wch: 12 }, // Código
-      { wch: 35 }, // Nombre
+      { wch: 10 },  // A — Cat
+      { wch: 12 },  // B — Código
+      { wch: 35 },  // C — Nombre
     ]
-    for (let r = 0; r < 13; r++) {
-      ws["!cols"].push({ wch: 12 }) // P.C.
-      ws["!cols"].push({ wch: 6 })  // Horas
-      ws["!cols"].push({ wch: 2 })  // gap
-      ws["!cols"].push({ wch: 5 })  // Tipo
+    for (let rot = 0; rot < 5; rot++) {
+      ws["!cols"].push({ wch: 55 })  // P.C. (código + nombre partida)
+      ws["!cols"].push({ wch: 7  })  // Horas
+      ws["!cols"].push({ wch: 2  })  // gap
+      ws["!cols"].push({ wch: 28 })  // Tipo
     }
+    ws["!cols"].push({ wch: 5 })  // GR
+    ws["!cols"].push({ wch: 10 }) // Tareo Día
 
     XLSX.utils.book_append_sheet(wb, ws, dayName)
   }
 
-  // Add 'Partida de Control' sheet
-  const pcData = partidas.map((p) => ["", p.id, p.nombre, `${p.id} ${p.nombre}`])
+  // ── Hoja "Partida de Control" ──────────────────────────────────────────────
+  const pcData = partidas.map(p => ["", p.id, p.nombre, `${p.id} ${p.nombre}`])
   const pcWS = XLSX.utils.aoa_to_sheet(pcData)
-  pcWS["!cols"] = [{ wch: 4 }, { wch: 14 }, { wch: 50 }, { wch: 60 }]
+  pcWS["!cols"] = [{ wch: 4 }, { wch: 14 }, { wch: 55 }, { wch: 65 }]
   XLSX.utils.book_append_sheet(wb, pcWS, "Partida de Control")
 
-  // Add 'TipoHora' sheet
-  const thData = tiposHora.map((t) => ["", t.codigo, t.descripcion, t.abreviatura])
+  // ── Hoja "TipoHora" ────────────────────────────────────────────────────────
+  const thData = tiposHora.map(t => ["", t.codigo, t.descripcion, `${t.codigo} ${t.descripcion}`])
   const thWS = XLSX.utils.aoa_to_sheet(thData)
-  thWS["!cols"] = [{ wch: 4 }, { wch: 6 }, { wch: 35 }, { wch: 30 }]
+  thWS["!cols"] = [{ wch: 4 }, { wch: 6 }, { wch: 35 }, { wch: 38 }]
   XLSX.utils.book_append_sheet(wb, thWS, "TipoHora")
 
-  // Add empty 'TipoDia' sheet
-  const tdWS = XLSX.utils.aoa_to_sheet([[]])
-  XLSX.utils.book_append_sheet(wb, tdWS, "TipoDia")
+  // ── Hoja "TipoDia" (vacía, requerida por S10) ──────────────────────────────
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[]]), "TipoDia")
 
-  // Generate filename
+  // ── Nombre de archivo y descarga ───────────────────────────────────────────
   const semStr = String(semana).padStart(2, "0")
   const filename = `TMO-${codigoProyecto}-${codigoNomina}-Sem${semStr}${anio}.xls`
 
-  // Write and download
   const wbOut = XLSX.write(wb, { bookType: "xls", type: "array" })
   const blob = new Blob([wbOut], { type: "application/vnd.ms-excel" })
   const url = URL.createObjectURL(blob)
