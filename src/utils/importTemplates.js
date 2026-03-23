@@ -1,6 +1,122 @@
 import * as XLSX from "xlsx"
 import { getTodayLocalDate } from "./dateUtils"
 
+function downloadWorkbook(wb, filename) {
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" })
+  const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// S10 — Plantillas modelo
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function downloadS10PersonalTemplate() {
+  const wb = XLSX.utils.book_new()
+  const data = [
+    ["Código", "Nombre", "DNI", "Categoría", "Fecha Ingreso", "Código categoría", "Abreviatura Categoría", "Costo hora promedio", "Ocupación", "Activo Proyecto"],
+    ["22002053", "CHUQUILIN ANGULO, OSCAR JUNIOR", "76214091", "003 Operario", "23/02/2026", "003", "ope", 25.0, "OPERARIO", "SI"],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  ws["!cols"] = [
+    { wch: 14 }, { wch: 38 }, { wch: 14 }, { wch: 18 }, { wch: 14 },
+    { wch: 16 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 16 },
+  ]
+  XLSX.utils.book_append_sheet(wb, ws, "Personal S10")
+  downloadWorkbook(wb, "plantilla_personal_s10.xlsx")
+}
+
+export function downloadS10PartidasTemplate() {
+  const wb = XLSX.utils.book_new()
+  const data = [
+    ["Código Partida de Control", "Descripción"],
+    ["010201015", "Traslado Vertical y Horizontal"],
+    ["010202001", "Topografía"],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  ws["!cols"] = [{ wch: 24 }, { wch: 60 }]
+  XLSX.utils.book_append_sheet(wb, ws, "Partidas Proyecto")
+  downloadWorkbook(wb, "plantilla_partidas_s10.xlsx")
+}
+
+export function downloadS10ModeloTemplate() {
+  const wb = XLSX.utils.book_new()
+
+  const partidasData = [
+    ["Código", "Descripción"],
+    ["010201015", "Traslado Vertical y Horizontal"],
+    ["010202001", "Topografía"],
+  ]
+  const partidasWs = XLSX.utils.aoa_to_sheet(partidasData)
+  partidasWs["!cols"] = [{ wch: 18 }, { wch: 60 }]
+
+  const tiposHoraData = [
+    ["Código", "Descripción", "Abreviatura"],
+    ["0", "NRO HRS NORMALES", "N"],
+    ["1", "NRO HRS EXTRAS AL 60%", "E60"],
+    ["2", "NRO HRS EXTRAS AL 100%", "E100"],
+  ]
+  const tiposHoraWs = XLSX.utils.aoa_to_sheet(tiposHoraData)
+  tiposHoraWs["!cols"] = [{ wch: 10 }, { wch: 30 }, { wch: 14 }]
+
+  XLSX.utils.book_append_sheet(wb, partidasWs, "Partida de Control")
+  XLSX.utils.book_append_sheet(wb, tiposHoraWs, "TipoHora")
+  downloadWorkbook(wb, "plantilla_modelo_tmo.xlsx")
+}
+
+export function downloadS10CostosTemplate() {
+  const wb = XLSX.utils.book_new()
+  const data = [
+    [
+      "Código",
+      "Apellidos y Nombres",
+      "Proyecto",
+      "Año",
+      "Periodo Semanal",
+      "Tipo de Nómina",
+      "Fecha",
+      "Horas laboradas",
+      "Horas descanso",
+      "Tipo Hora",
+      "Código Partida de Control",
+      "Partida de Control",
+      "Costo HH Normal",
+      "Costo HH Extra60",
+      "Costo HH Extra100",
+    ],
+    [
+      "22002053",
+      "CHUQUILIN ANGULO, OSCAR JUNIOR",
+      "03020001 - SUNNY",
+      "2026",
+      "SEM-09",
+      "OBREROS",
+      "2026-02-23",
+      8.5,
+      0,
+      "N",
+      "010201015",
+      "Traslado Vertical y Horizontal",
+      25.0,
+      40.0,
+      50.0,
+    ],
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+  ws["!cols"] = [
+    { wch: 14 }, { wch: 38 }, { wch: 24 }, { wch: 10 }, { wch: 16 },
+    { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+    { wch: 22 }, { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+  ]
+  XLSX.utils.book_append_sheet(wb, ws, "Consolidado Costos")
+  downloadWorkbook(wb, "plantilla_consolidado_costos_s10.xlsx")
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTIVIDADES — Plantilla de importación
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,15 +144,7 @@ export function downloadActividadesTemplate(partidas = []) {
 
   XLSX.utils.book_append_sheet(wb, ws, "Actividades")
   XLSX.utils.book_append_sheet(wb, refWS, "Partidas (referencia)")
-
-  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-  const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = "plantilla_actividades.xlsx"
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadWorkbook(wb, "plantilla_actividades.xlsx")
 }
 
 /**
@@ -113,15 +221,7 @@ export function downloadTareoTemplate(workers = [], actividades = [], fechaTareo
   XLSX.utils.book_append_sheet(wb, ws, "Tareo")
   XLSX.utils.book_append_sheet(wb, wrkWS, "Trabajadores (ref)")
   XLSX.utils.book_append_sheet(wb, actWS, "Actividades (ref)")
-
-  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-  const blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = "plantilla_tareo.xlsx"
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadWorkbook(wb, "plantilla_tareo.xlsx")
 }
 
 /**

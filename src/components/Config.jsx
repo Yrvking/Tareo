@@ -16,6 +16,10 @@ import {
   parseActividadesFromXLSX,
   downloadTareoTemplate,
   parseTareoFromXLSX,
+  downloadS10PersonalTemplate,
+  downloadS10PartidasTemplate,
+  downloadS10ModeloTemplate,
+  downloadS10CostosTemplate,
 } from "../utils/importTemplates"
 import { insertRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
@@ -31,33 +35,35 @@ export default function Config({
   const s10ImportGuides = [
     {
       title: "Personal S10",
-      detail: "Busca columnas por nombre sin importar su posición. Si el archivo trae más columnas, se ignoran.",
-      required: "Código, Nombre",
-      optional: "Código categoría, Categoría, Abreviatura Categoría, DNI, Costo hora promedio, Fecha Ingreso, Ocupación, Activo Proyecto",
+      detail: "Este archivo debe dejar completo al trabajador para operación y contabilidad. El orden de columnas puede cambiar.",
+      required: "Código, Nombre, DNI, Categoría, Fecha Ingreso",
+      complementary: "Código categoría, Abreviatura Categoría, Costo hora promedio, Ocupación, Activo Proyecto",
+      template: "Código | Nombre | DNI | Categoría | Fecha Ingreso | Código categoría | Abreviatura Categoría | Costo hora promedio",
+      onDownload: downloadS10PersonalTemplate,
     },
     {
       title: "Partidas por proyecto",
-      detail: "Reconoce el código de partida y la descripción aunque vengan movidos dentro de la hoja.",
+      detail: "Debe traer la relación base de partidas de control. El sistema reconoce encabezados aunque estén movidos.",
       required: "Código de partida, Descripción o Nombre",
-      optional: "Cualquier otra columna del reporte se ignora",
+      complementary: "Cualquier otra columna del reporte se ignora",
+      template: "Código Partida de Control | Descripción",
+      onDownload: downloadS10PartidasTemplate,
     },
     {
-      title: "Modelo TMO - Partidas",
-      detail: "En la hoja de partidas, toma solo los campos mínimos aunque el orden cambie.",
-      required: "Código, Descripción o Nombre",
-      optional: "Columnas auxiliares del modelo",
-    },
-    {
-      title: "Modelo TMO - Tipos de hora",
-      detail: "En la hoja TipoHora detecta los encabezados aunque estén reordenados.",
-      required: "Descripción",
-      optional: "Código, Abreviatura",
+      title: "Modelo TMO",
+      detail: "La plantilla modelo incluye las dos hojas que usa el sistema actualmente: Partida de Control y TipoHora.",
+      required: "Hoja Partida de Control: Código, Descripción o Nombre | Hoja TipoHora: Descripción",
+      complementary: "En TipoHora también se recomienda Código y Abreviatura",
+      template: "Partida de Control -> Código | Descripción  /  TipoHora -> Código | Descripción | Abreviatura",
+      onDownload: downloadS10ModeloTemplate,
     },
     {
       title: "Consolidado de costos",
-      detail: "Actualiza el costo hora desde el consolidado S10 sin importar el orden de columnas.",
-      required: "Código, Apellidos y Nombres",
-      optional: "Costo HH Normal, Costo HH Extra60, Costo HH Extra100, Código Partida de Control, Partida de Control",
+      detail: "Aquí las horas sí son obligatorias. Este archivo alimenta costos y valida la trazabilidad por tipo de hora y partida.",
+      required: "Código, Apellidos y Nombres, Fecha, Horas laboradas, Tipo Hora, Código Partida de Control, Partida de Control, Costo HH Normal",
+      complementary: "Proyecto, Año, Periodo Semanal, Tipo de Nómina, Horas descanso, Costo HH Extra60, Costo HH Extra100",
+      template: "Código | Apellidos y Nombres | Fecha | Horas laboradas | Tipo Hora | Código Partida de Control | Partida de Control | Costo HH Normal",
+      onDownload: downloadS10CostosTemplate,
     },
   ]
 
@@ -272,7 +278,7 @@ export default function Config({
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="label" style={{ marginBottom: 4 }}>SISTEMA S10 — IMPORTAR MAESTROS</div>
         <p style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
-          Personal: desde reporte S10 de personal activo. Partidas: desde archivo de partidas por proyecto o desde el TMO. Modelo TMO: carga partidas y tipos de hora del XLS de exportación. El sistema toma solo los campos necesarios aunque el archivo traiga columnas extra o en otro orden.
+          El sistema puede leer columnas aunque estén en otro orden, pero estas plantillas ya muestran lo que hoy necesita para funcionar completo: personal listo para contabilidad, partidas, modelo TMO y consolidado con horas y costos.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={() => personalFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
@@ -320,7 +326,25 @@ export default function Config({
                 <strong>Obligatorios:</strong> {guide.required}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, marginTop: 4 }}>
-                <strong>Opcionales:</strong> {guide.optional}
+                <strong>Complementarios:</strong> {guide.complementary}
+              </div>
+              <div style={{
+                marginTop: 8,
+                padding: '8px 9px',
+                borderRadius: 8,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px dashed rgba(148,163,184,0.25)',
+                fontSize: 10,
+                color: 'var(--text-dim)',
+                lineHeight: 1.45,
+                fontFamily: 'var(--font-mono)',
+              }}>
+                {guide.template}
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <button onClick={guide.onDownload} className="btn-pill-sm">
+                  ↓ Descargar plantilla
+                </button>
               </div>
             </div>
           ))}
