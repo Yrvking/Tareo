@@ -653,3 +653,18 @@ main {
   .card { padding: 16px; }
   .nav-item span { font-size: 11px; }
 }
+
+/* ── Dashboard ── */
+.dash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+@media (max-width: 700px) {
+  .dash-card { padding: 12px; }
+  .dash-card > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}

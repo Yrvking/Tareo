@@ -9,6 +9,7 @@ import Summary from "./components/Summary"
 import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
 import Help from "./components/Help"
+import Dashboard from "./components/Dashboard"
 import { fetchRegistros } from "./utils/supabaseClient"
 import { getWeekRange } from "./utils/dateUtils"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
@@ -21,7 +22,8 @@ import {
   SettingsIcon,
   UsersIcon,
   LayoutIcon,
-  HelpIcon
+  HelpIcon,
+  BarChartIcon
 } from "./components/Icons"
 import "./App.css"
 
@@ -41,19 +43,20 @@ function loadWorkersFromStorage() {
 }
 
 const TABS = [
+  { id: "dashboard", label: "Dashboard",       mobileLabel: "Dash",     icon: BarChartIcon },
   { id: "mobile",    label: "Carga Grupal",    mobileLabel: "Carga",    icon: UsersIcon },
   { id: "weekly",    label: "Control Semanal", mobileLabel: "Semanal",  icon: LayoutIcon },
   { id: "manual",    label: "Manual",          mobileLabel: "Manual",   icon: PlusIcon },
   { id: "registro",  label: "Voz",             mobileLabel: "Voz",      icon: MicIcon },
   { id: "resumen",   label: "Planilla",        mobileLabel: "Planilla", icon: ChartIcon },
-  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon },
+  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon, hideInBottomNav: true },
   { id: "ayuda",     label: "Ayuda",           mobileLabel: "Ayuda",    icon: HelpIcon, hideInBottomNav: true },
   { id: "config",    label: "Config",          mobileLabel: "Config",   icon: SettingsIcon, adminOnly: true },
 ]
 
 function AppContent() {
   const { user, profile, logout } = useAuth()
-  const [tab, setTab] = useState("mobile")
+  const [tab, setTab] = useState("dashboard")
   const [workers, setWorkers] = useState(() => loadWorkersFromStorage())
   const [partidas, setPartidas] = useState(INITIAL_PARTIDAS)
   const [actividades, setActividades] = useState(INITIAL_ACTIVIDADES)
@@ -148,6 +151,17 @@ function AppContent() {
         </header>
 
         <main style={{ paddingBottom: '20px' }}>
+          {tab === "dashboard" && (
+            <Dashboard
+              registros={registros}
+              workers={workers}
+              actividades={actividades}
+              partidas={partidas}
+              projectConfig={projectConfig}
+              fechaTareo={fechaTareo}
+            />
+          )}
+
           {tab === "mobile" && (
             <MobileEntry 
               workers={workers} 
