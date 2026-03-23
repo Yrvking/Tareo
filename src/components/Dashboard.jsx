@@ -119,28 +119,34 @@ export default function Dashboard({ registros, workers, frentes = [], actividade
 
   return (
     <div className="dashboard-shell">
-      <div className="dashboard-hero">
-        <div>
-          <div className="dashboard-eyebrow">Dashboard semanal</div>
-          <h2 className="dashboard-title-main">{projectConfig?.obra || "Control del proyecto"}</h2>
-          <p className="dashboard-copy">{projectConfig?.empresa || "Proyecto"} · {filtered.length} registros filtrados · {stats.assignments} asignaciones</p>
+      <div className="dashboard-topbar">
+        <div className="dashboard-project-strip">
+          <div className="dashboard-project-head">
+            <div className="dashboard-eyebrow">Dashboard semanal</div>
+            <div className="dashboard-copy">{filtered.length} registros filtrados · {stats.assignments} asignaciones</div>
+          </div>
+          <div className="dashboard-project-meta">
+            <span><span>Empresa:</span><strong>{projectConfig?.empresa || "Sin empresa"}</strong></span>
+            <span><span>Obra:</span><strong>{projectConfig?.obra || "Sin obra"}</strong></span>
+          </div>
         </div>
-        <div className="dashboard-view-toggle">
-          <button className={`btn-pill-sm ${view === "operativo" ? "active-pill" : ""}`} onClick={() => setView("operativo")}>Vista Operativa</button>
-          <button className={`btn-pill-sm ${view === "ejecutivo" ? "active-pill" : ""}`} onClick={() => setView("ejecutivo")}>Vista Ejecutiva</button>
+
+        <div className="dashboard-mode-switch">
+          <button className={view === "operativo" ? "active" : ""} onClick={() => setView("operativo")}>Operativa</button>
+          <button className={view === "ejecutivo" ? "active" : ""} onClick={() => setView("ejecutivo")}>Ejecutiva</button>
         </div>
       </div>
 
       <div className="dash-card dashboard-toolbar">
         <div className="dashboard-filter-grid">
-          <label className="dashboard-filter-field"><span>Buscar</span><input className="input-field" value={search} onChange={e => setSearch(e.target.value)} placeholder="Trabajador, actividad, frente..." /></label>
-          <label className="dashboard-filter-field"><span>Frente</span><select className="input-field" value={frenteFilter} onChange={e => setFrenteFilter(e.target.value)}><option value="">Todos</option>{frenteOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-          <label className="dashboard-filter-field"><span>Categoria</span><select className="input-field" value={categoriaFilter} onChange={e => setCategoriaFilter(e.target.value)}><option value="">Todas</option>{categorias.map(option => <option key={option} value={option}>{option}</option>)}</select></label>
-          <label className="dashboard-filter-field"><span>Actividad</span><select className="input-field" value={actividadFilter} onChange={e => setActividadFilter(e.target.value)}><option value="">Todas</option>{actividades.map(option => <option key={option.id} value={option.id}>{option.id} - {option.nombre}</option>)}</select></label>
+          <label className="dashboard-filter-field"><span>Buscar</span><input className="input-field dashboard-input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Trabajador, actividad, frente..." /></label>
+          <label className="dashboard-filter-field"><span>Frente</span><select className="input-field dashboard-input" value={frenteFilter} onChange={e => setFrenteFilter(e.target.value)}><option value="">Todos</option>{frenteOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+          <label className="dashboard-filter-field"><span>Categoria</span><select className="input-field dashboard-input" value={categoriaFilter} onChange={e => setCategoriaFilter(e.target.value)}><option value="">Todas</option>{categorias.map(option => <option key={option} value={option}>{option}</option>)}</select></label>
+          <label className="dashboard-filter-field"><span>Actividad</span><select className="input-field dashboard-input" value={actividadFilter} onChange={e => setActividadFilter(e.target.value)}><option value="">Todas</option>{actividades.map(option => <option key={option.id} value={option.id}>{option.id} - {option.nombre}</option>)}</select></label>
         </div>
         <div className="dashboard-toolbar-actions">
-          <button className={`btn-pill-sm ${onlyExtras ? "active-pill" : ""}`} onClick={() => setOnlyExtras(value => !value)}>Solo con HE</button>
-          <button className="btn-pill-sm" onClick={() => { setSearch(""); setFrenteFilter(""); setCategoriaFilter(""); setActividadFilter(""); setOnlyExtras(false) }}>Limpiar filtros</button>
+          <button className={`btn-pill-sm dashboard-toolbar-pill ${onlyExtras ? "active-pill" : ""}`} onClick={() => setOnlyExtras(value => !value)}>Solo con HE</button>
+          <button className="btn-pill-sm dashboard-toolbar-pill" onClick={() => { setSearch(""); setFrenteFilter(""); setCategoriaFilter(""); setActividadFilter(""); setOnlyExtras(false) }}>Limpiar filtros</button>
         </div>
       </div>
 
@@ -148,9 +154,8 @@ export default function Dashboard({ registros, workers, frentes = [], actividade
         <Metric label="Horas totales" value={fmtHours(stats.totalHoras)} sub={`${fmtHours(stats.totalHN)} N · ${fmtHours(stats.totalHE)} E`} tone="blue" onClick={() => stats.busiestDay && openDetail("day", stats.busiestDay.date, `${stats.busiestDay.label} ${stats.busiestDay.dayNum}`)} />
         <Metric label="Costo estimado" value={fmtCurrency(stats.totalCosto)} sub="Mano de obra filtrada" tone="green" />
         <Metric label="Trabajadores activos" value={String(stats.workerList.length)} sub={`${fmtHours(stats.avgHours)} promedio`} tone="gold" onClick={() => stats.workerList[0] && openDetail("worker", stats.workerList[0].id, stats.workerList[0].nombre)} />
-        <Metric label="Cobertura" value={`${stats.diasConRegistro}/6`} sub={stats.busiestDay ? `Pico ${stats.busiestDay.label}: ${fmtHours(stats.busiestDay.total)}` : "Sin actividad"} tone="neutral" />
-        <Metric label="Ratio HE" value={`${Math.round(stats.heRatio * 100)}%`} sub={stats.totalHE ? `${fmtHours(stats.totalHE)} HE` : "Sin extras"} tone="alert" onClick={() => openDetail("extras", "extras", "Horas extra")} />
-        <Metric label="Actividad lider" value={stats.topActividad?.nombre || "Sin actividad"} sub={stats.topActividad ? fmtHours(stats.topActividad.total) : "0"} tone="indigo" onClick={() => stats.topActividad && openDetail("activity", stats.topActividad.id, stats.topActividad.nombre)} />
+        <Metric label="Actividad lider" value={stats.topActividad ? fmtHours(stats.topActividad.total) : "0"} sub={stats.topActividad?.nombre || "Sin actividad"} tone="indigo" onClick={() => stats.topActividad && openDetail("activity", stats.topActividad.id, stats.topActividad.nombre)} />
+        <Metric label="Frente lider" value={stats.frenteList[0] ? fmtHours(stats.frenteList[0].total) : "0"} sub={stats.frenteList[0]?.nombre || "Sin frente"} tone="neutral" onClick={() => stats.frenteList[0] && openDetail("frente", stats.frenteList[0].id, stats.frenteList[0].nombre)} />
       </div>
 
       {view === "operativo" && (
@@ -161,7 +166,7 @@ export default function Dashboard({ registros, workers, frentes = [], actividade
               <div className="dashboard-chart">{stats.dayList.map(day => <button key={day.date} className="dashboard-chart-col" onClick={() => openDetail("day", day.date, `${day.label} ${day.dayNum}`)}><span className="dashboard-chart-value">{day.total ? fmtHours(day.total) : ""}</span><div className="dashboard-chart-bar-wrap"><div className="dashboard-chart-bar"><div style={{ height: `${Math.max((day.total / stats.maxDay) * 100, day.total ? 8 : 4)}px`, background: "var(--accent-blue)" }} /></div></div><span className="dashboard-chart-label">{day.label}</span><span className="dashboard-chart-sub">{day.workers} trab.</span></button>)}</div>
             </div>
             <div className="dash-card">
-              <div className="dashboard-section-title">Alertas</div>
+              <div className="dashboard-section-title">Atencion semanal</div>
               <div className="dashboard-alert-list">{stats.alerts.map(alert => <div key={alert.title} className={`dashboard-alert dashboard-alert-${alert.tone}`}><div className="dashboard-alert-title">{alert.title}</div><div className="dashboard-alert-description">{alert.text}</div></div>)}</div>
             </div>
           </div>
@@ -185,7 +190,7 @@ export default function Dashboard({ registros, workers, frentes = [], actividade
             <div className="dashboard-executive-copy">
               <p>La semana acumula <strong>{fmtHours(stats.totalHoras)}</strong> en <strong>{stats.workerList.length}</strong> trabajadores activos.</p>
               <p>El costo estimado es <strong>{fmtCurrency(stats.totalCosto)}</strong> y la actividad dominante es <strong>{stats.topActividad?.nombre || "Sin actividad"}</strong>.</p>
-              <p>La mejor lectura diaria la aporta <strong>{stats.busiestDay?.label || "-"}</strong> con <strong>{fmtHours(stats.busiestDay?.total || 0)}</strong>.</p>
+              <p>La mejor lectura diaria la aporta <strong>{stats.busiestDay?.label || "-"}</strong> con <strong>{fmtHours(stats.busiestDay?.total || 0)}</strong>, mientras el frente lider es <strong>{stats.frenteList[0]?.nombre || "Sin frente"}</strong>.</p>
             </div>
           </div>
           <div className="dash-card">
