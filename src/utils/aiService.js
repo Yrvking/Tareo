@@ -1,5 +1,36 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const PREFERRED_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  "gemini-1.0-pro"
+];
+
+function normalizeModelName(modelName) {
+  return String(modelName || "").replace(/^models\//, "").trim();
+}
+
+async function fetchGenerateContentModels(apiKey) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`;
+  const response = await fetch(endpoint);
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`MODELS_LIST_FAILED:${response.status}:${text}`);
+  }
+
+  const payload = await response.json();
+  const models = Array.isArray(payload.models) ? payload.models : [];
+
+  return models
+    .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("generateContent"))
+    .map(m => normalizeModelName(m.name))
+    .filter(Boolean);
+}
+
 /**
  * Capa de Limpieza de Datos (Privacy Scrubbing)
  * Elimina IDs reales o información sensible antes de subir a la nube.
@@ -29,15 +60,15 @@ export async function askAssistant(apiKey, userQuery, context) {
   if (!FINAL_KEY) throw new Error("MISSING_KEY");
 
   const genAI = new GoogleGenerativeAI(FINAL_KEY);
-  
-  // Lista robusta de modelos (incluyendo variantes comunes)
-  const modelsToTry = [
-    "gemini-1.5-flash", 
-    "gemini-1.5-pro",
-    "gemini-1.0-pro",
-    "gemini-pro",
-    "gemini-2.0-flash-exp"
-  ];
+
+  let discoveredModels = [];
+  try {
+    discoveredModels = await fetchGenerateContentModels(FINAL_KEY);
+  } catch (error) {
+    console.warn("No se pudo listar modelos en bootstrap. Se usa fallback local.", error);
+  }
+
+  const modelsToTry = Array.from(new Set([...PREFERRED_MODELS, ...discoveredModels]));
   
   const scrubbed = scrubData(context);
 
@@ -52,7 +83,8 @@ export async function askAssistant(apiKey, userQuery, context) {
   `;
 
   let lastError = null;
-  for (const modelName of modelsToTry) {
+  for (const rawModelName of modelsToTry) {
+    const modelName = normalizeModelName(rawModelName);
     try {
       console.log(`Intentando conectar con modelo: ${modelName}...`);
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -76,7 +108,7 @@ export async function askAssistant(apiKey, userQuery, context) {
     }
   }
 
-  throw lastError;
+  throw new Error(lastError?.message || "NO_MODEL_AVAILABLE");
 }
 
 /**
@@ -86,12 +118,11 @@ export async function askAssistant(apiKey, userQuery, context) {
 export async function getAvailableModels(apiKey) {
   const FINAL_KEY = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
   if (!FINAL_KEY) return [];
-  
+
   try {
-    const genAI = new GoogleGenerativeAI(FINAL_KEY);
-    // Nota: El SDK de JS a veces no expone listModels directamente de forma fácil.
-    // Usamos un modelo básico para testear conectividad si listModels falla.
-    return ["gemini-1.5-flash", "gemini-1.5-pro"]; 
+    const models = await fetchGenerateContentModels(FINAL_KEY);
+    const preferredFirst = [...PREFERRED_MODELS, ...models].map(normalizeModelName);
+    return Array.from(new Set(preferredFirst)).filter(m => models.includes(m));
   } catch (e) {
     console.error("Error validando modelos:", e);
     return [];

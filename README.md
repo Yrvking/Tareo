@@ -23,6 +23,52 @@ npm run dev
 
 Se abrirá automáticamente en http://localhost:3000
 
+## Configurar Gemini API Key (gratis)
+
+### 1) Crear la key en Google AI Studio
+
+1. Abre: https://aistudio.google.com/app/apikey
+2. Inicia sesión con tu cuenta de Google.
+3. Haz clic en **Create API key**.
+4. Si te pide proyecto, crea o selecciona uno.
+5. Copia la key generada.
+
+### 2) Cargar la key dentro de la app
+
+1. Ejecuta el proyecto con `npm run dev`.
+2. En la app, entra a la pestaña **Configuración**.
+3. Baja hasta **CONFIGURACIÓN DEL ASISTENTE IA**.
+4. Pega la key en el campo **Pega tu nueva API Key aquí...**.
+5. Haz clic en **GUARDAR**.
+6. Ve a la pestaña del asistente y prueba una consulta.
+
+### 3) Opción alternativa por variable de entorno local
+
+Si prefieres configurar por archivo local:
+
+1. Crea/edita `.env` en la raíz del proyecto.
+2. Agrega:
+
+```env
+VITE_GEMINI_API_KEY=TU_API_KEY_AQUI
+```
+
+3. Reinicia `npm run dev`.
+
+### 4) Seguridad (muy importante)
+
+- Nunca subas la key a git.
+- Este proyecto ya ignora `.env` en `.gitignore`.
+- Si compartiste una key por chat o captura, rótala y crea una nueva.
+
+### 5) Error 404 de modelo (ya corregido)
+
+Si viste este error:
+
+`models/gemini-pro is not found for API version v1beta`
+
+ya está corregido en el proyecto. Ahora el sistema consulta el catálogo real de modelos disponibles y usa solo modelos compatibles con `generateContent`.
+
 ## Compilar para producción
 
 ```bash
