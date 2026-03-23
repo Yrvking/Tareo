@@ -1,6 +1,6 @@
 import { useState, useRef } from "react"
 import Select from "react-select"
-import { PlusIcon, UploadIcon } from "./Icons"
+import { PlusIcon, UploadIcon, PencilIcon } from "./Icons"
 import {
   parsePersonalXLSX,
   parsePartidasFromXLS,
@@ -444,6 +444,15 @@ export default function Config({
                   <span className="mono" style={{ color: 'var(--accent-gold)', marginRight: 4 }}>{a.partidaId}</span>
                   {partida?.nombre || ""}
                 </span>
+                <button
+                  onClick={e => { e.stopPropagation(); startEditActividad(a) }}
+                  title="Editar actividad"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-blue)', padding: '2px 4px', flexShrink: 0, opacity: 0.7 }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
+                >
+                  <PencilIcon />
+                </button>
                 <input
                   type="checkbox"
                   checked={selectedActividades.includes(a.id)}
@@ -452,7 +461,7 @@ export default function Config({
                     setSelectedActividades(prev => prev.includes(a.id) ? prev.filter(id => id !== a.id) : [...prev, a.id])
                   }}
                   onClick={e => e.stopPropagation()}
-                  style={{ marginLeft: 6, flexShrink: 0 }}
+                  style={{ marginLeft: 2, flexShrink: 0 }}
                 />
               </div>
             )

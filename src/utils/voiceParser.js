@@ -23,9 +23,12 @@ const NUMBER_WORDS = {
 
 // Filler/noise words to strip out before parsing
 const FILLER_WORDS = [
-  "eh", "este", "este", "mmm", "am", "a ver", "bueno", "entonces",
+  "eh", "este", "mmm", "am", "a ver", "bueno", "entonces",
   "pues", "aver", "haber", "ahi", "ya", "aja", "ok", "okay",
-  "digamos", "osea", "o sea"
+  "digamos", "osea", "o sea",
+  // Spanish pronouns / discourse markers that confuse worker matching
+  "yo", "mi", "me", "el", "ella", "nos", "nosotros",
+  "le", "les", "se", "tu", "usted", "ellos", "ellas",
 ]
 
 function stripFillerWords(text) {
@@ -44,40 +47,62 @@ function findBestWorkerMatch(text, workers) {
   const fuse = new Fuse(workers, {
     keys: ["nombre", "id", "codigo"],
     includeScore: true,
-    threshold: 0.5, // Slightly more relaxed for field voice
+    threshold: 0.5,
     ignoreLocation: true,
     useExtendedSearch: true
   })
 
-  // Try searching for each word individually if the full phrase fails
-  const results = fuse.search(norm)
+  // Score a single fuse result against a query string
+  const scoreResult = (fuseResult, query) => {
+    const baseScore = Math.max(0, 100 - (fuseResult.score * 100))
+    let finalScore = baseScore
 
-  if (results.length > 0) {
-    const best = results[0]
-    const score = Math.max(0, 100 - (best.score * 100))
-    let finalScore = score
-
-    // REINFORCEMENT: If any word in the transcript matches a word in the name exactly
-    const transcriptWords = norm.split(/\s+/).filter(w => w.length > 3)
-    const nameNorm = normalize(best.item.nombre)
+    const nameNorm = normalize(fuseResult.item.nombre)
     const nameWords = nameNorm.split(/\s+/)
-    
-    const hasExactWordMatch = transcriptWords.some(tw => 
-      nameWords.some(nw => nw === tw)
-    )
+    const queryWords = query.split(/\s+/).filter(w => w.length > 2 && !/^\d+([.,]\d+)?$/.test(w))
 
-    if (hasExactWordMatch) {
-      finalScore = Math.max(finalScore, 80) // Boost if a full word matches
-    }
+    // Boost if any transcript word exactly matches a name word
+    const hasExactWordMatch = queryWords.some(tw => nameWords.some(nw => nw === tw))
+    if (hasExactWordMatch) finalScore = Math.max(finalScore, 80)
 
-    if (norm.includes(nameNorm) || nameNorm.includes(norm)) {
-      finalScore = 100
-    }
+    // Full substring containment → perfect score
+    if (nameNorm.includes(query) || query.includes(nameNorm)) finalScore = 100
 
-    return finalScore >= 40 ? { worker: best.item, score: finalScore } : null
+    return finalScore
   }
 
-  return null
+  let bestWorker = null
+  let bestScore = 0
+
+  // Strategy 1: search full text
+  const fullResults = fuse.search(norm)
+  if (fullResults.length > 0) {
+    const s = scoreResult(fullResults[0], norm)
+    if (s > bestScore) { bestScore = s; bestWorker = fullResults[0].item }
+  }
+
+  // Strategy 2: token-by-token — try individual words and 2-word phrases
+  // (skip pure numbers; only words ≥3 chars)
+  const tokens = norm.split(/\s+/).filter(w => w.length >= 3 && !/^\d+([.,]\d+)?$/.test(w))
+
+  for (const token of tokens) {
+    const results = fuse.search(token)
+    if (results.length > 0) {
+      const s = scoreResult(results[0], token)
+      if (s > bestScore) { bestScore = s; bestWorker = results[0].item }
+    }
+  }
+
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const phrase = `${tokens[i]} ${tokens[i + 1]}`
+    const results = fuse.search(phrase)
+    if (results.length > 0) {
+      const s = scoreResult(results[0], phrase)
+      if (s > bestScore) { bestScore = s; bestWorker = results[0].item }
+    }
+  }
+
+  return bestScore >= 40 ? { worker: bestWorker, score: bestScore } : null
 }
 
 function findBestFrenteMatch(text, frentes) {
