@@ -11,6 +11,7 @@ export default function Summary({
   fechaTareo, setFechaTareo
 }) {
   const [viewType, setViewType] = useState("worker_weekly") // "worker_weekly", "activity_daily", "activity_weekly"
+  const [resumenSubView, setResumenSubView] = useState("actividad") // "actividad" | "partida"
   const today = new Date()
   const [exportSemana, setExportSemana] = useState(getWeekNumber(today))
   const [exportAnio, setExportAnio] = useState(today.getFullYear())
@@ -51,53 +52,64 @@ export default function Summary({
     return summary
   }, [registros, workers])
 
-  // 2. Daily Matrix (Activity vs Worker) for the currently selected date
-  const activityDailyMatrix = useMemo(() => {
-    const dailyRegs = registros.filter(r => r.date === fechaTareo)
-    const matrix = {} // actividadId -> { name, partidaName, workers: { workerId: {hn, he} } }
-    const workersPresent = new Set()
+  // 2. Weekly Matrix (Activity vs Day) for the whole week
+  const activityWeeklyMatrix = useMemo(() => {
+    const matrix = {} // actividadId -> { nombre, partida, days: { date: { hn, he } } }
 
-    dailyRegs.forEach(reg => {
-      workersPresent.add(reg.workerId)
+    registros.forEach(reg => {
       reg.assignments.forEach(asg => {
         if (!matrix[asg.actividadId]) {
           const act = actividades?.find(a => a.id === asg.actividadId)
+          const partidaId = act?.partidaId || asg.partidaId
           matrix[asg.actividadId] = {
             nombre: act?.nombre || asg.actividadId,
-            partida: getPartidaNombre(asg.partidaId),
-            workers: {}
+            partida: getPartidaNombre(partidaId),
+            days: {}
           }
         }
-        if (!matrix[asg.actividadId].workers[reg.workerId]) {
-          matrix[asg.actividadId].workers[reg.workerId] = { hn: 0, he: 0 }
+        if (!matrix[asg.actividadId].days[reg.date]) {
+          matrix[asg.actividadId].days[reg.date] = { hn: 0, he: 0 }
         }
-        matrix[asg.actividadId].workers[reg.workerId].hn += (asg.horasNormales || 0)
-        matrix[asg.actividadId].workers[reg.workerId].he += (asg.horasExtras || 0)
+        matrix[asg.actividadId].days[reg.date].hn += (asg.horasNormales || 0)
+        matrix[asg.actividadId].days[reg.date].he += (asg.horasExtras || 0)
       })
     })
 
-    return { matrix, workerIds: Array.from(workersPresent) }
-  }, [registros, fechaTareo, actividades, getPartidaNombre])
+    return matrix
+  }, [registros, actividades, getPartidaNombre])
 
-  // 3. Weekly Activity Consolidation
+  // 3a. Weekly Activity Consolidation
   const weeklyActivitySummary = useMemo(() => {
-    const summary = {} // actividadId -> { nombre, totalHn, totalHe }
+    const summary = {}
     registros.forEach(reg => {
       reg.assignments.forEach(asg => {
         if (!summary[asg.actividadId]) {
           const act = actividades?.find(a => a.id === asg.actividadId)
-          summary[asg.actividadId] = {
-            nombre: act?.nombre || asg.actividadId,
-            totalHn: 0,
-            totalHe: 0
-          }
+          summary[asg.actividadId] = { nombre: act?.nombre || asg.actividadId, totalHn: 0, totalHe: 0 }
         }
         summary[asg.actividadId].totalHn += (asg.horasNormales || 0)
         summary[asg.actividadId].totalHe += (asg.horasExtras || 0)
       })
     })
-    return summary
+    return Object.values(summary).sort((a, b) => (b.totalHn + b.totalHe) - (a.totalHn + a.totalHe))
   }, [registros, actividades])
+
+  // 3b. Weekly Partida Consolidation
+  const weeklyPartidaSummary = useMemo(() => {
+    const summary = {}
+    registros.forEach(reg => {
+      reg.assignments.forEach(asg => {
+        const act = actividades?.find(a => a.id === asg.actividadId)
+        const partidaId = act?.partidaId || asg.partidaId || "SIN_PARTIDA"
+        if (!summary[partidaId]) {
+          summary[partidaId] = { id: partidaId, nombre: getPartidaNombre(partidaId), totalHn: 0, totalHe: 0 }
+        }
+        summary[partidaId].totalHn += (asg.horasNormales || 0)
+        summary[partidaId].totalHe += (asg.horasExtras || 0)
+      })
+    })
+    return Object.values(summary).sort((a, b) => (b.totalHn + b.totalHe) - (a.totalHn + a.totalHe))
+  }, [registros, actividades, getPartidaNombre])
 
   const handleExportS10 = () => {
     try {
@@ -189,42 +201,52 @@ export default function Summary({
         </div>
       )}
 
-      {/* VIEW 2: Activity Daily (Maestro Style) */}
+      {/* VIEW 2: Activity Weekly Matrix (Actividad × Día) */}
       {viewType === "activity_daily" && (
         <div className="card full-width-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div className="card-header-dark" style={{ padding: '16px' }}>
-            <span className="label">TAREO DIARIO POR ACTIVIDAD - {fechaTareo}</span>
+            <span className="label">TAREO SEMANAL POR ACTIVIDAD</span>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="report-table">
               <thead>
                 <tr>
-                  <th style={{ minWidth: '250px' }}>ACTIVIDAD / PARTIDA DE CONTROL</th>
-                  {activityDailyMatrix.workerIds.map(id => {
-                    const w = workers.find(x => x.id === id)
-                    return <th key={id} className="text-center rotated-th"><span>{w?.nombre.split(',')[0]}</span></th>
-                  })}
-                  <th className="text-center" style={{ background: 'rgba(100,255,218,0.1)' }}>T. HORAS</th>
+                  <th style={{ minWidth: '240px' }}>ACTIVIDAD</th>
+                  <th style={{ minWidth: '160px' }}>PARTIDA DE CONTROL</th>
+                  {weekRange.map(d => (
+                    <th key={d.date} className="text-center" style={{ minWidth: '52px' }}>{d.label}<br/><span style={{ fontSize: '9px', fontWeight: 400 }}>{d.dayNum}</span></th>
+                  ))}
+                  <th className="text-center" style={{ background: 'rgba(37,99,235,0.12)', minWidth: '56px' }}>TOTAL</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(activityDailyMatrix.matrix).map(([actId, data]) => {
-                  let actTotal = 0
-                  // Ensure name is used, not ID
-                  const displayName = data.nombre || actividades?.find(a => a.id === actId)?.nombre || actId
+                {Object.entries(activityWeeklyMatrix).length === 0 && (
+                  <tr><td colSpan={9} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Sin registros esta semana</td></tr>
+                )}
+                {Object.entries(activityWeeklyMatrix).map(([actId, data]) => {
+                  let rowTotal = 0
                   return (
                     <tr key={actId}>
                       <td>
-                        <div style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '13px' }}>{displayName}</div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{data.partida}</div>
+                        <div style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '12px' }}>{data.nombre}</div>
                       </td>
-                      {activityDailyMatrix.workerIds.map(wId => {
-                        const val = data.workers[wId] || { hn: 0, he: 0 }
-                        const total = val.hn + val.he
-                        actTotal += total
-                        return <td key={wId} className="text-center val-col">{total || '—'}</td>
+                      <td style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{data.partida}</td>
+                      {weekRange.map(d => {
+                        const cell = data.days[d.date] || { hn: 0, he: 0 }
+                        const total = cell.hn + cell.he
+                        rowTotal += total
+                        return (
+                          <td key={d.date} className="text-center val-col">
+                            {total > 0 ? (
+                              <span>
+                                {cell.hn > 0 && <span style={{ color: 'var(--text-dim)' }}>{cell.hn}</span>}
+                                {cell.he > 0 && <span style={{ color: 'var(--accent-gold)', fontSize: '10px' }}>+{cell.he}</span>}
+                              </span>
+                            ) : '—'}
+                          </td>
+                        )
                       })}
-                      <td className="text-center val-col" style={{ fontWeight: '800', background: 'rgba(255,255,255,0.03)' }}>{actTotal}</td>
+                      <td className="text-center val-col total-col-final">{rowTotal > 0 ? rowTotal : '—'}</td>
                     </tr>
                   )
                 })}
@@ -234,34 +256,103 @@ export default function Summary({
         </div>
       )}
 
-      {/* VIEW 3: Activity Weekly (Consolidated) */}
+      {/* VIEW 3: Resumen Semanal — Por Actividad o Por Partida */}
       {viewType === "activity_weekly" && (
-        <div className="card" style={{ maxWidth: '800px', margin: '0 auto', padding: 0 }}>
-          <div className="card-header-dark" style={{ padding: '16px' }}>
-            <span className="label">RESUMEN DE ACTIVIDADES (TOTAL SEMANA)</span>
+        <div>
+          {/* Sub-toggle */}
+          <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '10px', marginBottom: '16px', width: 'fit-content' }}>
+            <button onClick={() => setResumenSubView("actividad")} className={`pill-btn ${resumenSubView === "actividad" ? "active" : ""}`}>POR ACTIVIDAD</button>
+            <button onClick={() => setResumenSubView("partida")} className={`pill-btn ${resumenSubView === "partida" ? "active" : ""}`}>POR PARTIDA DE CONTROL</button>
           </div>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>ACTIVIDAD</th>
-                <th className="text-center">TOTAL HN</th>
-                <th className="text-center">TOTAL HE</th>
-                <th className="text-center">TOTAL HORAS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(weeklyActivitySummary).map(([id, data]) => (
-                <tr key={id}>
-                  <td style={{ fontWeight: '600' }}>{data.nombre}</td>
-                  <td className="text-center mono" style={{ color: 'var(--accent-gold)' }}>{data.totalHn.toFixed(1)}</td>
-                  <td className="text-center mono" style={{ color: '#ef4444' }}>{data.totalHe.toFixed(1)}</td>
-                  <td className="text-center mono" style={{ fontWeight: '800', borderLeft: '1px solid var(--border-dim)' }}>
-                    {(data.totalHn + data.totalHe).toFixed(1)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          {resumenSubView === "actividad" && (
+            <div className="card full-width-card" style={{ padding: 0 }}>
+              <div className="card-header-dark" style={{ padding: '14px 16px' }}>
+                <span className="label">RESUMEN POR ACTIVIDAD — SEMANA</span>
+              </div>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>ACTIVIDAD</th>
+                    <th className="text-center" style={{ minWidth: '70px' }}>HN</th>
+                    <th className="text-center" style={{ minWidth: '70px' }}>HE</th>
+                    <th className="text-center" style={{ minWidth: '80px' }}>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyActivitySummary.length === 0 && (
+                    <tr><td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Sin registros esta semana</td></tr>
+                  )}
+                  {weeklyActivitySummary.map((data, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: '600' }}>{data.nombre}</td>
+                      <td className="text-center mono" style={{ color: 'var(--accent-gold)' }}>{data.totalHn.toFixed(1)}</td>
+                      <td className="text-center mono" style={{ color: '#ef4444' }}>{data.totalHe.toFixed(1)}</td>
+                      <td className="text-center mono total-col-final">{(data.totalHn + data.totalHe).toFixed(1)}</td>
+                    </tr>
+                  ))}
+                  {weeklyActivitySummary.length > 0 && (() => {
+                    const totHn = weeklyActivitySummary.reduce((s, d) => s + d.totalHn, 0)
+                    const totHe = weeklyActivitySummary.reduce((s, d) => s + d.totalHe, 0)
+                    return (
+                      <tr style={{ background: 'rgba(37,99,235,0.08)' }}>
+                        <td style={{ fontWeight: '800', color: 'var(--accent-blue)' }}>TOTAL</td>
+                        <td className="text-center mono" style={{ color: 'var(--accent-gold)', fontWeight: 800 }}>{totHn.toFixed(1)}</td>
+                        <td className="text-center mono" style={{ color: '#ef4444', fontWeight: 800 }}>{totHe.toFixed(1)}</td>
+                        <td className="text-center mono total-col-final" style={{ fontSize: '14px' }}>{(totHn + totHe).toFixed(1)}</td>
+                      </tr>
+                    )
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {resumenSubView === "partida" && (
+            <div className="card full-width-card" style={{ padding: 0 }}>
+              <div className="card-header-dark" style={{ padding: '14px 16px' }}>
+                <span className="label">RESUMEN POR PARTIDA DE CONTROL — SEMANA</span>
+              </div>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: '120px' }}>CÓDIGO</th>
+                    <th>PARTIDA DE CONTROL</th>
+                    <th className="text-center" style={{ minWidth: '70px' }}>HN</th>
+                    <th className="text-center" style={{ minWidth: '70px' }}>HE</th>
+                    <th className="text-center" style={{ minWidth: '80px' }}>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyPartidaSummary.length === 0 && (
+                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>Sin registros esta semana</td></tr>
+                  )}
+                  {weeklyPartidaSummary.map((data, i) => (
+                    <tr key={i}>
+                      <td className="mono" style={{ color: 'var(--accent-gold)', fontSize: '11px' }}>{data.id}</td>
+                      <td style={{ fontWeight: '600' }}>{data.nombre}</td>
+                      <td className="text-center mono" style={{ color: 'var(--accent-gold)' }}>{data.totalHn.toFixed(1)}</td>
+                      <td className="text-center mono" style={{ color: '#ef4444' }}>{data.totalHe.toFixed(1)}</td>
+                      <td className="text-center mono total-col-final">{(data.totalHn + data.totalHe).toFixed(1)}</td>
+                    </tr>
+                  ))}
+                  {weeklyPartidaSummary.length > 0 && (() => {
+                    const totHn = weeklyPartidaSummary.reduce((s, d) => s + d.totalHn, 0)
+                    const totHe = weeklyPartidaSummary.reduce((s, d) => s + d.totalHe, 0)
+                    return (
+                      <tr style={{ background: 'rgba(37,99,235,0.08)' }}>
+                        <td />
+                        <td style={{ fontWeight: '800', color: 'var(--accent-blue)' }}>TOTAL</td>
+                        <td className="text-center mono" style={{ color: 'var(--accent-gold)', fontWeight: 800 }}>{totHn.toFixed(1)}</td>
+                        <td className="text-center mono" style={{ color: '#ef4444', fontWeight: 800 }}>{totHe.toFixed(1)}</td>
+                        <td className="text-center mono total-col-final" style={{ fontSize: '14px' }}>{(totHn + totHe).toFixed(1)}</td>
+                      </tr>
+                    )
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
