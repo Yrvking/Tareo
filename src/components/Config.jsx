@@ -26,6 +26,33 @@ export default function Config({
   tiposHora, setTiposHora,
   projectConfig, setProjectConfig,
 }) {
+  const s10ImportGuides = [
+    {
+      title: "Personal S10",
+      detail: "Busca columnas por nombre sin importar su posición. Si el archivo trae más columnas, se ignoran.",
+      required: "Código, Nombre",
+      optional: "Código categoría, Categoría, Abreviatura Categoría, DNI, Costo hora promedio, Fecha Ingreso, Ocupación, Activo Proyecto",
+    },
+    {
+      title: "Partidas por proyecto",
+      detail: "Reconoce el código de partida y la descripción aunque vengan movidos dentro de la hoja.",
+      required: "Código de partida, Descripción o Nombre",
+      optional: "Cualquier otra columna del reporte se ignora",
+    },
+    {
+      title: "Modelo TMO - Partidas",
+      detail: "En la hoja de partidas, toma solo los campos mínimos aunque el orden cambie.",
+      required: "Código, Descripción o Nombre",
+      optional: "Columnas auxiliares del modelo",
+    },
+    {
+      title: "Modelo TMO - Tipos de hora",
+      detail: "En la hoja TipoHora detecta los encabezados aunque estén reordenados.",
+      required: "Descripción",
+      optional: "Código, Abreviatura",
+    },
+  ]
+
   // ── Estado: forms de agregar ────────────────────────────────────────────────
   const [newWorkerName, setNewWorkerName]       = useState("")
   const [newPartidaId, setNewPartidaId]         = useState("")
@@ -86,8 +113,21 @@ export default function Config({
     try {
       const buffer = await readFileAsArrayBuffer(file)
       let imported = parsePartidasProyectoXLS(buffer)
-      if (imported.length === 0) imported = parsePartidasFromXLS(buffer)
-      if (imported.length === 0) { showFeedback("No se encontraron partidas", "error"); return }
+      let modelError = null
+
+      if (imported.length === 0) {
+        try {
+          imported = parsePartidasFromXLS(buffer)
+        } catch (err) {
+          modelError = err
+        }
+      }
+
+      if (imported.length === 0) {
+        showFeedback(modelError?.message || "No se encontraron partidas válidas. Verifica que exista Código y Descripción o Nombre.", "error")
+        return
+      }
+
       setPartidas(imported)
       showFeedback(`✓ ${imported.length} partidas importadas.`)
     } catch (err) { showFeedback(`Error: ${err.message}`, "error") }
@@ -100,9 +140,11 @@ export default function Config({
     try {
       const buffer = await readFileAsArrayBuffer(file)
       const importedPartidas = parsePartidasFromXLS(buffer)
-      if (importedPartidas.length > 0) setPartidas(importedPartidas)
       const importedTipos = parseTipoHoraFromXLS(buffer)
+
+      if (importedPartidas.length > 0) setPartidas(importedPartidas)
       if (importedTipos.length > 0) setTiposHora(importedTipos)
+
       showFeedback(`✓ Modelo ${file.name} cargado.`)
     } catch (err) { showFeedback(`Error: ${err.message}`, "error") }
     e.target.value = ""
@@ -206,7 +248,7 @@ export default function Config({
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="label" style={{ marginBottom: 4 }}>SISTEMA S10 — IMPORTAR MAESTROS</div>
         <p style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
-          Personal: desde reporte S10 de personal activo. Partidas: desde el archivo TMO. Modelo TMO: carga partidas y tipos de hora del XLS modelo de exportación.
+          Personal: desde reporte S10 de personal activo. Partidas: desde archivo de partidas por proyecto o desde el TMO. Modelo TMO: carga partidas y tipos de hora del XLS de exportación. El sistema toma solo los campos necesarios aunque el archivo traiga columnas extra o en otro orden.
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={() => personalFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
@@ -224,6 +266,37 @@ export default function Config({
             <input type="checkbox" checked={importMode === "replace"} onChange={e => setImportMode(e.target.checked ? "replace" : "merge")} />
             Reemplazar completamente al importar personal (por defecto: fusionar)
           </label>
+        </div>
+        <div style={{
+          marginTop: 14,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 10,
+        }}>
+          {s10ImportGuides.map((guide) => (
+            <div
+              key={guide.title}
+              style={{
+                border: '1px solid var(--border-dim)',
+                borderRadius: 10,
+                padding: '12px 12px 10px',
+                background: 'rgba(15,23,42,0.45)',
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-gold)', marginBottom: 6 }}>
+                {guide.title}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, marginBottom: 8 }}>
+                {guide.detail}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-main)', lineHeight: 1.45 }}>
+                <strong>Obligatorios:</strong> {guide.required}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.45, marginTop: 4 }}>
+                <strong>Opcionales:</strong> {guide.optional}
+              </div>
+            </div>
+          ))}
         </div>
         <input ref={personalFileRef}  type="file" hidden onChange={handleImportPersonal} accept=".xlsx,.xls" />
         <input ref={partidasFileRef}  type="file" hidden onChange={handleImportPartidas} accept=".xlsx,.xls" />

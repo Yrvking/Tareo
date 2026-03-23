@@ -99,6 +99,70 @@ Para compartir trabajadores, partidas, actividades, frentes y configuracion del 
 
 Si no ejecutas este script, la app seguira funcionando con almacenamiento local en cada dispositivo.
 
+## Importaciones S10
+
+El importador S10 ahora busca las columnas por nombre y no por posicion fija. Esto significa:
+
+- Si el usuario mueve columnas dentro del Excel, la importacion sigue funcionando.
+- Si el archivo trae columnas extra que el sistema no usa, se ignoran.
+- Solo deben existir los campos minimos requeridos para cada archivo.
+
+### 1) Personal S10
+
+Campos obligatorios:
+
+- `Codigo`
+- `Nombre`
+
+Campos opcionales que el sistema aprovecha si existen:
+
+- `Codigo categoria`
+- `Categoria`
+- `Abreviatura Categoria`
+- `DNI`
+- `Costo hora promedio`
+- `Fecha Ingreso`
+- `Ocupacion`
+- `Activo Proyecto`
+
+### 2) Partidas por proyecto
+
+Campos obligatorios:
+
+- `Codigo de partida`
+- `Descripcion` o `Nombre`
+
+Notas:
+
+- El archivo puede traer jerarquia, niveles o columnas adicionales.
+- El sistema toma la partida hoja final y su descripcion.
+
+### 3) Modelo TMO - hoja de Partidas
+
+Campos obligatorios:
+
+- `Codigo`
+- `Descripcion` o `Nombre`
+
+Campos opcionales:
+
+- Cualquier otra columna del modelo se ignora.
+
+### 4) Modelo TMO - hoja TipoHora
+
+Campos obligatorios:
+
+- `Descripcion`
+
+Campos opcionales:
+
+- `Codigo`
+- `Abreviatura`
+
+### Plantillas esperadas
+
+No necesitas reordenar columnas manualmente si el archivo vino desde S10. El sistema esta preparado para trabajar con los reportes descargados desde S10 tal como salen, y tambien tolera reordenamientos de columnas siempre que los encabezados sigan presentes.
+
 ## Compilar para producción
 
 ```bash
