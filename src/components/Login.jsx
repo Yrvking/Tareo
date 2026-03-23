@@ -16,7 +16,11 @@ export default function Login() {
       setLoading(true);
       await login(email, password);
     } catch (err) {
-      setError("Fallo al iniciar sesión: Correo o contraseña incorrectos.");
+      if (err?.message === "SUPABASE_CONFIG_MISSING") {
+        setError("Configuración incompleta en producción: agrega VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Railway y vuelve a desplegar.");
+      } else {
+        setError("Fallo al iniciar sesión: Correo o contraseña incorrectos.");
+      }
     } finally {
       setLoading(false);
     }

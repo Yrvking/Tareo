@@ -2,15 +2,18 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Faltan credenciales de Supabase en el archivo .env")
+if (!hasSupabaseConfig) {
+  console.warn("Faltan credenciales de Supabase (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)")
 }
 
-export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "")
+export const supabase = hasSupabaseConfig ? createClient(supabaseUrl, supabaseAnonKey) : null
 
 // Función para obtener los registros (por día o rango semanal)
 export async function fetchRegistros(startDate = null, endDate = null) {
+  if (!supabase) return []
+
   let query = supabase.from('registros').select('*').order('tareo_date', { ascending: true })
   
   if (startDate && endDate) {
@@ -41,6 +44,10 @@ export async function fetchRegistros(startDate = null, endDate = null) {
 
 // Función para insertar un registro individual y devolver la ID
 export async function insertRegistro(reg) {
+  if (!supabase) {
+    throw new Error('SUPABASE_CONFIG_MISSING')
+  }
+
   const { data, error } = await supabase
     .from('registros')
     .insert([
