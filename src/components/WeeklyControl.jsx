@@ -2,6 +2,7 @@ import { useState } from "react"
 import { SearchIcon, PlusIcon, TrashIcon, CheckIcon } from "./Icons"
 import Select from "react-select"
 import { insertRegistro, updateRegistro } from "../utils/supabaseClient"
+import { selectStyles } from "../utils/selectTheme"
 
 export default function WeeklyControl({ 
   workers, partidas, actividades, frentes, 
@@ -171,11 +172,7 @@ export default function WeeklyControl({
                     options={actividades.map(a => ({ value: a.id, label: `${a.id} - ${a.nombre}`, partidaId: a.partidaId }))}
                     value={newActivity}
                     onChange={setNewActivity}
-                    styles={{
-                      control: (base) => ({ ...base, background: 'var(--bg-dark)', border: '1px solid var(--border-dim)' }),
-                      singleValue: (base) => ({ ...base, color: 'white' }),
-                      menu: (base) => ({ ...base, background: 'var(--bg-card)' })
-                    }}
+                    styles={selectStyles}
                     placeholder="Seleccione..."
                   />
                 </div>

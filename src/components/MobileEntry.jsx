@@ -3,45 +3,7 @@ import Select from "react-select"
 import { SearchIcon, CheckIcon, PlusIcon, UserGroupIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
 import { getNormalHourCap } from "../utils/tareoLogic"
-
-const selectStyles = {
-  control: (base, state) => ({
-    ...base,
-    backgroundColor: '#0f172a',
-    borderColor: state.isFocused ? '#2563eb' : '#334155',
-    color: '#f8fafc',
-    borderRadius: '10px',
-    padding: '2px',
-    boxShadow: state.isFocused ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
-    '&:hover': {
-      borderColor: '#2563eb',
-    }
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: '10px',
-    zIndex: 100
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isFocused ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
-    color: state.isFocused ? '#2563eb' : '#94a3b8',
-    cursor: 'pointer',
-    '&:active': {
-      backgroundColor: 'rgba(37, 99, 235, 0.25)'
-    }
-  }),
-  singleValue: (base) => ({
-    ...base,
-    color: '#f8fafc'
-  }),
-  input: (base) => ({
-    ...base,
-    color: '#f8fafc'
-  })
-}
+import { selectStyles } from "../utils/selectTheme"
 
 export default function MobileEntry({ workers, frentes, actividades, setRegistros, fechaTareo }) {
   const cap = getNormalHourCap(fechaTareo)

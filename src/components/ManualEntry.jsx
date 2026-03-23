@@ -3,58 +3,7 @@ import Select from "react-select"
 import { PlusIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
 import { getNormalHourCap } from "../utils/tareoLogic"
-
-const selectStyles = {
-  control: (base, state) => ({
-    ...base,
-    backgroundColor: '#0a192f',
-    borderColor: state.isFocused ? '#64ffda' : '#233554',
-    color: '#e6f1ff',
-    boxShadow: state.isFocused ? '0 0 0 1px rgba(100, 255, 218, 0.2)' : 'none',
-    minHeight: '42px',
-    '&:hover': {
-      borderColor: '#64ffda',
-    }
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: '#112240',
-    border: '1px solid #233554',
-    zIndex: 100
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isFocused ? 'rgba(100, 255, 218, 0.1)' : 'transparent',
-    color: state.isFocused ? '#64ffda' : '#ccd6f6',
-    cursor: 'pointer',
-    '&:active': {
-      backgroundColor: 'rgba(100, 255, 218, 0.2)'
-    }
-  }),
-  singleValue: (base) => ({
-    ...base,
-    color: '#e6f1ff'
-  }),
-  input: (base) => ({
-    ...base,
-    color: '#e6f1ff'
-  }),
-  placeholder: (base) => ({
-    ...base,
-    color: '#495670'
-  }),
-  dropdownIndicator: (base) => ({
-    ...base,
-    color: '#8ab4c8',
-    '&:hover': {
-      color: '#64ffda'
-    }
-  }),
-  indicatorSeparator: (base) => ({
-    ...base,
-    backgroundColor: '#233554'
-  })
-}
+import { selectStyles } from "../utils/selectTheme"
 
 export default function ManualEntry({ workers, partidas, actividades, frentes, setRegistros, fechaTareo }) {
   const cap = getNormalHourCap(fechaTareo)
