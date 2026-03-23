@@ -44,28 +44,37 @@ function findBestWorkerMatch(text, workers) {
   const norm = normalize(text)
   if (!workers || workers.length === 0 || !norm) return null
 
+  // Use generous threshold so Fuse never pre-filters candidates we could boost.
+  // Our own gate (>= 40 below) is the true quality filter.
   const fuse = new Fuse(workers, {
     keys: ["nombre", "id", "codigo"],
     includeScore: true,
-    threshold: 0.5,
+    threshold: 0.8,
     ignoreLocation: true,
-    useExtendedSearch: true
+    useExtendedSearch: true,
+    minMatchCharLength: 2,
   })
 
-  // Score a single fuse result against a query string
+  // Compute our own 0-100 score from a fuse result + query
   const scoreResult = (fuseResult, query) => {
     const baseScore = Math.max(0, 100 - (fuseResult.score * 100))
     let finalScore = baseScore
 
     const nameNorm = normalize(fuseResult.item.nombre)
     const nameWords = nameNorm.split(/\s+/)
-    const queryWords = query.split(/\s+/).filter(w => w.length > 2 && !/^\d+([.,]\d+)?$/.test(w))
+    const queryWords = query.split(/\s+/).filter(w => w.length >= 3 && !/^\d+([.,]\d+)?$/.test(w))
 
-    // Boost if any transcript word exactly matches a name word
+    // Exact word match → strong boost (handles "elme" in "elme moran jhon jorge")
     const hasExactWordMatch = queryWords.some(tw => nameWords.some(nw => nw === tw))
-    if (hasExactWordMatch) finalScore = Math.max(finalScore, 80)
+    if (hasExactWordMatch) finalScore = Math.max(finalScore, 82)
 
-    // Full substring containment → perfect score
+    // Near-match: word differs by ≤1 char (handles "john" ↔ "jhon")
+    const hasNearWordMatch = queryWords.some(tw =>
+      nameWords.some(nw => Math.abs(tw.length - nw.length) <= 1 && levenshtein(tw, nw) <= 1)
+    )
+    if (hasNearWordMatch) finalScore = Math.max(finalScore, 65)
+
+    // Full substring containment → perfect
     if (nameNorm.includes(query) || query.includes(nameNorm)) finalScore = 100
 
     return finalScore
@@ -74,35 +83,38 @@ function findBestWorkerMatch(text, workers) {
   let bestWorker = null
   let bestScore = 0
 
-  // Strategy 1: search full text
-  const fullResults = fuse.search(norm)
-  if (fullResults.length > 0) {
-    const s = scoreResult(fullResults[0], norm)
-    if (s > bestScore) { bestScore = s; bestWorker = fullResults[0].item }
+  const trySearch = (query) => {
+    const results = fuse.search(query)
+    if (results.length > 0) {
+      const s = scoreResult(results[0], query)
+      if (s > bestScore) { bestScore = s; bestWorker = results[0].item }
+    }
   }
 
-  // Strategy 2: token-by-token — try individual words and 2-word phrases
-  // (skip pure numbers; only words ≥3 chars)
+  // Strategy 1: full text
+  trySearch(norm)
+
+  // Strategy 2: individual tokens + 2-word phrases (skip numbers)
   const tokens = norm.split(/\s+/).filter(w => w.length >= 3 && !/^\d+([.,]\d+)?$/.test(w))
-
-  for (const token of tokens) {
-    const results = fuse.search(token)
-    if (results.length > 0) {
-      const s = scoreResult(results[0], token)
-      if (s > bestScore) { bestScore = s; bestWorker = results[0].item }
-    }
-  }
-
-  for (let i = 0; i < tokens.length - 1; i++) {
-    const phrase = `${tokens[i]} ${tokens[i + 1]}`
-    const results = fuse.search(phrase)
-    if (results.length > 0) {
-      const s = scoreResult(results[0], phrase)
-      if (s > bestScore) { bestScore = s; bestWorker = results[0].item }
-    }
-  }
+  for (const token of tokens) trySearch(token)
+  for (let i = 0; i < tokens.length - 1; i++) trySearch(`${tokens[i]} ${tokens[i + 1]}`)
 
   return bestScore >= 40 ? { worker: bestWorker, score: bestScore } : null
+}
+
+// Simple Levenshtein for short strings (used only for ≤8 char words)
+function levenshtein(a, b) {
+  if (a === b) return 0
+  if (a.length > 8 || b.length > 8) return 99
+  const dp = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0)
+  )
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+  return dp[a.length][b.length]
 }
 
 function findBestFrenteMatch(text, frentes) {
