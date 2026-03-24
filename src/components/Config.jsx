@@ -203,15 +203,22 @@ export default function Config({
       const buffer = await readFileAsArrayBuffer(file)
       const regs = parseTareoFromXLSX(buffer, workers, actividades)
       if (regs.length === 0) { showFeedback("No se encontraron registros válidos", "error"); setTareoImporting(false); return }
-      let ok = 0, fail = 0
+      let ok = 0, fail = 0, pending = 0
       for (const reg of regs) {
         try {
-          const dbId = await insertRegistro(reg)
-          if (dbId) reg.id = dbId
+          const result = await insertRegistro(reg)
+          if (result?.id) reg.id = result.id
+          if (result?.syncStatus && result.syncStatus !== "synced") pending++
           ok++
         } catch { fail++ }
       }
-      showFeedback(fail === 0 ? `✓ ${ok} registros importados a Supabase.` : `Importados ${ok}, fallaron ${fail}.`, fail > 0 ? "error" : "success")
+      if (fail > 0) {
+        showFeedback(`Importados ${ok}, fallaron ${fail}.`, "error")
+      } else if (pending > 0) {
+        showFeedback(`✓ ${ok} registros importados. ${pending} quedaron pendientes de sincronización.`)
+      } else {
+        showFeedback(`✓ ${ok} registros importados.`)
+      }
     } catch (err) { showFeedback(`Error: ${err.message}`, "error") }
     setTareoImporting(false)
     e.target.value = ""
@@ -359,7 +366,7 @@ export default function Config({
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="label" style={{ marginBottom: 4 }}>IMPORTAR TAREO DESDE EXCEL</div>
         <p style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
-          Descarga la plantilla, complétala con los tareos de la semana y súbela para importarlos directamente a Supabase.
+          Descarga la plantilla, complétala con los tareos de la semana y súbela para importarlos en el sistema, incluso si luego quedan pendientes de sincronización.
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
           <button

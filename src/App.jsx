@@ -10,7 +10,15 @@ import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
 import Help from "./components/Help"
 import Dashboard from "./components/Dashboard"
-import { fetchAppSettings, fetchRegistros, saveAppSettings } from "./utils/supabaseClient"
+import {
+  fetchAppSettings,
+  fetchRegistros,
+  getDataEventName,
+  getPendingSyncCount,
+  getSyncEventName,
+  saveAppSettings,
+  syncPendingRegistros,
+} from "./utils/supabaseClient"
 import { getTodayLocalDate, getWeekRange } from "./utils/dateUtils"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import Login from "./components/Login"
@@ -88,6 +96,8 @@ function AppContent() {
   const [projectConfig, setProjectConfig] = useState(() => loadProjectConfigFromStorage())
   const [registros, setRegistros] = useState([])
   const [fechaTareo, setFechaTareo] = useState(() => getTodayLocalDate())
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false))
+  const [syncState, setSyncState] = useState({ pendingCount: 0, syncing: false })
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.workers, JSON.stringify(workers))
@@ -97,6 +107,57 @@ function AppContent() {
     localStorage.setItem(STORAGE_KEYS.tiposHora, JSON.stringify(tiposHora))
     localStorage.setItem(STORAGE_KEYS.projectConfig, JSON.stringify(projectConfig))
   }, [workers, partidas, actividades, frentes, tiposHora, projectConfig])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function refreshPendingCount() {
+      try {
+        const pendingCount = await getPendingSyncCount()
+        if (mounted) {
+          setSyncState((prev) => ({ ...prev, pendingCount }))
+        }
+      } catch {
+        if (mounted) {
+          setSyncState((prev) => ({ ...prev, pendingCount: 0 }))
+        }
+      }
+    }
+
+    function handleOnline() {
+      setIsOnline(true)
+    }
+
+    function handleOffline() {
+      setIsOnline(false)
+      setSyncState((prev) => ({ ...prev, syncing: false }))
+    }
+
+    function handleSyncEvent(event) {
+      const detail = event?.detail || {}
+      if (!mounted) return
+      setSyncState((prev) => ({
+        ...prev,
+        pendingCount: typeof detail.pendingCount === "number" ? detail.pendingCount : prev.pendingCount,
+        syncing: Boolean(detail.syncing),
+      }))
+      if (typeof detail.online === "boolean") {
+        setIsOnline(detail.online)
+      }
+    }
+
+    refreshPendingCount()
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+    window.addEventListener(getSyncEventName(), handleSyncEvent)
+
+    return () => {
+      mounted = false
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+      window.removeEventListener(getSyncEventName(), handleSyncEvent)
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -154,17 +215,60 @@ function AppContent() {
   }, [workers, partidas, actividades, frentes, tiposHora, projectConfig, user])
 
   useEffect(() => {
-    async function loadData() {
+    let active = true
+    let refreshTimer = null
+
+    async function loadData({ syncFirst = false } = {}) {
+      if (!user) return
+
+      if (syncFirst && isOnline) {
+        setSyncState((prev) => ({ ...prev, syncing: true }))
+        try {
+          const result = await syncPendingRegistros()
+          if (active) {
+            setSyncState((prev) => ({
+              ...prev,
+              syncing: false,
+              pendingCount: result.pending,
+            }))
+          }
+        } catch {
+          if (active) {
+            setSyncState((prev) => ({ ...prev, syncing: false }))
+          }
+        }
+      }
+
       const { dates } = getWeekRange(fechaTareo)
       const startStr = dates[0]
       const endStr = dates[dates.length - 1]
       const data = await fetchRegistros(startStr, endStr)
-      setRegistros(data)
+      if (active) {
+        setRegistros(data)
+        const pendingCount = await getPendingSyncCount()
+        if (active) {
+          setSyncState((prev) => ({ ...prev, pendingCount }))
+        }
+      }
     }
-    if (user) {
-      loadData()
+
+    loadData({ syncFirst: isOnline })
+
+    function handleDataChanged() {
+      clearTimeout(refreshTimer)
+      refreshTimer = setTimeout(() => {
+        loadData({ syncFirst: false })
+      }, 120)
     }
-  }, [fechaTareo, user])
+
+    window.addEventListener(getDataEventName(), handleDataChanged)
+
+    return () => {
+      active = false
+      clearTimeout(refreshTimer)
+      window.removeEventListener(getDataEventName(), handleDataChanged)
+    }
+  }, [fechaTareo, user, isOnline])
 
   if (!user) {
     return <Login />
@@ -222,7 +326,38 @@ function AppContent() {
             </h1>
             <span className="subtitle">CONTROL DE PROYECTO</span>
           </div>
-          <div className="date-display mono">
+          <div className="date-display mono" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <span
+              style={{
+                padding: "6px 10px",
+                borderRadius: "999px",
+                border: "1px solid var(--border-dim)",
+                background: !isOnline
+                  ? "rgba(239, 68, 68, 0.14)"
+                  : syncState.syncing
+                    ? "rgba(212, 165, 90, 0.15)"
+                    : syncState.pendingCount > 0
+                      ? "rgba(37, 99, 235, 0.14)"
+                      : "rgba(34, 197, 94, 0.14)",
+                color: !isOnline
+                  ? "#fca5a5"
+                  : syncState.syncing
+                    ? "var(--accent-gold)"
+                    : syncState.pendingCount > 0
+                      ? "var(--accent-blue)"
+                      : "#86efac",
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              {!isOnline
+                ? "Sin conexión"
+                : syncState.syncing
+                  ? "Sincronizando..."
+                  : syncState.pendingCount > 0
+                    ? `${syncState.pendingCount} pendientes`
+                    : "En línea"}
+            </span>
             <input 
               aria-label="Fecha de tareo"
               type="date" 

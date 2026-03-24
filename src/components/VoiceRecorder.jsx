@@ -60,18 +60,21 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     
     try {
       if (editingRegistroId) {
-        await updateRegistro(newReg, { source: "voice_edit" })
+        const result = await updateRegistro(newReg, { source: "voice_edit" })
+        if (result?.id) newReg.id = result.id
+        if (result?.syncStatus) newReg.syncStatus = result.syncStatus
         setRegistros(prev => [...prev, newReg])
       } else {
-        const dbId = await insertRegistro(newReg)
-        if (dbId) newReg.id = dbId
+        const result = await insertRegistro(newReg)
+        if (result?.id) newReg.id = result.id
+        if (result?.syncStatus) newReg.syncStatus = result.syncStatus
         setRegistros(prev => [...prev, newReg])
       }
 
       setSessionAssignments([])
       setEditingRegistroId(null)
     } catch (e) {
-      setFeedbackMessage({ type: "error", message: "Error guardando en la Nube", timeout: 5000 })
+      setFeedbackMessage({ type: "error", message: "No se pudo guardar el registro.", timeout: 5000 })
     }
   }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo, editingRegistroId])
 
@@ -255,7 +258,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
             .catch(() => {
               setFeedbackMessage({
                 type: "error",
-                message: "No se pudo eliminar en la nube.",
+                message: "No se pudo eliminar el registro.",
                 timeout: 4000
               })
             })
@@ -537,6 +540,14 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startListening = useCallback(() => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setFeedbackMessage({
+        type: "error",
+        message: "No hay conexión de red. El sistema de voz solo funciona con internet.",
+        timeout: 5000
+      })
+      return
+    }
     if (!recognitionRef.current) return
     shouldRestartRef.current = true
     setTranscript("")
@@ -627,7 +638,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       const { dates } = getWeekRange(fechaTareo)
       const fresh = await fetchRegistros(dates[0], dates[dates.length - 1])
       setRegistros(fresh)
-      setFeedbackMessage({ type: "error", message: e.message || "No se pudo eliminar en la nube.", timeout: 5000 })
+      setFeedbackMessage({ type: "error", message: e.message || "No se pudo eliminar el registro.", timeout: 5000 })
     }
   }
 
@@ -659,7 +670,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     if (failed === 0) {
       setFeedbackMessage({ type: "success", message: `Se eliminaron ${success} registros.`, timeout: 3500 })
     } else {
-      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}. Verifica permisos Supabase.`, timeout: 5000 })
+      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}.`, timeout: 5000 })
     }
   }
 

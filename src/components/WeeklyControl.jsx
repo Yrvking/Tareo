@@ -64,8 +64,9 @@ export default function WeeklyControl({
     }
 
     try {
-      const dbId = await insertRegistro(newReg)
-      if (dbId) newReg.id = dbId
+      const result = await insertRegistro(newReg)
+      if (result?.id) newReg.id = result.id
+      if (result?.syncStatus) newReg.syncStatus = result.syncStatus
       setRegistros(prev => [...prev, newReg])
       
       setSelectedDay(null)
@@ -73,7 +74,7 @@ export default function WeeklyControl({
       setNewHn(0)
       setNewHe(0)
     } catch (err) {
-      alert("Error guardando registro")
+      alert("No se pudo guardar el registro.")
     }
   }
 

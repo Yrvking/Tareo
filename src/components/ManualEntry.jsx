@@ -61,16 +61,22 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
     }
 
     try {
-      const dbId = await insertRegistro(newReg)
-      if (dbId) newReg.id = dbId
+      const result = await insertRegistro(newReg)
+      if (result?.id) newReg.id = result.id
+      if (result?.syncStatus) newReg.syncStatus = result.syncStatus
 
       setRegistros((prev) => [...prev, newReg])
       setManualEntries([{ actividad: null, horasNormales: "", horasExtras: "" }])
       setManualWorker(null)
       
-      showFeedback("success", `✓ Registro guardado para ${worker.nombre}`)
+      showFeedback(
+        "success",
+        result?.syncStatus === "synced"
+          ? `✓ Registro guardado para ${worker.nombre}`
+          : `✓ Registro guardado localmente para ${worker.nombre}. Se sincronizará cuando vuelva internet.`
+      )
     } catch (e) {
-      showFeedback("error", "Error al guardar en la nube (Verifique su conexión)")
+      showFeedback("error", "No se pudo guardar el registro.")
     }
   }
 

@@ -44,6 +44,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
     const currentActObj = actividades.find(a => a.id === selectedActivity.value)
 
     let successCount = 0
+    let pendingCount = 0
     for (const workerId of selectedWorkers) {
       const worker = workers.find(w => w.id === workerId)
       if (!worker) continue
@@ -66,10 +67,14 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
       }
 
       try {
-        const dbId = await insertRegistro(newReg)
-        if (dbId) newReg.id = dbId
+        const result = await insertRegistro(newReg)
+        if (result?.id) newReg.id = result.id
+        if (result?.syncStatus) newReg.syncStatus = result.syncStatus
         setRegistros(prev => [...prev, newReg])
         successCount++
+        if (result?.syncStatus && result.syncStatus !== "synced") {
+          pendingCount++
+        }
       } catch (e) {
         console.error("Error batch save", e)
       }
@@ -82,7 +87,12 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
       setRegistros(fresh)
     } catch { /* no bloquear feedback si el re-fetch falla */ }
 
-    showFeedback("success", `✓ Se registraron ${successCount} trabajadores`)
+    showFeedback(
+      "success",
+      pendingCount > 0
+        ? `✓ ${successCount} trabajadores registrados. ${pendingCount} quedaron pendientes de sincronización.`
+        : `✓ Se registraron ${successCount} trabajadores`
+    )
     setSelectedWorkers([])
     setSearchQuery("")
   }
