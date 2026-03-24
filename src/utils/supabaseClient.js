@@ -12,6 +12,7 @@ import {
   putRegistroLocal,
   putManyRegistrosLocal,
 } from "./offlineDb"
+import { normalizeAssignmentsByDailyCap } from "./tareoLogic"
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -73,6 +74,38 @@ function sortRegistros(registros = []) {
 
 function sanitizeAssignments(assignments = []) {
   return Array.isArray(assignments) ? assignments.map((assignment) => ({ ...assignment })) : []
+}
+
+async function getExistingDailyNormalHours(workerId, date, excludeRecordId = null) {
+  if (!workerId || !date) return 0
+
+  const localRecords = await getRegistrosLocalByRange(date, date)
+  return localRecords.reduce((sum, record) => {
+    if (record.deleted) return sum
+    if (excludeRecordId && String(record.id) === String(excludeRecordId)) return sum
+    if (String(record.workerId) !== String(workerId)) return sum
+    if (record.date !== date) return sum
+
+    const recordNormalHours = sanitizeAssignments(record.assignments).reduce(
+      (recordSum, assignment) => recordSum + (Number(assignment?.horasNormales) || 0),
+      0
+    )
+
+    return sum + recordNormalHours
+  }, 0)
+}
+
+async function applyDailyNormalCap(reg, excludeRecordId = null) {
+  const usedNormalHours = await getExistingDailyNormalHours(reg.workerId, reg.date, excludeRecordId)
+  const adjustment = normalizeAssignmentsByDailyCap(reg.assignments, reg.date, usedNormalHours)
+
+  return {
+    normalizedReg: {
+      ...reg,
+      assignments: adjustment.assignments,
+    },
+    adjustment,
+  }
 }
 
 function localRecordToRegistro(record) {
@@ -430,13 +463,14 @@ export async function insertRegistro(reg) {
   }
 
   const localId = typeof reg.id === "string" ? reg.id : createLocalId("local")
-  const normalizedReg = {
+  const baseReg = {
     ...reg,
     id: localId,
     workerId: String(reg.workerId),
     frenteId: reg.frenteId ? String(reg.frenteId) : null,
     assignments: sanitizeAssignments(reg.assignments),
   }
+  const { normalizedReg, adjustment } = await applyDailyNormalCap(baseReg)
 
   if (canReachSupabase()) {
     try {
@@ -449,13 +483,14 @@ export async function insertRegistro(reg) {
       await putRegistroLocal(syncedRecord)
       await clearQueuedRecord(syncedRecord.id)
       emitDataChanged({ reason: "insert_synced" })
-      return { id: syncedRecord.id, syncStatus: "synced" }
+      return { id: syncedRecord.id, syncStatus: "synced", record: localRecordToRegistro(syncedRecord), adjustment }
     } catch (error) {
       console.warn("Insert offline fallback:", error.message)
     }
   }
 
-  return storePendingCreate(normalizedReg)
+  const pendingResult = await storePendingCreate(normalizedReg)
+  return { ...pendingResult, record: localRecordToRegistro(makeLocalRecord(normalizedReg, { syncStatus: pendingResult.syncStatus })), adjustment }
 }
 
 export async function updateRegistro(reg, options = {}) {
@@ -477,12 +512,13 @@ export async function updateRegistro(reg, options = {}) {
     throw new Error("REGISTRO_NOT_FOUND_LOCAL")
   }
 
-  const normalizedReg = {
+  const baseReg = {
     ...reg,
     id: existingRecord.id,
     remoteId: existingRecord.remoteId,
     assignments: sanitizeAssignments(reg.assignments),
   }
+  const { normalizedReg, adjustment } = await applyDailyNormalCap(baseReg, existingRecord.id)
 
   if (canReachSupabase() && existingRecord.remoteId) {
     try {
@@ -501,13 +537,22 @@ export async function updateRegistro(reg, options = {}) {
       await putRegistroLocal(syncedRecord)
       await clearQueuedRecord(syncedRecord.id)
       emitDataChanged({ reason: "update_synced" })
-      return { id: syncedRecord.id, syncStatus: "synced" }
+      return { id: syncedRecord.id, syncStatus: "synced", record: localRecordToRegistro(syncedRecord), adjustment }
     } catch (error) {
       console.warn("Update offline fallback:", error.message)
     }
   }
 
-  return storePendingUpdate(normalizedReg, existingRecord)
+  const pendingResult = await storePendingUpdate(normalizedReg, existingRecord)
+  return {
+    ...pendingResult,
+    record: localRecordToRegistro(makeLocalRecord(normalizedReg, {
+      id: existingRecord.id,
+      remoteId: existingRecord.remoteId,
+      syncStatus: pendingResult.syncStatus,
+    })),
+    adjustment,
+  }
 }
 
 export async function deleteRegistroById(id, options = {}) {

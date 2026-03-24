@@ -1,8 +1,9 @@
 import { parseLocalDate } from "./dateUtils"
 
 /**
- * Lógica de Tareo para Construcción Civil Perú (Regímen 48h Semanales)
- * Distribución: Lun-Vie (8.5h) + Sáb (5.5h) = 48h
+ * Lógica de Tareo
+ * Regla operativa actual: máximo 8.5 horas normales por día.
+ * Todo exceso pasa automáticamente a horas extras.
  */
 
 export const getNormalHourCap = (dateString) => {
@@ -11,8 +12,39 @@ export const getNormalHourCap = (dateString) => {
   const day = date.getDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sáb
   
   if (day === 0) return 0; // Domingo
-  if (day === 6) return 5.5; // Sábado
-  return 8.5; // Lunes a Viernes
+  return 8.5; // Lunes a Sábado
+};
+
+const roundHours = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
+export const normalizeAssignmentsByDailyCap = (assignments = [], dateString, usedNormalHours = 0) => {
+  const cap = getNormalHourCap(dateString);
+  let remainingNormal = Math.max(0, roundHours(cap - usedNormalHours));
+  let movedToExtra = 0;
+
+  const normalizedAssignments = (Array.isArray(assignments) ? assignments : []).map((assignment) => {
+    const horasNormales = roundHours(assignment?.horasNormales);
+    const horasExtras = roundHours(assignment?.horasExtras);
+    const allowedNormal = Math.min(horasNormales, remainingNormal);
+    const overflowNormal = Math.max(0, roundHours(horasNormales - allowedNormal));
+
+    remainingNormal = roundHours(remainingNormal - allowedNormal);
+    movedToExtra = roundHours(movedToExtra + overflowNormal);
+
+    return {
+      ...assignment,
+      horasNormales: roundHours(allowedNormal),
+      horasExtras: roundHours(horasExtras + overflowNormal),
+    };
+  });
+
+  return {
+    assignments: normalizedAssignments,
+    cap,
+    usedNormalHours: roundHours(usedNormalHours),
+    movedToExtra,
+    adjusted: movedToExtra > 0,
+  };
 };
 
 /**

@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/android": "^8.2.0",
+    "@capacitor/android": "^7.6.0",
     "@capacitor/cli": "^7.6.0",
-    "@capacitor/core": "^8.2.0",
+    "@capacitor/core": "^7.6.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.99.3",
     "fuse.js": "^7.1.0",

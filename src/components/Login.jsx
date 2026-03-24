@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import projectLogo from "../../LOGO.png";
 import "./Login.css";
 
 export default function Login() {
@@ -31,15 +32,13 @@ export default function Login() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
+            <img
+              src={projectLogo}
+              alt="Grupo Padova Registro y Tareo de Personal"
+            />
           </div>
           <h2>Ingreso al Sistema</h2>
-          <p>Control de Horas Hombre - Tareador</p>
+          <p>Control de Horas Hombre - Tareador Padova</p>
         </div>
         
         {error && <div className="login-error">{error}</div>}

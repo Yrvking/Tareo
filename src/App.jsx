@@ -33,6 +33,7 @@ import {
   HelpIcon,
   BarChartIcon
 } from "./components/Icons"
+import projectLogo from "../LOGO.png"
 import "./App.css"
 
 const STORAGE_KEYS = {
@@ -79,7 +80,7 @@ const TABS = [
   { id: "manual",    label: "Manual",          mobileLabel: "Manual",   icon: PlusIcon },
   { id: "registro",  label: "Voz",             mobileLabel: "Voz",      icon: MicIcon },
   { id: "resumen",   label: "Planilla",        mobileLabel: "Planilla", icon: ChartIcon },
-  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon, hideInBottomNav: true },
+  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon },
   { id: "ayuda",     label: "Ayuda",           mobileLabel: "Ayuda",    icon: HelpIcon, hideInBottomNav: true },
   { id: "config",    label: "Config",          mobileLabel: "Config",   icon: SettingsIcon, adminOnly: true },
 ]
@@ -290,8 +291,15 @@ function AppContent() {
     <div className="app-root">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h1 className="title" style={{ fontSize: '24px' }}>TAREADOR</h1>
-          <span className="subtitle" style={{ fontSize: '12px' }}>S10 PROFESSIONAL</span>
+          <img
+            className="brand-logo"
+            src={projectLogo}
+            alt="Grupo Padova Registro y Tareo de Personal"
+          />
+          <div className="sidebar-brand-copy">
+            <h1 className="title sidebar-brand-title">TAREADOR</h1>
+            <span className="subtitle sidebar-brand-subtitle">CONTROL DE PROYECTO PADOVA</span>
+          </div>
         </div>
         
         <nav className="sidebar-nav">
@@ -320,11 +328,18 @@ function AppContent() {
 
       <div className="app-container">
         <header className="header" style={{ marginBottom: '24px' }}>
-          <div className="title-group">
-            <h1 className="title">
-              {visibleTabs.find(t => t.id === tab)?.label || "TAREADOR"}
-            </h1>
-            <span className="subtitle">CONTROL DE PROYECTO</span>
+          <div className="header-title-wrap">
+            <img
+              className="header-logo"
+              src={projectLogo}
+              alt="Grupo Padova Registro y Tareo de Personal"
+            />
+            <div className="title-group">
+              <h1 className="title">
+                {visibleTabs.find(t => t.id === tab)?.label || "TAREADOR"}
+              </h1>
+              <span className="subtitle">CONTROL DE PROYECTO</span>
+            </div>
           </div>
           <div className="date-display mono" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <span
@@ -474,7 +489,7 @@ function AppContent() {
           )}
 
           {/* Build Version Tag */}
-          <div style={{ pointerEvents: 'none', position: 'fixed', bottom: 4, right: 10, fontSize: '11px', color: 'var(--text-dim)', opacity: 0.65, zIndex: 3000 }}>
+          <div className="build-version-tag">
             v1.1.10-DYNAMIC
           </div>
         </main>

@@ -62,18 +62,19 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
 
     try {
       const result = await insertRegistro(newReg)
-      if (result?.id) newReg.id = result.id
-      if (result?.syncStatus) newReg.syncStatus = result.syncStatus
+      const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
+      if (result?.id) savedReg.id = result.id
+      if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
 
-      setRegistros((prev) => [...prev, newReg])
+      setRegistros((prev) => [...prev, savedReg])
       setManualEntries([{ actividad: null, horasNormales: "", horasExtras: "" }])
       setManualWorker(null)
       
       showFeedback(
         "success",
-        result?.syncStatus === "synced"
+        `${result?.syncStatus === "synced"
           ? `✓ Registro guardado para ${worker.nombre}`
-          : `✓ Registro guardado localmente para ${worker.nombre}. Se sincronizará cuando vuelva internet.`
+          : `✓ Registro guardado localmente para ${worker.nombre}. Se sincronizará cuando vuelva internet.`}${result?.adjustment?.adjusted ? ` Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar el tope diario de 8.5 HN.` : ""}`
       )
     } catch (e) {
       showFeedback("error", "No se pudo guardar el registro.")

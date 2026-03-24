@@ -12,6 +12,7 @@
   --border-dim: #334155;
   --red-accent: #ef4444;
   --green-accent: #22c55e;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Spacing scale */
   --space-xs: 4px;
@@ -75,6 +76,30 @@ body {
 .sidebar-brand {
   margin-bottom: 40px;
   padding: 0 12px;
+}
+
+.brand-logo {
+  width: 100%;
+  max-width: 228px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.18));
+}
+
+.sidebar-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-brand-title {
+  font-size: 24px;
+}
+
+.sidebar-brand-subtitle {
+  font-size: 11px;
 }
 
 .sidebar-nav {
@@ -314,6 +339,15 @@ main {
     padding: 28px 32px;
   }
 
+  .header-logo {
+    display: none;
+  }
+
+  .build-version-tag {
+    bottom: 10px;
+    right: 14px;
+  }
+
   .desktop-grid {
     display: grid;
     grid-template-columns: minmax(320px, 430px) 1fr;
@@ -365,7 +399,7 @@ main {
 @media (max-width: 1023px) {
   .app-container {
     max-width: 550px;
-    padding-bottom: 100px;
+    padding-bottom: calc(138px + var(--safe-bottom));
   }
   
   .desktop-grid {
@@ -373,6 +407,24 @@ main {
     flex-direction: column;
     gap: 20px;
   }
+}
+
+.header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 74px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(15, 23, 42, 0.45));
+  border: 1px solid rgba(37, 99, 235, 0.18);
 }
 
 .title-group {
@@ -420,15 +472,18 @@ main {
 /* Bottom Navigation (Professional S10) */
 .bottom-nav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(30, 41, 59, 0.98);
+  bottom: calc(4px + var(--safe-bottom));
+  left: 12px;
+  right: 12px;
+  background: rgba(30, 41, 59, 0.96);
   backdrop-filter: blur(12px);
-  border-top: 1px solid var(--border-dim);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
   display: flex;
-  justify-content: space-around;
-  padding: 12px 0 24px 0; /* Padding for mobile home indicators */
+  justify-content: space-between;
+  gap: 4px;
+  padding: 8px;
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
   z-index: 1000;
 }
 
@@ -436,26 +491,50 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--text-dim);
   font-size: 10px;
   font-weight: 600;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 1;
   min-width: 0;
-  padding: 0 2px;
+  min-height: 62px;
+  padding: 10px 4px 8px;
+  border-radius: 14px;
+}
+
+.nav-item span {
+  font-size: 11px;
+  line-height: 1.05;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-item.active {
   color: var(--accent-blue);
+  background: rgba(37, 99, 235, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
 }
 
 .nav-item.active svg {
-  transform: translateY(-2px);
   color: var(--accent-blue);
+}
+
+.build-version-tag {
+  pointer-events: none;
+  position: fixed;
+  bottom: calc(90px + var(--safe-bottom));
+  right: 14px;
+  font-size: 11px;
+  color: var(--text-dim);
+  opacity: 0.65;
+  z-index: 3000;
 }
 
 /* Worker Selection List */
@@ -649,9 +728,31 @@ main {
 
 /* Media Queries */
 @media (max-width: 480px) {
-  .app-container { padding: 12px; }
+  .app-container {
+    padding: 12px;
+    padding-bottom: calc(132px + var(--safe-bottom));
+  }
   .card { padding: 16px; }
+  .bottom-nav {
+    left: 8px;
+    right: 8px;
+    bottom: calc(3px + var(--safe-bottom));
+    padding: 7px 6px;
+  }
+  .nav-item {
+    min-height: 58px;
+    padding: 8px 2px 7px;
+  }
   .nav-item span { font-size: 11px; }
+  .build-version-tag {
+    right: 10px;
+    bottom: calc(84px + var(--safe-bottom));
+    font-size: 10px;
+  }
+  .header-logo {
+    width: 62px;
+    padding: 6px 8px;
+  }
 }
 
 /* ── Dashboard ── */

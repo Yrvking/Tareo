@@ -61,14 +61,30 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     try {
       if (editingRegistroId) {
         const result = await updateRegistro(newReg, { source: "voice_edit" })
-        if (result?.id) newReg.id = result.id
-        if (result?.syncStatus) newReg.syncStatus = result.syncStatus
-        setRegistros(prev => [...prev, newReg])
+        const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
+        if (result?.id) savedReg.id = result.id
+        if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
+        setRegistros(prev => [...prev, savedReg])
+        if (result?.adjustment?.adjusted) {
+          setFeedbackMessage({
+            type: "info",
+            message: `Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar 8.5 HN en el día.`,
+            timeout: 5000
+          })
+        }
       } else {
         const result = await insertRegistro(newReg)
-        if (result?.id) newReg.id = result.id
-        if (result?.syncStatus) newReg.syncStatus = result.syncStatus
-        setRegistros(prev => [...prev, newReg])
+        const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
+        if (result?.id) savedReg.id = result.id
+        if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
+        setRegistros(prev => [...prev, savedReg])
+        if (result?.adjustment?.adjusted) {
+          setFeedbackMessage({
+            type: "info",
+            message: `Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar 8.5 HN en el día.`,
+            timeout: 5000
+          })
+        }
       }
 
       setSessionAssignments([])
@@ -503,6 +519,14 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         return
       }
       if (e.error === "aborted") return
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setFeedbackMessage({
+          type: "error",
+          message: "El micrófono fue bloqueado. Permite el audio para esta app en Android.",
+          timeout: 5000
+        })
+        return
+      }
       setFeedbackMessage({ type: "error", message: `Error: ${e.error}` })
     }
 
@@ -539,7 +563,14 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startListening = useCallback(() => {
+  const requestMicrophoneAccess = useCallback(async () => {
+    if (!navigator?.mediaDevices?.getUserMedia) return true
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    stream.getTracks().forEach((track) => track.stop())
+    return true
+  }, [])
+
+  const startListening = useCallback(async () => {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       setFeedbackMessage({
         type: "error",
@@ -549,6 +580,16 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       return
     }
     if (!recognitionRef.current) return
+    try {
+      await requestMicrophoneAccess()
+    } catch (error) {
+      setFeedbackMessage({
+        type: "error",
+        message: "No se concedió acceso al micrófono. Habilítalo en los permisos de la app.",
+        timeout: 5000
+      })
+      return
+    }
     shouldRestartRef.current = true
     setTranscript("")
     setFeedbackMessage(null)
@@ -563,9 +604,13 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       recognitionRef.current.start()
       setIsListening(true)
     } catch (err) {
-      // May already be started
+      setFeedbackMessage({
+        type: "error",
+        message: "No se pudo iniciar el micrófono. Revisa los permisos de audio de la app.",
+        timeout: 5000
+      })
     }
-  }, [])
+  }, [requestMicrophoneAccess])
 
   const stopListening = useCallback(() => {
     shouldRestartRef.current = false

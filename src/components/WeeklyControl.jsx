@@ -65,14 +65,19 @@ export default function WeeklyControl({
 
     try {
       const result = await insertRegistro(newReg)
-      if (result?.id) newReg.id = result.id
-      if (result?.syncStatus) newReg.syncStatus = result.syncStatus
-      setRegistros(prev => [...prev, newReg])
+      const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
+      if (result?.id) savedReg.id = result.id
+      if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
+      setRegistros(prev => [...prev, savedReg])
       
       setSelectedDay(null)
       setNewActivity(null)
       setNewHn(0)
       setNewHe(0)
+
+      if (result?.adjustment?.adjusted) {
+        alert(`Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar el tope diario de 8.5 HN.`)
+      }
     } catch (err) {
       alert("No se pudo guardar el registro.")
     }
