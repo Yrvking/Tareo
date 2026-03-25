@@ -2,50 +2,73 @@ import { parseLocalDate } from "./dateUtils"
 
 /**
  * Lógica de Tareo
- * Regla operativa actual: máximo 8.5 horas normales por día.
- * Todo exceso pasa automáticamente a horas extras.
+ * Reglas operativas actuales:
+ * - Máximo 8.5 horas normales por día.
+ * - Máximo 2.5 horas extras por día.
+ * - No existe conversión automática entre HN y HE.
  */
 
+export const NORMAL_HOUR_CAP = 8.5
+export const EXTRA_HOUR_CAP = 2.5
+
 export const getNormalHourCap = (dateString) => {
-  if (!dateString) return 8.5;
+  if (!dateString) return NORMAL_HOUR_CAP;
   const date = parseLocalDate(dateString);
   const day = date.getDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sáb
   
   if (day === 0) return 0; // Domingo
-  return 8.5; // Lunes a Sábado
+  return NORMAL_HOUR_CAP; // Lunes a Sábado
 };
+
+export const getExtraHourCap = () => EXTRA_HOUR_CAP
 
 const roundHours = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
-export const normalizeAssignmentsByDailyCap = (assignments = [], dateString, usedNormalHours = 0) => {
-  const cap = getNormalHourCap(dateString);
-  let remainingNormal = Math.max(0, roundHours(cap - usedNormalHours));
-  let movedToExtra = 0;
+export const summarizeAssignmentHours = (assignments = []) => {
+  const list = Array.isArray(assignments) ? assignments : []
+  return list.reduce(
+    (sum, assignment) => ({
+      hn: roundHours(sum.hn + roundHours(assignment?.horasNormales)),
+      he: roundHours(sum.he + roundHours(assignment?.horasExtras)),
+    }),
+    { hn: 0, he: 0 }
+  )
+}
 
-  const normalizedAssignments = (Array.isArray(assignments) ? assignments : []).map((assignment) => {
-    const horasNormales = roundHours(assignment?.horasNormales);
-    const horasExtras = roundHours(assignment?.horasExtras);
-    const allowedNormal = Math.min(horasNormales, remainingNormal);
-    const overflowNormal = Math.max(0, roundHours(horasNormales - allowedNormal));
+export const validateAssignmentsByDailyLimits = ({
+  assignments = [],
+  dateString,
+  usedNormalHours = 0,
+  usedExtraHours = 0,
+}) => {
+  const normalCap = getNormalHourCap(dateString)
+  const extraCap = getExtraHourCap(dateString)
+  const submitted = summarizeAssignmentHours(assignments)
+  const totalNormal = roundHours(roundHours(usedNormalHours) + submitted.hn)
+  const totalExtra = roundHours(roundHours(usedExtraHours) + submitted.he)
+  const errors = []
 
-    remainingNormal = roundHours(remainingNormal - allowedNormal);
-    movedToExtra = roundHours(movedToExtra + overflowNormal);
+  if (totalNormal > normalCap) {
+    errors.push(`Las Horas Normales del día suman ${totalNormal}h y el tope es ${normalCap}h.`)
+  }
 
-    return {
-      ...assignment,
-      horasNormales: roundHours(allowedNormal),
-      horasExtras: roundHours(horasExtras + overflowNormal),
-    };
-  });
+  if (totalExtra > extraCap) {
+    errors.push(`Las Horas Extras del día suman ${totalExtra}h y el tope es ${extraCap}h.`)
+  }
 
   return {
-    assignments: normalizedAssignments,
-    cap,
+    valid: errors.length === 0,
+    normalCap,
+    extraCap,
     usedNormalHours: roundHours(usedNormalHours),
-    movedToExtra,
-    adjusted: movedToExtra > 0,
-  };
-};
+    usedExtraHours: roundHours(usedExtraHours),
+    submittedNormalHours: submitted.hn,
+    submittedExtraHours: submitted.he,
+    totalNormal,
+    totalExtra,
+    errors,
+  }
+}
 
 /**
  * Divide las horas totales en Normales y Extras basándose en la fecha

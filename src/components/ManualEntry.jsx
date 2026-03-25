@@ -2,11 +2,12 @@ import { useState } from "react"
 import Select from "react-select"
 import { PlusIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
-import { getNormalHourCap } from "../utils/tareoLogic"
+import { getNormalHourCap, getExtraHourCap } from "../utils/tareoLogic"
 import { selectStyles } from "../utils/selectTheme"
 
 export default function ManualEntry({ workers, partidas, actividades, frentes, setRegistros, fechaTareo }) {
   const cap = getNormalHourCap(fechaTareo)
+  const extraCap = getExtraHourCap(fechaTareo)
   const [manualWorker, setManualWorker] = useState(null)
   const [manualFrente, setManualFrente] = useState(null)
   const [manualEntries, setManualEntries] = useState([{ actividad: null, horasNormales: cap, horasExtras: "" }])
@@ -74,10 +75,10 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
         "success",
         `${result?.syncStatus === "synced"
           ? `✓ Registro guardado para ${worker.nombre}`
-          : `✓ Registro guardado localmente para ${worker.nombre}. Se sincronizará cuando vuelva internet.`}${result?.adjustment?.adjusted ? ` Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar el tope diario de 8.5 HN.` : ""}`
+          : `✓ Registro guardado localmente para ${worker.nombre}. Se sincronizará cuando vuelva internet.`}`
       )
     } catch (e) {
-      showFeedback("error", "No se pudo guardar el registro.")
+      showFeedback("error", e.message || "No se pudo guardar el registro.")
     }
   }
 
@@ -134,12 +135,12 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
             />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
-            <label className="field-label-sm">Horas Norm.</label>
+            <label className="field-label-sm">Horas Norm. (max {cap})</label>
             <input
               type="number"
               step="0.5"
               min="0"
-              max="24"
+              max={cap}
               value={entry.horasNormales}
               onChange={(e) => {
                 const updated = [...manualEntries]
@@ -151,12 +152,12 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
             />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
-            <label className="field-label-sm" style={{ color: "#e88" }}>Horas Ext.</label>
+            <label className="field-label-sm" style={{ color: "#e88" }}>Horas Ext. (max {extraCap})</label>
             <input
               type="number"
               step="0.5"
               min="0"
-              max="24"
+              max={extraCap}
               value={entry.horasExtras}
               onChange={(e) => {
                 const updated = [...manualEntries]

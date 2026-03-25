@@ -3,12 +3,13 @@ import Select from "react-select"
 import { SearchIcon, CheckIcon, PlusIcon, UserGroupIcon, TrashIcon } from "./Icons"
 import { insertRegistro, fetchRegistros } from "../utils/supabaseClient"
 import { getWeekRange } from "../utils/dateUtils"
-import { getNormalHourCap } from "../utils/tareoLogic"
+import { getNormalHourCap, getExtraHourCap } from "../utils/tareoLogic"
 import { selectStyles } from "../utils/selectTheme"
 import { getWorkerCategoryLabel } from "../utils/workerCategory"
 
 export default function MobileEntry({ workers, frentes, actividades, setRegistros, fechaTareo }) {
   const cap = getNormalHourCap(fechaTareo)
+  const extraCap = getExtraHourCap(fechaTareo)
   const [selectedWorkers, setSelectedWorkers] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedActivity, setSelectedActivity] = useState(null)
@@ -46,8 +47,8 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
 
     let successCount = 0
     let pendingCount = 0
-    let adjustedCount = 0
-    let adjustedHours = 0
+    let failedCount = 0
+    let lastError = ""
     for (const workerId of selectedWorkers) {
       const worker = workers.find(w => w.id === workerId)
       if (!worker) continue
@@ -79,12 +80,9 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
         if (result?.syncStatus && result.syncStatus !== "synced") {
           pendingCount++
         }
-        if (result?.adjustment?.adjusted) {
-          adjustedCount++
-          adjustedHours += result.adjustment.movedToExtra || 0
-        }
       } catch (e) {
-        console.error("Error batch save", e)
+        failedCount++
+        lastError = e?.message || "No se pudo guardar el registro."
       }
     }
 
@@ -96,10 +94,10 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
     } catch { /* no bloquear feedback si el re-fetch falla */ }
 
     showFeedback(
-      "success",
+      failedCount > 0 ? "error" : "success",
       `${pendingCount > 0
         ? `✓ ${successCount} trabajadores registrados. ${pendingCount} quedaron pendientes de sincronización.`
-        : `✓ Se registraron ${successCount} trabajadores`}${adjustedCount > 0 ? ` ${adjustedCount} registros ajustaron ${adjustedHours}h a Horas Extras por superar 8.5 HN diarias.` : ""}`
+        : `✓ Se registraron ${successCount} trabajadores`}${failedCount > 0 ? ` Fallaron ${failedCount}. ${lastError}` : ""}`
     )
     setSelectedWorkers([])
     setSearchQuery("")
@@ -147,11 +145,14 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label className="field-label-sm" htmlFor="mobile-hn">Horas Normales (HN)</label>
+                <label className="field-label-sm" htmlFor="mobile-hn">Horas Normales (HN, max {cap})</label>
                 <input 
                   id="mobile-hn"
                   aria-label="Horas normales"
                   type="number" 
+                  step="0.5"
+                  min="0"
+                  max={cap}
                   value={hn} 
                   onChange={e => setHn(e.target.value)}
                   className="input-field mono"
@@ -159,11 +160,14 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label className="field-label-sm" htmlFor="mobile-he" style={{ color: '#ef4444' }}>Horas Extras (HE)</label>
+                <label className="field-label-sm" htmlFor="mobile-he" style={{ color: '#ef4444' }}>Horas Extras (HE, max {extraCap})</label>
                 <input 
                   id="mobile-he"
                   aria-label="Horas extras"
                   type="number" 
+                  step="0.5"
+                  min="0"
+                  max={extraCap}
                   value={he} 
                   onChange={e => setHe(e.target.value)}
                   className="input-field mono"

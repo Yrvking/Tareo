@@ -5,11 +5,14 @@ import { insertRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
 import { getWeekRange } from "../utils/dateUtils"
 import { getWorkerCategoryLabel } from "../utils/workerCategory"
+import { getNormalHourCap, getExtraHourCap } from "../utils/tareoLogic"
 
 export default function WeeklyControl({ 
   workers, partidas, actividades, frentes, 
   registros, setRegistros, fechaTareo 
 }) {
+  const normalCap = getNormalHourCap(fechaTareo)
+  const extraCap = getExtraHourCap(fechaTareo)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDay, setSelectedDay] = useState(null) // { workerId, date }
   const [newActivity, setNewActivity] = useState(null)
@@ -75,12 +78,8 @@ export default function WeeklyControl({
       setNewActivity(null)
       setNewHn(0)
       setNewHe(0)
-
-      if (result?.adjustment?.adjusted) {
-        alert(`Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar el tope diario de 8.5 HN.`)
-      }
     } catch (err) {
-      alert("No se pudo guardar el registro.")
+      alert(err.message || "No se pudo guardar el registro.")
     }
   }
 
@@ -220,12 +219,12 @@ export default function WeeklyControl({
 
                 <div className="weekly-hour-grid">
                   <div className="weekly-hour-field">
-                    <label className="field-label-sm">Horas Normales</label>
-                    <input type="number" className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+                    <label className="field-label-sm">Horas Normales (max {normalCap})</label>
+                    <input type="number" step="0.5" min="0" max={normalCap} className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
                   </div>
                   <div className="weekly-hour-field">
-                    <label className="field-label-sm">Horas Extras</label>
-                    <input type="number" className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }} />
+                    <label className="field-label-sm">Horas Extras (max {extraCap})</label>
+                    <input type="number" step="0.5" min="0" max={extraCap} className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }} />
                   </div>
                 </div>
 

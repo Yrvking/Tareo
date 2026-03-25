@@ -226,16 +226,20 @@ export default function Config({
       const regs = parseTareoFromXLSX(buffer, workers, actividades)
       if (regs.length === 0) { showFeedback("No se encontraron registros válidos", "error"); setTareoImporting(false); return }
       let ok = 0, fail = 0, pending = 0
+      let lastError = ""
       for (const reg of regs) {
         try {
           const result = await insertRegistro(reg)
           if (result?.id) reg.id = result.id
           if (result?.syncStatus && result.syncStatus !== "synced") pending++
           ok++
-        } catch { fail++ }
+        } catch (error) {
+          fail++
+          lastError = error?.message || "No se pudo guardar uno de los registros."
+        }
       }
       if (fail > 0) {
-        showFeedback(`Importados ${ok}, fallaron ${fail}.`, "error")
+        showFeedback(`Importados ${ok}, fallaron ${fail}. ${lastError}`, "error")
       } else if (pending > 0) {
         showFeedback(`✓ ${ok} registros importados. ${pending} quedaron pendientes de sincronización.`)
       } else {

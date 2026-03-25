@@ -80,32 +80,18 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         if (result?.id) savedReg.id = result.id
         if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
         setRegistros(prev => [...prev, savedReg])
-        if (result?.adjustment?.adjusted) {
-          setFeedbackMessage({
-            type: "info",
-            message: `Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar 8.5 HN en el día.`,
-            timeout: 5000
-          })
-        }
       } else {
         const result = await insertRegistro(newReg)
         const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
         if (result?.id) savedReg.id = result.id
         if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
         setRegistros(prev => [...prev, savedReg])
-        if (result?.adjustment?.adjusted) {
-          setFeedbackMessage({
-            type: "info",
-            message: `Se movieron ${result.adjustment.movedToExtra}h a Horas Extras por superar 8.5 HN en el día.`,
-            timeout: 5000
-          })
-        }
       }
 
       setSessionAssignments([])
       setEditingRegistroId(null)
     } catch (e) {
-      setFeedbackMessage({ type: "error", message: "No se pudo guardar el registro.", timeout: 5000 })
+      setFeedbackMessage({ type: "error", message: e.message || "No se pudo guardar el registro.", timeout: 5000 })
     }
   }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo, editingRegistroId])
 
@@ -438,16 +424,8 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       }
 
       if (result.assignments.length > 0) {
-        const pastNormal = registros
-          .filter(r => String(r.workerId) === String(result.worker.id))
-          .reduce((sum, r) => sum + r.assignments.reduce((s, a) => s + (a.horasNormales || 0), 0), 0)
-
         setSessionAssignments(prev => {
           let newAssignments = [...prev]
-          const currentNormal = prev.reduce((sum, a) => sum + (a.horasNormales || 0), 0)
-          let previousHoursToday = pastNormal + currentNormal
-          
-          let overflowHappened = false
 
           for (const a of result.assignments) {
             let addNormal = a.horasNormales || 0
@@ -483,19 +461,11 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
             // The user wants to see their session context. 
             const assignText = newAssignments.map(formatAssign).join(", ")
             
-            if (overflowHappened) {
-              setFeedbackMessage({
-                type: "info",
-                message: `Límite 8.5h superado. Exceso convertido a Horas Extras: [${assignText}]`,
-                timeout: 6000
-              })
-            } else {
-              setFeedbackMessage({
-                type: "success",
-                message: `✓ ${assignText}`,
-                timeout: 4000
-              })
-            }
+            setFeedbackMessage({
+              type: "success",
+              message: `✓ ${assignText}`,
+              timeout: 4000
+            })
           }, 0)
 
           return newAssignments

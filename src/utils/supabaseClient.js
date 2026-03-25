@@ -12,7 +12,7 @@ import {
   putRegistroLocal,
   putManyRegistrosLocal,
 } from "./offlineDb"
-import { normalizeAssignmentsByDailyCap } from "./tareoLogic"
+import { validateAssignmentsByDailyLimits } from "./tareoLogic"
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -76,8 +76,8 @@ function sanitizeAssignments(assignments = []) {
   return Array.isArray(assignments) ? assignments.map((assignment) => ({ ...assignment })) : []
 }
 
-async function getExistingDailyNormalHours(workerId, date, excludeRecordId = null) {
-  if (!workerId || !date) return 0
+async function getExistingDailyHourTotals(workerId, date, excludeRecordId = null) {
+  if (!workerId || !date) return { hn: 0, he: 0 }
 
   const localRecords = await getRegistrosLocalByRange(date, date)
   return localRecords.reduce((sum, record) => {
@@ -86,25 +86,49 @@ async function getExistingDailyNormalHours(workerId, date, excludeRecordId = nul
     if (String(record.workerId) !== String(workerId)) return sum
     if (record.date !== date) return sum
 
-    const recordNormalHours = sanitizeAssignments(record.assignments).reduce(
-      (recordSum, assignment) => recordSum + (Number(assignment?.horasNormales) || 0),
-      0
+    const totals = sanitizeAssignments(record.assignments).reduce(
+      (recordSum, assignment) => ({
+        hn: recordSum.hn + (Number(assignment?.horasNormales) || 0),
+        he: recordSum.he + (Number(assignment?.horasExtras) || 0),
+      }),
+      { hn: 0, he: 0 }
     )
 
-    return sum + recordNormalHours
-  }, 0)
+    return {
+      hn: sum.hn + totals.hn,
+      he: sum.he + totals.he,
+    }
+  }, { hn: 0, he: 0 })
 }
 
 async function applyDailyNormalCap(reg, excludeRecordId = null) {
-  const usedNormalHours = await getExistingDailyNormalHours(reg.workerId, reg.date, excludeRecordId)
-  const adjustment = normalizeAssignmentsByDailyCap(reg.assignments, reg.date, usedNormalHours)
+  const usedTotals = await getExistingDailyHourTotals(reg.workerId, reg.date, excludeRecordId)
+  const validation = validateAssignmentsByDailyLimits({
+    assignments: reg.assignments,
+    dateString: reg.date,
+    usedNormalHours: usedTotals.hn,
+    usedExtraHours: usedTotals.he,
+  })
+
+  if (!validation.valid) {
+    const error = new Error(
+      `${validation.errors.join(" ")} Ingresa las Horas Extras manualmente y recuerda que su tope es ${validation.extraCap}h por día.`
+    )
+    error.code = "DAILY_HOUR_LIMIT_EXCEEDED"
+    error.validation = validation
+    throw error
+  }
 
   return {
     normalizedReg: {
       ...reg,
-      assignments: adjustment.assignments,
+      assignments: sanitizeAssignments(reg.assignments),
     },
-    adjustment,
+    adjustment: {
+      adjusted: false,
+      movedToExtra: 0,
+      validation,
+    },
   }
 }
 
