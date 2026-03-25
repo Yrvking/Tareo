@@ -5,6 +5,7 @@ import { insertRegistro, fetchRegistros } from "../utils/supabaseClient"
 import { getWeekRange } from "../utils/dateUtils"
 import { getNormalHourCap } from "../utils/tareoLogic"
 import { selectStyles } from "../utils/selectTheme"
+import { getWorkerCategoryLabel } from "../utils/workerCategory"
 
 export default function MobileEntry({ workers, frentes, actividades, setRegistros, fechaTareo }) {
   const cap = getNormalHourCap(fechaTareo)
@@ -24,7 +25,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
   const filteredWorkers = useMemo(() => {
     return workers.filter(w => 
       w.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      w.categoria?.toLowerCase().includes(searchQuery.toLowerCase())
+      getWorkerCategoryLabel(w, { includeCode: true, fallback: "" }).toLowerCase().includes(searchQuery.toLowerCase())
     )
   }, [workers, searchQuery])
 
@@ -231,7 +232,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 </div>
                 <div className="worker-info">
                   <div className="worker-name">{w.nombre}</div>
-                  <div className="worker-cat">{w.categoria || "CARGO NO DEF."} • <span className="mono" style={{ color: 'var(--accent-gold)' }}>{w.id}</span></div>
+                  <div className="worker-cat">{getWorkerCategoryLabel(w, { fallback: "CARGO NO DEF." })} • <span className="mono" style={{ color: 'var(--accent-gold)' }}>{w.id}</span></div>
                 </div>
               </div>
             ))}

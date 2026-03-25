@@ -3,6 +3,7 @@ import { DownloadIcon, FileIcon } from "./Icons"
 import { getAccountingExportIssues } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
 import { getWeekRange } from "../utils/dateUtils"
+import { getWorkerCategoryLabel } from "../utils/workerCategory"
 
 function formatDateLabel(dateString) {
   const date = new Date(`${dateString}T12:00:00`)
@@ -64,7 +65,7 @@ export default function Summary({
         const worker = workerMap.get(String(reg.workerId))
         summary[reg.workerId] = {
           nombre: reg.workerNombre,
-          categoria: worker?.categoria || "PEÓN",
+          categoria: getWorkerCategoryLabel(worker, { fallback: "PEÓN" }),
           days: {},
         }
       }

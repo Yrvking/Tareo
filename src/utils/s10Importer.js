@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { normalizeWorkerRecord } from "./workerCategory"
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -81,6 +82,25 @@ function getRowValue(row, columnMap, key) {
   return String(row[index] ?? "").trim()
 }
 
+function pickFirstFilled(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue
+    if (String(value).trim()) return String(value).trim()
+  }
+  return ""
+}
+
+function buildCategoria(categoriaCode, categoria, abrevCategoria) {
+  const code = String(categoriaCode || "").trim()
+  const name = String(categoria || "").trim()
+  const abrev = String(abrevCategoria || "").trim()
+
+  if (code && name) return `${code} ${name}`.trim()
+  if (name) return name
+  if (code) return code
+  return abrev
+}
+
 function isLikelyHeaderValue(value) {
   const normalized = normalizeCompact(value)
   return [
@@ -147,20 +167,24 @@ export function parsePersonalXLSX(fileBuffer) {
       const codigo = getRowValue(row, columnMap, "codigo")
       const nombre = getRowValue(row, columnMap, "nombre")
       const costoHora = parseFloat(getRowValue(row, columnMap, "costoHora") || "0") || 0
+      const categoriaCode = getRowValue(row, columnMap, "categoriaCode")
+      const categoria = getRowValue(row, columnMap, "categoria")
+      const abrevCategoria = getRowValue(row, columnMap, "abrevCategoria")
 
-      return {
+      return normalizeWorkerRecord({
         id: codigo,
         codigo,
         nombre,
-        categoriaCode: getRowValue(row, columnMap, "categoriaCode"),
-        categoria: getRowValue(row, columnMap, "categoria"),
-        abrevCategoria: getRowValue(row, columnMap, "abrevCategoria"),
+        categoriaCode,
+        categoria: buildCategoria(categoriaCode, categoria, abrevCategoria),
+        categoriaNombre: categoria,
+        abrevCategoria,
         dni: getRowValue(row, columnMap, "dni"),
         costoHora,
         fechaIngreso: getRowValue(row, columnMap, "fechaIngreso"),
         ocupacion: getRowValue(row, columnMap, "ocupacion"),
         activo: getRowValue(row, columnMap, "activo"),
-      }
+      })
     })
     .filter((worker) => worker.codigo && worker.nombre)
 
@@ -444,7 +468,32 @@ export function mergeWorkers(existing, imported, replaceAll = false) {
 
   // Update/add imported workers
   for (const w of imported) {
-    merged.set(w.codigo || w.id, w)
+    const key = w.codigo || w.id
+    const previous = merged.get(key)
+    if (!previous) {
+      merged.set(key, w)
+      continue
+    }
+
+      merged.set(key, normalizeWorkerRecord({
+        ...previous,
+        ...w,
+        id: pickFirstFilled(w.id, previous.id),
+        codigo: pickFirstFilled(w.codigo, previous.codigo),
+        nombre: pickFirstFilled(w.nombre, previous.nombre),
+      categoriaCode: pickFirstFilled(w.categoriaCode, previous.categoriaCode),
+      categoria: pickFirstFilled(w.categoria, previous.categoria),
+      categoriaNombre: pickFirstFilled(w.categoriaNombre, previous.categoriaNombre),
+      abrevCategoria: pickFirstFilled(w.abrevCategoria, previous.abrevCategoria),
+      dni: pickFirstFilled(w.dni, previous.dni),
+      fechaIngreso: pickFirstFilled(w.fechaIngreso, previous.fechaIngreso),
+      ocupacion: pickFirstFilled(w.ocupacion, previous.ocupacion),
+      activo: pickFirstFilled(w.activo, previous.activo),
+        banco: pickFirstFilled(w.banco, previous.banco),
+        cuenta: pickFirstFilled(w.cuenta, previous.cuenta),
+        cci: pickFirstFilled(w.cci, previous.cci),
+        costoHora: Number(w.costoHora || 0) || Number(previous.costoHora || 0) || 0,
+      }))
   }
 
   return Array.from(merged.values())

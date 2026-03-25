@@ -4,6 +4,7 @@ import Select from "react-select"
 import { insertRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
 import { getWeekRange } from "../utils/dateUtils"
+import { getWorkerCategoryLabel } from "../utils/workerCategory"
 
 export default function WeeklyControl({ 
   workers, partidas, actividades, frentes, 
@@ -106,7 +107,7 @@ export default function WeeklyControl({
                   {w.nombre}
                 </span>
                 <span style={{ fontSize: 11, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
-                  {w.categoria?.toUpperCase() || "PEÓN"}
+                  {getWorkerCategoryLabel(w, { fallback: "PEÓN" }).toUpperCase()}
                 </span>
                 <span className="mono" style={{ fontSize: 11, color: 'var(--accent-gold)', whiteSpace: 'nowrap' }}>
                   {w.codigo || w.id}

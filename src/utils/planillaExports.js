@@ -2,6 +2,7 @@ import ExcelJS from "exceljs"
 import { parseLocalDate } from "./dateUtils"
 import { getAccountingExportIssues } from "./exportCSV"
 import { getWeekNumber } from "./s10Exporter"
+import { getWorkerCategoryLabel } from "./workerCategory"
 
 const APP = {
   dark: "FF0F172A",
@@ -48,13 +49,6 @@ async function saveWorkbook(workbook, filename) {
     filename,
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   )
-}
-
-function cleanCategory(value) {
-  return String(value || "")
-    .replace(/^\d+\s*/, "")
-    .trim()
-    .toUpperCase() || "SIN CATEGORIA"
 }
 
 function splitWorkerName(fullName) {
@@ -297,7 +291,7 @@ function buildAccountingRows(registros, workers, actividades, partidas, weekRang
         dni: worker.dni || "",
         apellidos: names.apellidos,
         nombres: names.nombres,
-        categoria: cleanCategory(worker.categoria || worker.abrevCategoria || ""),
+        categoria: getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }).toUpperCase(),
         pc: row.partidaId,
         partida: row.partidaNombre,
         falta: "",
@@ -335,7 +329,7 @@ function buildPersonalRows(registros, workers) {
       item: index + 1,
       dni: worker.dni || "",
       nombre: worker.nombre || "",
-      categoria: cleanCategory(worker.categoria || worker.abrevCategoria || ""),
+      categoria: getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }).toUpperCase(),
       fechaIngreso: worker.fechaIngreso || "",
       codigo: worker.codigo || worker.id || "",
       ocupacion: worker.ocupacion || "",

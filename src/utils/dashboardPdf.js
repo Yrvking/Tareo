@@ -12,6 +12,10 @@ function fmtCurrency(value) {
   })}`
 }
 
+function pct(value) {
+  return `${Math.round(Number(value || 0) * 100)}%`
+}
+
 function formatFilterSummary(filters = {}) {
   const parts = []
   if (filters.search) parts.push(`Buscar: ${filters.search}`)
@@ -58,14 +62,15 @@ export function exportDashboardExecutivePdf({
 
   autoTable(doc, {
     startY: 148,
-    head: [["Indicador", "Semana activa", `Acumulado al ${fechaTareo}`]],
+    head: [["KPI gerencial", "Semana activa", `Acumulado al ${fechaTareo}`]],
     body: [
       ["Horas totales", fmtHours(weekStats.totalHoras), fmtHours(cumulativeStats.totalHoras)],
       ["Horas normales", fmtHours(weekStats.totalHN), fmtHours(cumulativeStats.totalHN)],
       ["Horas extras", fmtHours(weekStats.totalHE), fmtHours(cumulativeStats.totalHE)],
       ["Costo estimado", fmtCurrency(weekStats.totalCosto), fmtCurrency(cumulativeStats.totalCosto)],
       ["Trabajadores activos", String(weekStats.workerList.length), String(cumulativeStats.workerList.length)],
-      ["Asignaciones", String(weekStats.assignments), String(cumulativeStats.assignments)],
+      ["Horas promedio por trabajador", fmtHours(weekStats.avgHours), fmtHours(cumulativeStats.avgHours)],
+      ["Peso de horas extra", pct(weekStats.heRatio), pct(cumulativeStats.heRatio)],
     ],
     theme: "grid",
     headStyles: { fillColor: primary, textColor: 255, fontStyle: "bold" },
@@ -74,27 +79,29 @@ export function exportDashboardExecutivePdf({
     margin: { left: 40, right: 40 },
   })
 
-  const topActivities = cumulativeStats.activityList.slice(0, 8).map((item) => [
-    item.nombre,
-    fmtHours(item.hn),
-    fmtHours(item.he),
-    fmtHours(item.total),
-  ])
+  const decisionRows = [
+    ["Actividad líder acumulada", cumulativeStats.topActividad?.nombre || "Sin actividad", `${fmtHours(cumulativeStats.topActividad?.total || 0)} horas`],
+    ["Actividad líder semana", weekStats.topActividad?.nombre || "Sin actividad", `${fmtHours(weekStats.topActividad?.total || 0)} horas`],
+    ["Pico semanal", weekStats.busiestDay ? `${weekStats.busiestDay.label} ${weekStats.busiestDay.dayNum}` : "-", `${fmtHours(weekStats.busiestDay?.total || 0)} horas`],
+    ["Partida crítica acumulada", cumulativeStats.partidaList[0]?.nombre || "Sin partida", `${fmtHours(cumulativeStats.partidaList[0]?.total || 0)} horas`],
+    ["Categoría dominante", cumulativeStats.categoriaList[0]?.nombre || "Sin categoría", `${fmtHours(cumulativeStats.categoriaList[0]?.total || 0)} horas`],
+    ["Días con registro en semana", String(weekStats.diasConRegistro || 0), "de 6 días programados"],
+  ]
 
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY + 18,
-    head: [["Top actividades acumuladas", "HN", "HE", "Total"]],
-    body: topActivities.length ? topActivities : [["Sin datos", "-", "-", "-"]],
+    head: [["Foco de decisión", "Lectura", "Dato clave"]],
+    body: decisionRows,
     theme: "grid",
     headStyles: { fillColor: dark, textColor: gold, fontStyle: "bold" },
     styles: { fontSize: 9, cellPadding: 5 },
     margin: { left: 40, right: 40 },
   })
 
-  const topWorkers = cumulativeStats.workerList.slice(0, 8).map((item) => [
+  const topWorkers = cumulativeStats.workerList.slice(0, 6).map((item) => [
     item.nombre,
     item.categoria,
-    fmtHours(item.total),
+    `${fmtHours(item.total)} h`,
     fmtCurrency(item.costo),
   ])
 
@@ -108,21 +115,44 @@ export function exportDashboardExecutivePdf({
     margin: { left: 40, right: 40 },
   })
 
-  const weekDays = weekStats.dayList.map((day) => [
-    `${day.label} ${day.dayNum}`,
-    fmtHours(day.hn),
-    fmtHours(day.he),
-    fmtHours(day.total),
-    String(day.workers),
+  const topActivities = cumulativeStats.activityList.slice(0, 6).map((item) => [
+    item.nombre,
+    `${fmtHours(item.total)} h`,
+    pct(item.total / Math.max(cumulativeStats.totalHoras, 1)),
+    fmtHours(item.he),
   ])
 
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY + 18,
-    head: [["Semana activa", "HN", "HE", "Total", "Trabajadores"]],
-    body: weekDays.length ? weekDays : [["Sin datos", "-", "-", "-", "-"]],
+    head: [["Top actividades acumuladas", "Horas", "% participación", "HE"]],
+    body: topActivities.length ? topActivities : [["Sin datos", "-", "-", "-"]],
     theme: "grid",
     headStyles: { fillColor: gold, textColor: dark, fontStyle: "bold" },
     styles: { fontSize: 9, cellPadding: 5 },
+    margin: { left: 40, right: 40 },
+  })
+
+  const actions = []
+  if (cumulativeStats.heRatio >= 0.15) {
+    actions.push(["Alerta de sobretiempo", `Las HE representan ${pct(cumulativeStats.heRatio)} del acumulado. Revisar cuadrillas y redistribución.`])
+  }
+  if ((cumulativeStats.topActividad?.total || 0) / Math.max(cumulativeStats.totalHoras, 1) >= 0.35) {
+    actions.push(["Concentración operativa", `${cumulativeStats.topActividad?.nombre || "La actividad líder"} supera el 35% de las horas. Validar balance con cronograma.`])
+  }
+  if ((weekStats.diasConRegistro || 0) < 6) {
+    actions.push(["Cobertura semanal", `Solo hay ${weekStats.diasConRegistro || 0} días con registro en la semana activa. Confirmar carga completa.`])
+  }
+  if (!actions.length) {
+    actions.push(["Estado general", "No se detectan desviaciones críticas con los filtros actuales."])
+  }
+
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 18,
+    head: [["Comentario gerencial", "Interpretación"]],
+    body: actions,
+    theme: "grid",
+    headStyles: { fillColor: primary, textColor: 255, fontStyle: "bold" },
+    styles: { fontSize: 9, cellPadding: 6 },
     margin: { left: 40, right: 40 },
   })
 

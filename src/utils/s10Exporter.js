@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx"
 import { formatLocalDate } from "./dateUtils"
+import { getWorkerCategoryLabel } from "./workerCategory"
 
 const DAY_NAMES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
@@ -153,7 +154,7 @@ export function generateWeeklyXLS({
       const isLast = wIdx === workers.length - 1
       const row = new Array(53).fill("")
 
-      row[0] = w.categoria || ""
+      row[0] = getWorkerCategoryLabel(w, { includeCode: true, fallback: "" })
       row[1] = w.codigo || w.id || ""
       row[2] = w.nombre || ""
 

@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx"
+import { getWorkerCategoryLabel, hasWorkerCategory } from "./workerCategory"
 
 function getIsoDay(dateString) {
   const dateObj = dateString ? new Date(`${dateString}T12:00:00`) : new Date()
@@ -33,7 +34,7 @@ export function getAccountingExportIssues(registros = [], workers = []) {
 
     const missing = []
     if (!String(worker.dni || "").trim()) missing.push("DNI")
-    if (!String(worker.categoria || "").trim()) missing.push("Categoría")
+    if (!hasWorkerCategory(worker)) missing.push("Categoría")
     if (!String(worker.fechaIngreso || "").trim()) missing.push("Fecha de Ingreso")
 
     if (missing.length > 0) {
@@ -124,7 +125,7 @@ export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
       worker?.dni || "",
       worker?.codigo || worker?.id || row.workerId,
       worker?.nombre || row.workerNombre || row.workerId,
-      worker?.categoria || worker?.abrevCategoria || "",
+      getWorkerCategoryLabel(worker, { includeCode: true, fallback: "" }),
       worker?.fechaIngreso || "",
       costoHora,
       row.frente,

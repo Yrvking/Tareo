@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { DownloadIcon } from "./Icons"
 import { getWeekRange, parseLocalDate } from "../utils/dateUtils"
+import { getWorkerCategoryLabel } from "../utils/workerCategory"
 
 const DAY_LABELS = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB"]
 
@@ -23,13 +24,22 @@ export default function Dashboard({
   const [detail, setDetail] = useState(null)
 
   const { dates } = useMemo(() => getWeekRange(fechaTareo), [fechaTareo])
-  const workerMap = useMemo(() => new Map(workers.map((worker) => [String(worker.id), worker])), [workers])
+  const workerMap = useMemo(
+    () =>
+      new Map(
+        workers.flatMap((worker) => {
+          const keys = [worker.id, worker.codigo].filter(Boolean)
+          return keys.map((key) => [String(key), worker])
+        })
+      ),
+    [workers]
+  )
   const activityMap = useMemo(() => new Map(actividades.map((actividad) => [String(actividad.id), actividad])), [actividades])
   const partidaMap = useMemo(() => new Map(partidas.map((partida) => [String(partida.id), partida])), [partidas])
   const frenteMap = useMemo(() => new Map(frentes.map((frente) => [String(frente.id), frente])), [frentes])
 
   const categorias = useMemo(
-    () => Array.from(new Set(workers.map((worker) => cleanCategory(worker.categoria)))).sort((a, b) => a.localeCompare(b, "es")),
+    () => Array.from(new Set(workers.map((worker) => getWorkerCategoryLabel(worker)).filter(Boolean))).sort((a, b) => a.localeCompare(b, "es")),
     [workers]
   )
 
@@ -207,9 +217,8 @@ export default function Dashboard({
         <div className="dashboard-kpi-grid">
           <Metric label="Horas acumuladas" value={fmtHours(cumulativeStats.totalHoras)} sub={`${fmtHours(cumulativeStats.totalHN)} N · ${fmtHours(cumulativeStats.totalHE)} E`} tone="blue" onClick={() => cumulativeStats.topActividad && openDetail("activity", cumulativeStats.topActividad.id, cumulativeStats.topActividad.nombre, "global")} />
           <Metric label="Costo acumulado" value={fmtCurrency(cumulativeStats.totalCosto)} sub="Hasta la fecha seleccionada" tone="green" />
-          <Metric label="Trabajadores acumulados" value={String(cumulativeStats.workerList.length)} sub={`${fmtHours(cumulativeStats.avgHours)} promedio`} tone="gold" onClick={() => cumulativeStats.workerList[0] && openDetail("worker", cumulativeStats.workerList[0].id, cumulativeStats.workerList[0].nombre, "global")} />
-          <Metric label="Actividad lider global" value={cumulativeStats.topActividad ? fmtHours(cumulativeStats.topActividad.total) : "0"} sub={cumulativeStats.topActividad?.nombre || "Sin actividad"} tone="indigo" onClick={() => cumulativeStats.topActividad && openDetail("activity", cumulativeStats.topActividad.id, cumulativeStats.topActividad.nombre, "global")} />
-          <Metric label="Frente lider global" value={cumulativeStats.frenteList[0] ? fmtHours(cumulativeStats.frenteList[0].total) : "0"} sub={cumulativeStats.frenteList[0]?.nombre || "Sin frente"} tone="neutral" onClick={() => cumulativeStats.frenteList[0] && openDetail("frente", cumulativeStats.frenteList[0].id, cumulativeStats.frenteList[0].nombre, "global")} />
+          <Metric label="Trabajadores acumulados" value={String(cumulativeStats.workerList.length)} sub={`${fmtHours(cumulativeStats.avgHours)} horas promedio`} tone="gold" onClick={() => cumulativeStats.workerList[0] && openDetail("worker", cumulativeStats.workerList[0].id, cumulativeStats.workerList[0].nombre, "global")} />
+          <Metric label="Actividad lider global" value={cumulativeStats.topActividad ? `${fmtHours(cumulativeStats.topActividad.total)} horas` : "0 horas"} sub={cumulativeStats.topActividad?.nombre || "Sin actividad"} tone="indigo" onClick={() => cumulativeStats.topActividad && openDetail("activity", cumulativeStats.topActividad.id, cumulativeStats.topActividad.nombre, "global")} />
         </div>
       </div>
 
@@ -224,9 +233,8 @@ export default function Dashboard({
         <div className="dashboard-kpi-grid">
           <Metric label="Horas totales" value={fmtHours(weeklyStats.totalHoras)} sub={`${fmtHours(weeklyStats.totalHN)} N · ${fmtHours(weeklyStats.totalHE)} E`} tone="blue" onClick={() => weeklyStats.busiestDay && openDetail("day", weeklyStats.busiestDay.date, `${weeklyStats.busiestDay.label} ${weeklyStats.busiestDay.dayNum}`, "week")} />
           <Metric label="Costo estimado" value={fmtCurrency(weeklyStats.totalCosto)} sub="Mano de obra semanal" tone="green" />
-          <Metric label="Trabajadores activos" value={String(weeklyStats.workerList.length)} sub={`${fmtHours(weeklyStats.avgHours)} promedio`} tone="gold" onClick={() => weeklyStats.workerList[0] && openDetail("worker", weeklyStats.workerList[0].id, weeklyStats.workerList[0].nombre, "week")} />
-          <Metric label="Actividad lider" value={weeklyStats.topActividad ? fmtHours(weeklyStats.topActividad.total) : "0"} sub={weeklyStats.topActividad?.nombre || "Sin actividad"} tone="indigo" onClick={() => weeklyStats.topActividad && openDetail("activity", weeklyStats.topActividad.id, weeklyStats.topActividad.nombre, "week")} />
-          <Metric label="Frente lider" value={weeklyStats.frenteList[0] ? fmtHours(weeklyStats.frenteList[0].total) : "0"} sub={weeklyStats.frenteList[0]?.nombre || "Sin frente"} tone="neutral" onClick={() => weeklyStats.frenteList[0] && openDetail("frente", weeklyStats.frenteList[0].id, weeklyStats.frenteList[0].nombre, "week")} />
+          <Metric label="Trabajadores activos" value={String(weeklyStats.workerList.length)} sub={`${fmtHours(weeklyStats.avgHours)} horas promedio`} tone="gold" onClick={() => weeklyStats.workerList[0] && openDetail("worker", weeklyStats.workerList[0].id, weeklyStats.workerList[0].nombre, "week")} />
+          <Metric label="Actividad lider" value={weeklyStats.topActividad ? `${fmtHours(weeklyStats.topActividad.total)} horas` : "0 horas"} sub={weeklyStats.topActividad?.nombre || "Sin actividad"} tone="indigo" onClick={() => weeklyStats.topActividad && openDetail("activity", weeklyStats.topActividad.id, weeklyStats.topActividad.nombre, "week")} />
         </div>
       </div>
 
@@ -281,12 +289,12 @@ export default function Dashboard({
             <div className="dash-card dashboard-executive-card">
               <div className="dashboard-section-title">Resumen ejecutivo</div>
               <div className="dashboard-executive-copy">
-                <p>Hasta el <strong>{fechaTareo}</strong> el proyecto acumula <strong>{fmtHours(cumulativeStats.totalHoras)}</strong> en <strong>{cumulativeStats.workerList.length}</strong> trabajadores con costo estimado de <strong>{fmtCurrency(cumulativeStats.totalCosto)}</strong>.</p>
-                <p>La actividad dominante acumulada es <strong>{cumulativeStats.topActividad?.nombre || "Sin actividad"}</strong> y el frente lider es <strong>{cumulativeStats.frenteList[0]?.nombre || "Sin frente"}</strong>.</p>
-                <p>La semana activa suma <strong>{fmtHours(weeklyStats.totalHoras)}</strong>, equivalente al <strong>{cumulativeShare}%</strong> del acumulado filtrado.</p>
+                <p>Hasta el <strong>{fechaTareo}</strong> el proyecto acumula <strong>{fmtHours(cumulativeStats.totalHoras)} horas</strong> en <strong>{cumulativeStats.workerList.length}</strong> trabajadores con costo estimado de <strong>{fmtCurrency(cumulativeStats.totalCosto)}</strong>.</p>
+                <p>La actividad dominante acumulada es <strong>{cumulativeStats.topActividad?.nombre || "Sin actividad"}</strong> con <strong>{fmtHours(cumulativeStats.topActividad?.total || 0)} horas</strong>.</p>
+                <p>La semana activa suma <strong>{fmtHours(weeklyStats.totalHoras)} horas</strong>, equivalente al <strong>{cumulativeShare}%</strong> del acumulado filtrado.</p>
               </div>
             </div>
-            <ListCard title="Frentes acumulados" items={cumulativeStats.frenteList.slice(0, 6)} onOpen={(item) => openDetail("frente", item.id, item.nombre, "global")} compact />
+            <ListCard title="Categorias acumuladas" items={cumulativeStats.categoriaList.slice(0, 6)} onOpen={(item) => openDetail("category", item.id, item.nombre, "global")} compact />
           </div>
 
           <div className="dashboard-main-grid">
@@ -372,7 +380,7 @@ function filterDashboardRecords(records, filters, workerMap, activityMap, partid
 
   return records.filter((reg) => {
     const worker = workerMap.get(String(reg.workerId))
-    const categoria = cleanCategory(worker?.categoria)
+    const categoria = getWorkerCategoryLabel(worker)
     const frenteId = String(reg.frenteId || "")
     const frenteName = reg.frenteNombre || frenteMap.get(frenteId)?.nombre || "Sin frente"
     const hitFrente = !filters.frenteFilter || filters.frenteFilter === frenteId || filters.frenteFilter === frenteName
@@ -385,7 +393,7 @@ function filterDashboardRecords(records, filters, workerMap, activityMap, partid
     const text = [
       reg.workerNombre,
       worker?.codigo,
-      worker?.categoria,
+      getWorkerCategoryLabel(worker, { includeCode: true, fallback: "" }),
       frenteId,
       frenteName,
       ...(reg.assignments || []).flatMap((assignment) => {
@@ -417,7 +425,7 @@ function buildDashboardStats(filtered, dates, workerMap, activityMap, partidaMap
 
   filtered.forEach((reg) => {
     const worker = workerMap.get(String(reg.workerId))
-    const categoria = cleanCategory(worker?.categoria)
+    const categoria = getWorkerCategoryLabel(worker)
     const frenteId = String(reg.frenteId || reg.frenteNombre || "Sin frente")
     const frenteName = reg.frenteNombre || frenteMap.get(String(reg.frenteId || ""))?.nombre || "Sin frente"
 
@@ -495,6 +503,7 @@ function buildDashboardStats(filtered, dates, workerMap, activityMap, partidaMap
   const categoriaList = toList(categoriaStats).map((item) => ({ ...item, total: item.hn + item.he }))
   const partidaList = toList(partidaStats).map((item) => ({ ...item, total: item.hn + item.he }))
   const totalHoras = totalHN + totalHE
+  const diasConRegistro = dayList.filter((day) => day.total > 0).length
   const busiestDay = [...dayList].sort((a, b) => b.total - a.total)[0] || null
   const topActividad = activityList[0] || null
   const alerts = []
@@ -536,9 +545,11 @@ function buildDashboardStats(filtered, dates, workerMap, activityMap, partidaMap
     frenteList,
     categoriaList,
     partidaList,
+    diasConRegistro,
     busiestDay,
     topActividad,
     avgHours: totalHoras / Math.max(workerList.length, 1),
+    heRatio: totalHE / Math.max(totalHoras, 1),
     alerts,
     maxDay: Math.max(...dayList.map((day) => day.total), 1),
   }
@@ -562,7 +573,7 @@ function buildDetailRows(detail, registros, activityMap, partidaMap, workerMap) 
             : detail.type === "frente"
               ? String(reg.frenteId || reg.frenteNombre || "Sin frente") === String(detail.key)
               : detail.type === "category"
-                ? cleanCategory(worker?.categoria) === detail.key
+                ? getWorkerCategoryLabel(worker) === detail.key
                 : detail.type === "partida"
                   ? partidaId === String(detail.key)
                   : false
@@ -596,10 +607,6 @@ function bump(map, key, seed, hn, he) {
 
 function toList(map) {
   return Array.from(map.values()).sort((a, b) => (b.hn + b.he) - (a.hn + a.he))
-}
-
-function cleanCategory(value) {
-  return String(value || "").replace(/^\d+\s*/, "").trim() || "Sin categoria"
 }
 
 function shortName(value) {

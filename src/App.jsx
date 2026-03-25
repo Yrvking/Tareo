@@ -20,6 +20,7 @@ import {
   syncPendingRegistros,
 } from "./utils/supabaseClient"
 import { getTodayLocalDate, getWeekRange } from "./utils/dateUtils"
+import { normalizeWorkersCollection } from "./utils/workerCategory"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import Login from "./components/Login"
 import {
@@ -92,7 +93,7 @@ function AppContent() {
   const [showBottomNav, setShowBottomNav] = useState(() => (
     typeof window === "undefined" ? true : window.innerWidth < 900
   ))
-  const [workers, setWorkers] = useState(() => loadArrayFromStorage(STORAGE_KEYS.workers, INITIAL_WORKERS))
+  const [workers, setWorkers] = useState(() => normalizeWorkersCollection(loadArrayFromStorage(STORAGE_KEYS.workers, INITIAL_WORKERS)))
   const [partidas, setPartidas] = useState(() => loadArrayFromStorage(STORAGE_KEYS.partidas, INITIAL_PARTIDAS))
   const [actividades, setActividades] = useState(() => loadArrayFromStorage(STORAGE_KEYS.actividades, INITIAL_ACTIVIDADES))
   const [frentes, setFrentes] = useState(() => loadArrayFromStorage(STORAGE_KEYS.frentes, INITIAL_FRENTES))
@@ -199,7 +200,7 @@ function AppContent() {
         return
       }
 
-      if (Array.isArray(remotePayload.workers)) setWorkers(remotePayload.workers)
+      if (Array.isArray(remotePayload.workers)) setWorkers(normalizeWorkersCollection(remotePayload.workers))
       if (Array.isArray(remotePayload.partidas)) setPartidas(remotePayload.partidas)
       if (Array.isArray(remotePayload.actividades)) setActividades(remotePayload.actividades)
       if (Array.isArray(remotePayload.frentes)) setFrentes(remotePayload.frentes)
