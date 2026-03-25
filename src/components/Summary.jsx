@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { DownloadIcon, FileIcon } from "./Icons"
-import { exportDatabaseXLSX, getAccountingExportIssues } from "../utils/exportCSV"
+import { getAccountingExportIssues } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
 import { getWeekRange } from "../utils/dateUtils"
 
@@ -229,10 +229,39 @@ export default function Summary({
     }
   }
 
-  const handleExportDatabase = () => {
+  const handleExportPlanillaExcel = async () => {
     try {
-      exportDatabaseXLSX(registros, workers, partidas, actividades)
-      setExportFeedback("✓ Base de datos exportada a Excel.")
+      const { exportStyledPlanillaWorkbook } = await import("../utils/planillaExports")
+      const filename = await exportStyledPlanillaWorkbook({
+        fechaTareo,
+        projectConfig,
+        weekRange,
+        workerWeeklyData,
+        dailyActivityReport,
+        activityWeeklyMatrix,
+        weeklyActivitySummary,
+        weeklyPartidaSummary,
+      })
+      setExportFeedback(`✓ Exportado Excel visual: ${filename}`)
+      setTimeout(() => setExportFeedback(null), 5000)
+    } catch (err) {
+      setExportFeedback(`Error: ${err.message}`)
+    }
+  }
+
+  const handleExportAccounting = async () => {
+    try {
+      const { exportAccountingWorkbook } = await import("../utils/planillaExports")
+      const filename = await exportAccountingWorkbook({
+        registros,
+        workers,
+        partidas,
+        actividades,
+        fechaTareo,
+        projectConfig,
+        weekRange,
+      })
+      setExportFeedback(`✓ Exportado contabilidad: ${filename}`)
       setTimeout(() => setExportFeedback(null), 5000)
     } catch (err) {
       setExportFeedback(`Error: ${err.message}`)
@@ -241,10 +270,23 @@ export default function Summary({
 
   return (
     <div className="summary-container">
-      <div className="view-selector-pill summary-top-toggle">
-        <button onClick={() => setViewType("worker_weekly")} className={`pill-btn ${viewType === "worker_weekly" ? "active" : ""}`}>PLANILLA SEMANAL</button>
-        <button onClick={() => setViewType("activity_daily")} className={`pill-btn ${viewType === "activity_daily" ? "active" : ""}`}>TAREO X ACTIVIDAD</button>
-        <button onClick={() => setViewType("activity_weekly")} className={`pill-btn ${viewType === "activity_weekly" ? "active" : ""}`}>RESUMEN SEMANAL</button>
+      <div className="summary-toolbar">
+        <div className="view-selector-pill summary-top-toggle">
+          <button onClick={() => setViewType("worker_weekly")} className={`pill-btn ${viewType === "worker_weekly" ? "active" : ""}`}>PLANILLA SEMANAL</button>
+          <button onClick={() => setViewType("activity_daily")} className={`pill-btn ${viewType === "activity_daily" ? "active" : ""}`}>TAREO X ACTIVIDAD</button>
+          <button onClick={() => setViewType("activity_weekly")} className={`pill-btn ${viewType === "activity_weekly" ? "active" : ""}`}>RESUMEN SEMANAL</button>
+        </div>
+        <div className="summary-toolbar-actions">
+          <button onClick={handleExportPlanillaExcel} className="btn-export-sm" style={{ background: "var(--border-dim)" }}>
+            <FileIcon /> EXPORTAR CUADROS EXCEL
+          </button>
+          <button onClick={handleExportAccounting} className="btn-export-sm" style={{ background: "rgba(37,99,235,0.14)" }}>
+            <DownloadIcon /> EXPORTAR CONTABILIDAD
+          </button>
+          <button onClick={handleExportS10} className="btn-export-sm">
+            <DownloadIcon /> EXPORTAR S10
+          </button>
+        </div>
       </div>
 
       {exportFeedback && <div className="alert-success" style={{ marginBottom: 16 }}>{exportFeedback}</div>}
@@ -261,14 +303,7 @@ export default function Summary({
         <div className="card full-width-card" style={{ padding: 0, overflow: "hidden" }}>
           <div className="card-header-dark summary-header-bar">
             <span className="label">REPORTE DE TAREO DE PERSONAL OBRERO</span>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={handleExportDatabase} className="btn-export-sm" style={{ background: "var(--border-dim)" }}>
-                <FileIcon /> EXPORTAR BD CONTABILIDAD
-              </button>
-              <button onClick={handleExportS10} className="btn-export-sm">
-                <DownloadIcon /> EXPORTAR S10
-              </button>
-            </div>
+            <span className="summary-helper-text">Exporta visual, contabilidad o S10 desde la barra superior.</span>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table className="report-table">
@@ -540,6 +575,19 @@ export default function Summary({
       )}
 
       <style>{`
+        .summary-toolbar {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+          margin-bottom: 18px;
+        }
+        .summary-toolbar-actions {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
         .summary-top-toggle,
         .summary-sub-toggle {
           display: flex;
@@ -548,9 +596,6 @@ export default function Summary({
           padding: 4px;
           border-radius: 12px;
           width: fit-content;
-        }
-        .summary-top-toggle {
-          margin-bottom: 24px;
         }
         .pill-btn {
           background: transparent;
@@ -670,6 +715,18 @@ export default function Summary({
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 0.3px;
+        }
+        @media (max-width: 720px) {
+          .summary-toolbar {
+            align-items: stretch;
+          }
+          .summary-toolbar-actions {
+            width: 100%;
+          }
+          .summary-toolbar-actions .btn-export-sm {
+            flex: 1;
+            justify-content: center;
+          }
         }
       `}</style>
     </div>

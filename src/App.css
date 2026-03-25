@@ -726,6 +726,30 @@ main {
   font-size: 11px;
 }
 
+.weekly-hour-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.weekly-hour-field {
+  min-width: 0;
+}
+
+.weekly-action-row {
+  display: flex;
+  gap: 8px;
+}
+
+.weekly-action-primary {
+  flex: 1;
+}
+
+.weekly-action-secondary {
+  padding: 0 16px;
+}
+
 /* Media Queries */
 @media (max-width: 480px) {
   .app-container {
@@ -753,6 +777,17 @@ main {
     width: 62px;
     padding: 6px 8px;
   }
+  .weekly-hour-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .weekly-action-row {
+    flex-direction: column;
+  }
+  .weekly-action-secondary {
+    width: 100%;
+    padding: 12px 16px;
+  }
 }
 
 /* ── Dashboard ── */
@@ -774,6 +809,21 @@ main {
   justify-content: space-between;
   gap: 14px;
   align-items: stretch;
+}
+
+.dashboard-topbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
 }
 
 .dashboard-project-strip {
@@ -815,6 +865,27 @@ main {
 .dashboard-project-meta strong {
   color: var(--text-main);
   font-weight: 700;
+}
+
+.dashboard-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-block-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.dashboard-block-copy {
+  font-size: 12px;
+  color: var(--text-dim);
+  max-width: 360px;
+  text-align: right;
 }
 
 .dashboard-mode-switch {
@@ -1108,9 +1179,19 @@ main {
   .dashboard-topbar {
     flex-direction: column;
   }
+  .dashboard-topbar-actions {
+    justify-content: flex-start;
+  }
   .dashboard-project-strip {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .dashboard-block-head {
+    align-items: flex-start;
+  }
+  .dashboard-block-copy {
+    max-width: none;
+    text-align: left;
   }
   .dashboard-mode-switch {
     align-self: flex-start;

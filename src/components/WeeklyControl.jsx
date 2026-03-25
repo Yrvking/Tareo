@@ -96,8 +96,8 @@ export default function WeeklyControl({
         />
       </div>
 
-      <div className="worker-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filteredWorkers.slice(0, 50).map(w => (
+      <div className="worker-cards-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 24 }}>
+        {filteredWorkers.map(w => (
           <div key={w.id} className="worker-weekly-card card" style={{ marginBottom: 0, padding: '12px 16px' }}>
             {/* Header: nombre + meta en una sola fila */}
             <div className="worker-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -217,22 +217,22 @@ export default function WeeklyControl({
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-                  <div style={{ flex: 1 }}>
+                <div className="weekly-hour-grid">
+                  <div className="weekly-hour-field">
                     <label className="field-label-sm">Horas Normales</label>
-                    <input type="number" className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} />
+                    <input type="number" className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="weekly-hour-field">
                     <label className="field-label-sm">Horas Extras</label>
-                    <input type="number" className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ borderColor: '#ef4444' }} />
+                    <input type="number" className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={handleSaveDay} className="btn-primary" style={{ flex: 1 }}>
+                <div className="weekly-action-row">
+                  <button onClick={handleSaveDay} className="btn-primary weekly-action-primary">
                     <CheckIcon /> AGREGAR REGISTRO
                   </button>
-                  <button onClick={() => setSelectedDay(null)} className="btn-pill-sm" style={{ padding: '0 16px' }}>
+                  <button onClick={() => setSelectedDay(null)} className="btn-pill-sm weekly-action-secondary">
                     CANCELAR
                   </button>
                 </div>

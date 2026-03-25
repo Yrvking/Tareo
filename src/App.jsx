@@ -89,6 +89,9 @@ function AppContent() {
   const { user, profile, logout } = useAuth()
   const cloudHydratedRef = useRef(false)
   const [tab, setTab] = useState("dashboard")
+  const [showBottomNav, setShowBottomNav] = useState(() => (
+    typeof window === "undefined" ? true : window.innerWidth < 900
+  ))
   const [workers, setWorkers] = useState(() => loadArrayFromStorage(STORAGE_KEYS.workers, INITIAL_WORKERS))
   const [partidas, setPartidas] = useState(() => loadArrayFromStorage(STORAGE_KEYS.partidas, INITIAL_PARTIDAS))
   const [actividades, setActividades] = useState(() => loadArrayFromStorage(STORAGE_KEYS.actividades, INITIAL_ACTIVIDADES))
@@ -96,6 +99,7 @@ function AppContent() {
   const [tiposHora, setTiposHora] = useState(() => loadArrayFromStorage(STORAGE_KEYS.tiposHora, INITIAL_TIPOS_HORA))
   const [projectConfig, setProjectConfig] = useState(() => loadProjectConfigFromStorage())
   const [registros, setRegistros] = useState([])
+  const [allRegistros, setAllRegistros] = useState([])
   const [fechaTareo, setFechaTareo] = useState(() => getTodayLocalDate())
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false))
   const [syncState, setSyncState] = useState({ pendingCount: 0, syncing: false })
@@ -158,6 +162,22 @@ function AppContent() {
       window.removeEventListener("offline", handleOffline)
       window.removeEventListener(getSyncEventName(), handleSyncEvent)
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined
+
+    const media = window.matchMedia("(max-width: 899px)")
+    const syncViewport = () => setShowBottomNav(media.matches)
+
+    syncViewport()
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", syncViewport)
+      return () => media.removeEventListener("change", syncViewport)
+    }
+
+    media.addListener(syncViewport)
+    return () => media.removeListener(syncViewport)
   }, [])
 
   useEffect(() => {
@@ -240,12 +260,9 @@ function AppContent() {
         }
       }
 
-      const { dates } = getWeekRange(fechaTareo)
-      const startStr = dates[0]
-      const endStr = dates[dates.length - 1]
-      const data = await fetchRegistros(startStr, endStr)
+      const data = await fetchRegistros()
       if (active) {
-        setRegistros(data)
+        setAllRegistros(data)
         const pendingCount = await getPendingSyncCount()
         if (active) {
           setSyncState((prev) => ({ ...prev, pendingCount }))
@@ -269,7 +286,16 @@ function AppContent() {
       clearTimeout(refreshTimer)
       window.removeEventListener(getDataEventName(), handleDataChanged)
     }
-  }, [fechaTareo, user, isOnline])
+  }, [user, isOnline])
+
+  useEffect(() => {
+    const { dates } = getWeekRange(fechaTareo)
+    const startStr = dates[0]
+    const endStr = dates[dates.length - 1]
+    setRegistros(
+      allRegistros.filter((record) => record.date >= startStr && record.date <= endStr)
+    )
+  }, [allRegistros, fechaTareo])
 
   if (!user) {
     return <Login />
@@ -387,6 +413,7 @@ function AppContent() {
           {tab === "dashboard" && (
             <Dashboard
               registros={registros}
+              allRegistros={allRegistros}
               workers={workers}
               frentes={frentes}
               actividades={actividades}
@@ -494,18 +521,20 @@ function AppContent() {
           </div>
         </main>
 
-        <nav className="bottom-nav">
-          {visibleTabs.filter(t => !t.hideInBottomNav).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`nav-item ${tab === t.id ? "active" : ""}`}
-            >
-              <t.icon />
-              <span>{t.mobileLabel || t.label}</span>
-            </button>
-          ))}
-        </nav>
+        {showBottomNav && (
+          <nav className="bottom-nav">
+            {visibleTabs.filter(t => !t.hideInBottomNav).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`nav-item ${tab === t.id ? "active" : ""}`}
+              >
+                <t.icon />
+                <span>{t.mobileLabel || t.label}</span>
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
     </div>
   )
