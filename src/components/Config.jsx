@@ -31,6 +31,7 @@ export default function Config({
   actividades, setActividades,
   tiposHora, setTiposHora,
   projectConfig, setProjectConfig,
+  fechaTareo,
 }) {
   const s10ImportGuides = [
     {
@@ -101,10 +102,31 @@ export default function Config({
   const costosFileRef     = useRef(null)
   const actividadesFileRef = useRef(null)
   const tareoFileRef      = useRef(null)
+  const closedTareoDates = Array.isArray(projectConfig.closedTareoDates) ? projectConfig.closedTareoDates : []
+  const isSelectedDateClosed = Boolean(fechaTareo && closedTareoDates.includes(fechaTareo))
 
   const showFeedback = (msg, type = "success") => {
     setImportFeedback({ message: msg, type })
     setTimeout(() => setImportFeedback(null), 5000)
+  }
+
+  const setTareoDateClosed = (targetDate, closed) => {
+    if (!targetDate) return
+    const nextClosedDates = closed
+      ? Array.from(new Set([...closedTareoDates, targetDate])).sort()
+      : closedTareoDates.filter((date) => date !== targetDate)
+
+    setProjectConfig({
+      ...projectConfig,
+      closedTareoDates: nextClosedDates,
+    })
+
+    showFeedback(
+      closed
+        ? `✓ Fecha ${targetDate} cerrada para eliminación de tareos.`
+        : `✓ Fecha ${targetDate} reabierta para edición y eliminación.`,
+      "success"
+    )
   }
 
   // ── Importaciones S10 ───────────────────────────────────────────────────────
@@ -746,6 +768,37 @@ export default function Config({
             <input type="text" value={projectConfig.codigoNomina}
               onChange={e => setProjectConfig({...projectConfig, codigoNomina: e.target.value})}
               className="input-field mono" style={{ width: '100%' }} />
+          </div>
+        </div>
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, border: "1px solid var(--border-dim)", background: "rgba(255,255,255,0.03)" }}>
+          <div className="label" style={{ marginBottom: 8, color: "var(--accent-blue)" }}>CIERRE DE TAREO</div>
+          <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 12 }}>
+            Fecha seleccionada: <strong style={{ color: "var(--text-main)" }}>{fechaTareo || "Sin fecha"}</strong>{" "}
+            · Estado:{" "}
+            <strong style={{ color: isSelectedDateClosed ? "var(--red-accent)" : "var(--accent-gold)" }}>
+              {isSelectedDateClosed ? "CERRADA" : "ABIERTA"}
+            </strong>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={() => setTareoDateClosed(fechaTareo, true)}
+              className="btn-primary"
+              disabled={!fechaTareo || isSelectedDateClosed}
+              style={{ opacity: !fechaTareo || isSelectedDateClosed ? 0.6 : 1 }}
+            >
+              CERRAR FECHA SELECCIONADA
+            </button>
+            <button
+              onClick={() => setTareoDateClosed(fechaTareo, false)}
+              className="btn-pill-sm"
+              disabled={!fechaTareo || !isSelectedDateClosed}
+              style={{ opacity: !fechaTareo || !isSelectedDateClosed ? 0.6 : 1 }}
+            >
+              REABRIR FECHA
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 10 }}>
+            Cuando una fecha está cerrada, un usuario común no podrá eliminar tareos de esa fecha desde la pestaña Voz. Admin y super admin sí podrán hacerlo.
           </div>
         </div>
       </div>

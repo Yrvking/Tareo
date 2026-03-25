@@ -88,6 +88,7 @@ const TABS = [
 
 function AppContent() {
   const { user, profile, logout } = useAuth()
+  const isAdminUser = profile?.role === "admin" || profile?.role === "super_admin"
   const cloudHydratedRef = useRef(false)
   const [tab, setTab] = useState("dashboard")
   const [showBottomNav, setShowBottomNav] = useState(() => (
@@ -302,7 +303,7 @@ function AppContent() {
     return <Login />
   }
 
-  const visibleTabs = TABS.filter(t => !t.adminOnly || profile?.role === 'admin')
+  const visibleTabs = TABS.filter(t => !t.adminOnly || isAdminUser)
 
   const getPartidaNombre = (id) => {
     const p = partidas.find((p) => String(p.id) === String(id))
@@ -457,6 +458,7 @@ function AppContent() {
               getPartidaNombre={getPartidaNombre}
               getFrenteNombre={getFrenteNombre}
               fechaTareo={fechaTareo}
+              projectConfig={projectConfig}
             />
           )}
 
@@ -499,7 +501,7 @@ function AppContent() {
 
           {tab === "ayuda" && <Help />}
 
-          {tab === "config" && profile?.role === 'admin' && (
+          {tab === "config" && isAdminUser && (
             <Config
               workers={workers}
               setWorkers={setWorkers}
@@ -513,6 +515,7 @@ function AppContent() {
               setTiposHora={setTiposHora}
               projectConfig={projectConfig}
               setProjectConfig={setProjectConfig}
+              fechaTareo={fechaTareo}
             />
           )}
 

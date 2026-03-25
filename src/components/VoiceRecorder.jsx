@@ -3,8 +3,10 @@ import { MicIcon, CheckIcon, TrashIcon } from "./Icons"
 import { parseContinuousVoice } from "../utils/voiceParser"
 import { insertRegistro, updateRegistro, deleteRegistroById, fetchRegistros } from "../utils/supabaseClient"
 import { getWeekRange } from "../utils/dateUtils"
+import { useAuth } from "../contexts/AuthContext"
 
-export default function VoiceRecorder({ workers, partidas, actividades, frentes, registros, setRegistros, getPartidaNombre, getFrenteNombre, fechaTareo }) {
+export default function VoiceRecorder({ workers, partidas, actividades, frentes, registros, setRegistros, getPartidaNombre, getFrenteNombre, fechaTareo, projectConfig }) {
+  const { profile } = useAuth()
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [speechSupported, setSpeechSupported] = useState(true)
@@ -23,6 +25,19 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const shouldRestartRef = useRef(false)
   const timerRef = useRef(null)
   const sessionStartRef = useRef(null)
+  const closedTareoDates = Array.isArray(projectConfig?.closedTareoDates) ? projectConfig.closedTareoDates : []
+  const isPrivilegedUser = profile?.role === "admin" || profile?.role === "super_admin"
+  const isSelectedDateClosed = Boolean(fechaTareo && closedTareoDates.includes(fechaTareo))
+
+  const canDeleteRegistro = useCallback((reg) => {
+    if (!reg?.date) return true
+    return isPrivilegedUser || !closedTareoDates.includes(reg.date)
+  }, [closedTareoDates, isPrivilegedUser])
+
+  const getDeleteBlockMessage = useCallback((reg) => {
+    if (canDeleteRegistro(reg)) return ""
+    return `La fecha ${reg.date} está cerrada. Solo admin o super admin puede eliminar este tareo.`
+  }, [canDeleteRegistro])
 
   // Timer for session duration
   useEffect(() => {
@@ -262,6 +277,14 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       case "delete_last": {
         if (registros.length > 0) {
           const last = registros[registros.length - 1]
+          if (!canDeleteRegistro(last)) {
+            setFeedbackMessage({
+              type: "error",
+              message: getDeleteBlockMessage(last),
+              timeout: 5000
+            })
+            break
+          }
           deleteRegistroById(last.id, { beforeData: last, source: "voice_delete_last" })
             .then(() => {
               setRegistros(prev => prev.slice(0, -1))
@@ -370,7 +393,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       default:
         break
     }
-  }, [registros, workers, frentes, sessionAssignments, currentWorker, commitCurrentWorker, setRegistros, actividades, startEditingRegistro])
+  }, [registros, workers, frentes, sessionAssignments, currentWorker, commitCurrentWorker, setRegistros, actividades, startEditingRegistro, canDeleteRegistro, getDeleteBlockMessage])
 
   const handleFinalTranscript = useCallback((text) => {
     const result = parseContinuousVoice(text, workers, actividades, frentes, currentWorker)
@@ -669,6 +692,11 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   }
 
   const deleteRegistro = async (reg) => {
+    if (!canDeleteRegistro(reg)) {
+      setFeedbackMessage({ type: "error", message: getDeleteBlockMessage(reg), timeout: 5000 })
+      return
+    }
+
     const confirmed = window.confirm(`¿Seguro que deseas eliminar el registro de ${reg.workerNombre}?`)
     if (!confirmed) return
 
@@ -690,14 +718,26 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const deleteSelectedRegistros = async () => {
     if (selectedRegistroIds.length === 0) return
 
-    const confirmed = window.confirm(`¿Seguro que deseas eliminar ${selectedRegistroIds.length} registros seleccionados?`)
+    const selected = registros.filter(r => selectedRegistroIds.includes(r.id))
+    const blocked = selected.filter((reg) => !canDeleteRegistro(reg))
+    const deletable = selected.filter((reg) => canDeleteRegistro(reg))
+
+    if (deletable.length === 0) {
+      setFeedbackMessage({
+        type: "error",
+        message: blocked[0] ? getDeleteBlockMessage(blocked[0]) : "No hay registros habilitados para eliminar.",
+        timeout: 5000
+      })
+      return
+    }
+
+    const confirmed = window.confirm(`¿Seguro que deseas eliminar ${deletable.length} registros seleccionados?${blocked.length > 0 ? ` ${blocked.length} quedarán bloqueados por cierre.` : ""}`)
     if (!confirmed) return
 
     let success = 0
     let failed = 0
-    const selected = registros.filter(r => selectedRegistroIds.includes(r.id))
 
-    for (const reg of selected) {
+    for (const reg of deletable) {
       try {
         await deleteRegistroById(reg.id, { beforeData: reg, source: "voice_bulk_delete" })
         success++
@@ -713,9 +753,9 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     clearRegistroSelection()
 
     if (failed === 0) {
-      setFeedbackMessage({ type: "success", message: `Se eliminaron ${success} registros.`, timeout: 3500 })
+      setFeedbackMessage({ type: "success", message: `Se eliminaron ${success} registros.${blocked.length > 0 ? ` ${blocked.length} quedaron bloqueados por cierre.` : ""}`, timeout: 4000 })
     } else {
-      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success} y fallaron ${failed}.`, timeout: 5000 })
+      setFeedbackMessage({ type: "error", message: `Se eliminaron ${success}, fallaron ${failed}.${blocked.length > 0 ? ` ${blocked.length} estaban cerrados.` : ""}`, timeout: 5000 })
     }
   }
 
@@ -868,6 +908,17 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         </div>
       )}
 
+      {isSelectedDateClosed && !isPrivilegedUser && (
+        <div className="alert-info" style={{ marginBottom: 16 }}>
+          ℹ La fecha {fechaTareo} está cerrada. Puedes revisar y editar, pero no eliminar tareos desde esta vista.
+        </div>
+      )}
+      {isSelectedDateClosed && isPrivilegedUser && (
+        <div className="alert-info" style={{ marginBottom: 16 }}>
+          ℹ La fecha {fechaTareo} está cerrada para usuarios comunes. Tu perfil {profile?.role === "super_admin" ? "super admin" : "admin"} aún puede eliminar registros.
+        </div>
+      )}
+
       {/* Voice Command Guide */}
       {!isListening && (
         <div className="card" style={{ marginBottom: 16 }}>
@@ -946,9 +997,14 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
                   style={{ marginRight: 8 }}
                   title="Seleccionar registro"
                 />
-                <span className="mono" style={{ fontSize: 10, color: "var(--accent-blue)", minWidth: '65px' }}>
-                  {reg.timestamp}
-                </span>
+                <div style={{ minWidth: "88px", display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--accent-blue)" }}>
+                    {reg.date}
+                  </span>
+                  <span className="mono" style={{ fontSize: 9, color: "var(--text-dim)" }}>
+                    {reg.timestamp || ""}
+                  </span>
+                </div>
                 <span style={{ fontWeight: 700, color: "var(--text-main)", minWidth: '160px', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {reg.workerNombre.split(',')[0]}
                 </span>
@@ -969,7 +1025,13 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
                 <button onClick={() => startEditingRegistro(reg)} className="btn-pill-sm" title="Editar Tareo" style={{ marginRight: 6 }}>
                   Editar
                 </button>
-                <button onClick={() => deleteRegistro(reg)} className="btn-icon-danger" title="Eliminar Tareo">
+                <button
+                  onClick={() => deleteRegistro(reg)}
+                  className="btn-icon-danger"
+                  title={canDeleteRegistro(reg) ? "Eliminar Tareo" : getDeleteBlockMessage(reg)}
+                  disabled={!canDeleteRegistro(reg)}
+                  style={{ opacity: canDeleteRegistro(reg) ? 1 : 0.45, cursor: canDeleteRegistro(reg) ? "pointer" : "not-allowed" }}
+                >
                   <TrashIcon />
                 </button>
               </div>

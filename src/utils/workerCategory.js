@@ -2,6 +2,21 @@ function normalizeCategoryValue(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim()
 }
 
+function mapCategoryAbbreviation(value) {
+  const normalized = normalizeCategoryValue(value).toLowerCase()
+  if (!normalized) return ""
+
+  const known = {
+    ope: "Operario",
+    peo: "Peon",
+    tec: "Tecnico",
+    cap: "Capataz",
+    ofi: "Oficial",
+  }
+
+  return known[normalized] || normalized.toUpperCase()
+}
+
 export function extractWorkerCategoryCode(worker = {}) {
   const explicitCode = normalizeCategoryValue(worker.categoriaCode)
   if (explicitCode) return explicitCode
@@ -13,16 +28,19 @@ export function extractWorkerCategoryCode(worker = {}) {
 
 export function extractWorkerCategoryName(worker = {}) {
   const explicitName = normalizeCategoryValue(worker.categoriaNombre)
-  if (explicitName) return explicitName
+  if (explicitName && !/^\d+$/.test(explicitName)) return explicitName
 
   const categoria = normalizeCategoryValue(worker.categoria)
   if (categoria) {
     const withoutCode = categoria.replace(/^\d+\s*/, "").trim()
-    return withoutCode || categoria
+    if (withoutCode && !/^\d+$/.test(withoutCode)) return withoutCode
   }
 
-  const abbreviation = normalizeCategoryValue(worker.abrevCategoria)
-  return abbreviation ? abbreviation.toUpperCase() : ""
+  const abbreviation = mapCategoryAbbreviation(worker.abrevCategoria)
+  if (abbreviation) return abbreviation
+
+  if (categoria && !/^\d+$/.test(categoria)) return categoria
+  return ""
 }
 
 export function getWorkerCategoryLabel(worker = {}, options = {}) {
@@ -40,8 +58,8 @@ export function getWorkerCategoryLabel(worker = {}, options = {}) {
   if (includeCode && code) return code
   if (fullCategory) return includeCode ? fullCategory : fullCategory.replace(/^\d+\s*/, "").trim() || fullCategory
 
-  const abbreviation = normalizeCategoryValue(worker.abrevCategoria)
-  if (abbreviation) return abbreviation.toUpperCase()
+  const abbreviation = mapCategoryAbbreviation(worker.abrevCategoria)
+  if (abbreviation) return abbreviation
 
   return fallback
 }

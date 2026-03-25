@@ -21,6 +21,14 @@ function getSheetRows(sheet) {
 
 function findColumnIndex(headerRow, aliases) {
   const normalizedAliases = aliases.map(normalizeCompact)
+
+  const exactMatchIndex = headerRow.findIndex((cell) => {
+    const normalizedCell = normalizeCompact(cell)
+    return normalizedAliases.includes(normalizedCell)
+  })
+
+  if (exactMatchIndex >= 0) return exactMatchIndex
+
   return headerRow.findIndex((cell) => {
     const normalizedCell = normalizeCompact(cell)
     return normalizedAliases.some((alias) => normalizedCell.includes(alias))
