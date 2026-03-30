@@ -4,9 +4,11 @@ import { parseContinuousVoice } from "../utils/voiceParser"
 import { insertRegistro, updateRegistro, deleteRegistroById, fetchRegistros } from "../utils/supabaseClient"
 import { getWeekRange } from "../utils/dateUtils"
 import { useAuth } from "../contexts/AuthContext"
+import { canDeleteTareos, normalizeRole } from "../utils/accessControl"
 
 export default function VoiceRecorder({ workers, partidas, actividades, frentes, registros, setRegistros, getPartidaNombre, getFrenteNombre, fechaTareo, projectConfig }) {
   const { profile } = useAuth()
+  const currentRole = normalizeRole(profile?.role)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState("")
   const [speechSupported, setSpeechSupported] = useState(true)
@@ -26,18 +28,21 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const timerRef = useRef(null)
   const sessionStartRef = useRef(null)
   const closedTareoDates = Array.isArray(projectConfig?.closedTareoDates) ? projectConfig.closedTareoDates : []
-  const isPrivilegedUser = profile?.role === "admin" || profile?.role === "super_admin"
+  const isPrivilegedUser = canDeleteTareos(currentRole)
   const isSelectedDateClosed = Boolean(fechaTareo && closedTareoDates.includes(fechaTareo))
 
   const canDeleteRegistro = useCallback((reg) => {
     if (!reg?.date) return true
-    return isPrivilegedUser || !closedTareoDates.includes(reg.date)
-  }, [closedTareoDates, isPrivilegedUser])
+    return isPrivilegedUser
+  }, [isPrivilegedUser])
 
   const getDeleteBlockMessage = useCallback((reg) => {
     if (canDeleteRegistro(reg)) return ""
+    if (!isPrivilegedUser) {
+      return "Tu rol no puede eliminar tareos. Solicita a un admin o super admin."
+    }
     return `La fecha ${reg.date} está cerrada. Solo admin o super admin puede eliminar este tareo.`
-  }, [canDeleteRegistro])
+  }, [canDeleteRegistro, isPrivilegedUser])
 
   // Timer for session duration
   useEffect(() => {
@@ -878,9 +883,9 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
         </div>
       )}
 
-      {isSelectedDateClosed && !isPrivilegedUser && (
+      {!isPrivilegedUser && (
         <div className="alert-info" style={{ marginBottom: 16 }}>
-          ℹ La fecha {fechaTareo} está cerrada. Puedes revisar y editar, pero no eliminar tareos desde esta vista.
+          ℹ Tu rol no puede eliminar tareos desde esta vista. Si necesitas eliminar un registro, solicita apoyo a un admin.
         </div>
       )}
       {isSelectedDateClosed && isPrivilegedUser && (

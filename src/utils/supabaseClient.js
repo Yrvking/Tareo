@@ -13,6 +13,16 @@ import {
   putManyRegistrosLocal,
 } from "./offlineDb"
 import { validateAssignmentsByDailyLimits } from "./tareoLogic"
+import {
+  normalizeManagedUsers,
+  normalizeManagedUser,
+  normalizeAccessEntries,
+  normalizeAccessEntry,
+} from "./accessControl"
+import {
+  normalizeContractorCompanies,
+  normalizeContractorWorkers,
+} from "./contractorPortal"
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -27,6 +37,10 @@ export const supabase = hasSupabaseConfig ? createClient(supabaseUrl, supabaseAn
 const DATA_EVENT = "tareador:data-changed"
 const SYNC_EVENT = "tareador:sync-status"
 let appSettingsTableMissing = false
+const SYSTEM_USERS_KEY = "system_users"
+const ACCESS_ENTRIES_KEY = "access_entries"
+const CONTRACTOR_COMPANIES_KEY = "contractor_companies"
+const CONTRACTOR_ROSTER_KEY = "contractor_roster"
 
 function isNavigatorOnline() {
   if (typeof navigator === "undefined") return true
@@ -59,6 +73,30 @@ async function emitSyncStatus(detail = {}) {
 
 function emitDataChanged(detail = {}) {
   dispatchBrowserEvent(DATA_EVENT, detail)
+}
+
+function getStoredUsersFromPayload(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.users)) return payload.users
+  return []
+}
+
+function getStoredEntriesFromPayload(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.entries)) return payload.entries
+  return []
+}
+
+function getStoredCompaniesFromPayload(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.companies)) return payload.companies
+  return []
+}
+
+function getStoredRosterFromPayload(payload) {
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload?.workers)) return payload.workers
+  return []
 }
 
 function createLocalId(prefix = "local") {
@@ -465,6 +503,163 @@ export async function saveAppSettings(payload, settingKey = "catalogs") {
   }
 
   return true
+}
+
+async function fetchProfilesList() {
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, email, role")
+    .order("email", { ascending: true })
+
+  if (error) {
+    console.warn("No se pudo leer la lista de perfiles:", error.message)
+    return []
+  }
+
+  return Array.isArray(data) ? data : []
+}
+
+async function updateProfileRole(profileId, role) {
+  if (!supabase || !profileId) return false
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      role,
+    })
+    .eq("id", profileId)
+
+  if (error) {
+    console.warn("No se pudo actualizar el rol en profiles:", error.message)
+    return false
+  }
+
+  return true
+}
+
+export async function fetchStoredSystemUsers() {
+  const payload = await fetchAppSettings(SYSTEM_USERS_KEY)
+  return normalizeManagedUsers(getStoredUsersFromPayload(payload))
+}
+
+export async function saveStoredSystemUsers(users = []) {
+  return saveAppSettings({ users: normalizeManagedUsers(users) }, SYSTEM_USERS_KEY)
+}
+
+export async function fetchManagedUsers() {
+  const [storedUsers, profileUsers] = await Promise.all([
+    fetchStoredSystemUsers(),
+    fetchProfilesList(),
+  ])
+
+  return normalizeManagedUsers([
+    ...profileUsers.map((profile) => ({
+      id: profile.id,
+      email: profile.email,
+      role: profile.role,
+      source: "profiles",
+    })),
+    ...storedUsers,
+  ])
+}
+
+export async function upsertManagedUser(userData = {}) {
+  const existingUsers = await fetchStoredSystemUsers()
+  const normalized = normalizeManagedUser({
+    ...userData,
+    lastSeenAt: userData.lastSeenAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdAt: userData.createdAt || new Date().toISOString(),
+  })
+
+  const key = normalized.id || normalized.email
+  const nextUsers = normalizeManagedUsers([
+    ...existingUsers.filter((entry) => (entry.id || entry.email) !== key && entry.email !== normalized.email),
+    {
+      ...existingUsers.find((entry) => (entry.id || entry.email) === key || entry.email === normalized.email),
+      ...normalized,
+    },
+  ])
+
+  await saveStoredSystemUsers(nextUsers)
+  return nextUsers
+}
+
+export async function saveManagedUserRole(userData = {}, role = "user") {
+  const existingUsers = await fetchStoredSystemUsers()
+  const currentMatch = existingUsers.find((entry) => (
+    (userData.id && entry.id === userData.id) ||
+    (userData.email && entry.email === String(userData.email).trim().toLowerCase())
+  ))
+
+  const nextEntry = normalizeManagedUser({
+    ...currentMatch,
+    ...userData,
+    role,
+    updatedAt: new Date().toISOString(),
+    createdAt: currentMatch?.createdAt || userData.createdAt || new Date().toISOString(),
+  })
+
+  const nextUsers = normalizeManagedUsers([
+    ...existingUsers.filter((entry) => (
+      entry.id !== nextEntry.id &&
+      entry.email !== nextEntry.email
+    )),
+    nextEntry,
+  ])
+
+  await saveStoredSystemUsers(nextUsers)
+  if (nextEntry.id) {
+    await updateProfileRole(nextEntry.id, nextEntry.role)
+  }
+  return nextUsers
+}
+
+export async function fetchAccessEntries() {
+  const payload = await fetchAppSettings(ACCESS_ENTRIES_KEY)
+  return normalizeAccessEntries(getStoredEntriesFromPayload(payload))
+}
+
+export async function saveAccessEntries(entries = []) {
+  const normalized = normalizeAccessEntries(entries)
+  await saveAppSettings({ entries: normalized }, ACCESS_ENTRIES_KEY)
+  return normalized
+}
+
+export async function upsertAccessEntry(entry = {}) {
+  const entries = await fetchAccessEntries()
+  const normalized = normalizeAccessEntry(entry)
+  const nextEntries = normalizeAccessEntries([
+    ...entries.filter((current) => current.id !== normalized.id),
+    normalized,
+  ])
+
+  await saveAccessEntries(nextEntries)
+  return nextEntries
+}
+
+export async function fetchContractorCompanies() {
+  const payload = await fetchAppSettings(CONTRACTOR_COMPANIES_KEY)
+  return normalizeContractorCompanies(getStoredCompaniesFromPayload(payload))
+}
+
+export async function saveContractorCompanies(companies = []) {
+  const normalized = normalizeContractorCompanies(companies)
+  await saveAppSettings({ companies: normalized }, CONTRACTOR_COMPANIES_KEY)
+  return normalized
+}
+
+export async function fetchContractorRoster(companies = []) {
+  const payload = await fetchAppSettings(CONTRACTOR_ROSTER_KEY)
+  return normalizeContractorWorkers(getStoredRosterFromPayload(payload), companies)
+}
+
+export async function saveContractorRoster(workers = [], companies = []) {
+  const normalized = normalizeContractorWorkers(workers, companies)
+  await saveAppSettings({ workers: normalized }, CONTRACTOR_ROSTER_KEY)
+  return normalized
 }
 
 export async function fetchRegistros(startDate = null, endDate = null) {

@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { supabase, hasSupabaseConfig } from "../utils/supabaseClient";
+import {
+  supabase,
+  hasSupabaseConfig,
+  fetchStoredSystemUsers,
+  upsertManagedUser,
+} from "../utils/supabaseClient";
+import {
+  getRoleLabel,
+  resolveEffectiveRole,
+} from "../utils/accessControl";
 
 const AuthContext = createContext();
 
@@ -17,14 +26,14 @@ export function AuthProvider({ children }) {
     // Escuchar el estado de la sesión
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user.id, session.user);
       else setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user);
       } else {
         setProfile(null);
         setLoading(false);
@@ -34,7 +43,7 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(userId, authUser = null) {
     if (!supabase) {
       setProfile({ role: 'user' });
       setLoading(false);
@@ -49,15 +58,40 @@ export function AuthProvider({ children }) {
         .eq('id', userId)
         .single();
         
-      if (!error && data) {
-        setProfile(data);
-      } else {
-        // En un inicio, si el perfil no existe, podemos crearle uno temporal o dejarlo como usuario base
-        setProfile({ role: 'user' }); // Fallback temporal hasta que se cree en DB
-      }
+      const systemUsers = await fetchStoredSystemUsers();
+      const currentSystemUser = systemUsers.find((entry) => (
+        entry.id === userId ||
+        entry.email === String(authUser?.email || "").trim().toLowerCase()
+      ));
+
+      const effectiveRole = resolveEffectiveRole({
+        email: authUser?.email,
+        storedRole: currentSystemUser?.role,
+        profileRole: !error && data ? data.role : "user",
+      });
+
+      const nextProfile = {
+        ...(data || {}),
+        id: userId,
+        email: authUser?.email || data?.email || "",
+        role: effectiveRole,
+        roleLabel: getRoleLabel(effectiveRole),
+      };
+
+      setProfile(nextProfile);
+
+      await upsertManagedUser({
+        id: userId,
+        email: nextProfile.email,
+        role: effectiveRole,
+        displayName: authUser?.user_metadata?.full_name || data?.full_name || "",
+        lastSeenAt: new Date().toISOString(),
+        source: currentSystemUser?.source || (data?.role ? "profiles" : "app_settings"),
+      });
     } catch (err) {
       console.error("Error fetching profile:", err);
-      setProfile({ role: 'user' });
+      const fallbackRole = resolveEffectiveRole({ email: authUser?.email, storedRole: "user", profileRole: "user" });
+      setProfile({ id: userId, email: authUser?.email || "", role: fallbackRole, roleLabel: getRoleLabel(fallbackRole) });
     } finally {
       setLoading(false);
     }

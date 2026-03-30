@@ -10,6 +10,9 @@ import AIAssistant from "./components/AIAssistant"
 import Config from "./components/Config"
 import Help from "./components/Help"
 import Dashboard from "./components/Dashboard"
+import VigilanciaPanel from "./components/VigilanciaPanel"
+import PrevencionPanel from "./components/PrevencionPanel"
+import ContractorPortalPanel from "./components/ContractorPortalPanel"
 import {
   fetchAppSettings,
   fetchRegistros,
@@ -22,6 +25,10 @@ import {
 import { getTodayLocalDate, getWeekRange } from "./utils/dateUtils"
 import { normalizeWorkersCollection } from "./utils/workerCategory"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import {
+  canAccessConfig,
+  normalizeRole,
+} from "./utils/accessControl"
 import Login from "./components/Login"
 import {
   SparklesIcon,
@@ -32,7 +39,10 @@ import {
   UsersIcon,
   LayoutIcon,
   HelpIcon,
-  BarChartIcon
+  BarChartIcon,
+  ShieldIcon,
+  ClipboardCheckIcon,
+  QrIcon,
 } from "./components/Icons"
 import projectLogo from "../LOGO.png"
 import "./App.css"
@@ -75,20 +85,24 @@ function loadProjectConfigFromStorage() {
 }
 
 const TABS = [
-  { id: "dashboard", label: "Dashboard",       mobileLabel: "Dash",     icon: BarChartIcon },
-  { id: "mobile",    label: "Carga Grupal",    mobileLabel: "Carga",    icon: UsersIcon },
-  { id: "weekly",    label: "Control Semanal", mobileLabel: "Semanal",  icon: LayoutIcon },
-  { id: "manual",    label: "Manual",          mobileLabel: "Manual",   icon: PlusIcon },
-  { id: "registro",  label: "Voz",             mobileLabel: "Voz",      icon: MicIcon },
-  { id: "resumen",   label: "Planilla",        mobileLabel: "Planilla", icon: ChartIcon },
-  { id: "ai",        label: "Asistente",       mobileLabel: "IA",       icon: SparklesIcon },
-  { id: "ayuda",     label: "Ayuda",           mobileLabel: "Ayuda",    icon: HelpIcon, hideInBottomNav: true },
-  { id: "config",    label: "Config",          mobileLabel: "Config",   icon: SettingsIcon, adminOnly: true },
+  { id: "dashboard",  label: "Dashboard",       mobileLabel: "Dash",      icon: BarChartIcon,      roles: ["super_admin", "admin", "user"] },
+  { id: "mobile",     label: "Carga Grupal",    mobileLabel: "Carga",     icon: UsersIcon,         roles: ["super_admin", "admin", "user"] },
+  { id: "weekly",     label: "Control Semanal", mobileLabel: "Semanal",   icon: LayoutIcon,        roles: ["super_admin", "admin", "user"] },
+  { id: "manual",     label: "Manual",          mobileLabel: "Manual",    icon: PlusIcon,          roles: ["super_admin", "admin", "user"] },
+  { id: "registro",   label: "Voz",             mobileLabel: "Voz",       icon: MicIcon,           roles: ["super_admin", "admin", "user"] },
+  { id: "resumen",    label: "Planilla",        mobileLabel: "Planilla",  icon: ChartIcon,         roles: ["super_admin", "admin", "user"] },
+  { id: "ai",         label: "Asistente",       mobileLabel: "IA",        icon: SparklesIcon,      roles: ["super_admin", "admin", "user"] },
+  { id: "contratista", label: "Portal Contratista", mobileLabel: "Portal", icon: QrIcon,         roles: ["super_admin"], hideInBottomNav: true, bottomNavRoles: ["super_admin"] },
+  { id: "accesos",    label: "Vigilancia",      mobileLabel: "Accesos",   icon: ShieldIcon,        roles: ["super_admin"], hideInBottomNav: true, bottomNavRoles: ["super_admin"] },
+  { id: "prevencion", label: "Prevención",      mobileLabel: "SOMA",      icon: ClipboardCheckIcon, roles: ["super_admin"], hideInBottomNav: true, bottomNavRoles: ["super_admin"] },
+  { id: "ayuda",      label: "Ayuda",           mobileLabel: "Ayuda",     icon: HelpIcon,          roles: ["super_admin", "admin", "user", "vigilancia", "prevencion", "contratista"], hideInBottomNav: true },
+  { id: "config",     label: "Config",          mobileLabel: "Config",    icon: SettingsIcon,      roles: ["super_admin", "admin"] },
 ]
 
 function AppContent() {
   const { user, profile, logout } = useAuth()
-  const isAdminUser = profile?.role === "admin" || profile?.role === "super_admin"
+  const currentRole = normalizeRole(profile?.role)
+  const isAdminUser = canAccessConfig(currentRole)
   const cloudHydratedRef = useRef(false)
   const [tab, setTab] = useState("dashboard")
   const [showBottomNav, setShowBottomNav] = useState(() => (
@@ -299,11 +313,21 @@ function AppContent() {
     )
   }, [allRegistros, fechaTareo])
 
+  const visibleTabs = TABS.filter((tabItem) => tabItem.roles.includes(currentRole))
+  const bottomNavTabs = visibleTabs.filter((tabItem) => (
+    !tabItem.hideInBottomNav || tabItem.bottomNavRoles?.includes(currentRole)
+  ))
+
+  useEffect(() => {
+    if (visibleTabs.length === 0) return
+    if (!visibleTabs.some((item) => item.id === tab)) {
+      setTab(visibleTabs[0].id)
+    }
+  }, [tab, visibleTabs])
+
   if (!user) {
     return <Login />
   }
-
-  const visibleTabs = TABS.filter(t => !t.adminOnly || isAdminUser)
 
   const getPartidaNombre = (id) => {
     const p = partidas.find((p) => String(p.id) === String(id))
@@ -499,6 +523,24 @@ function AppContent() {
             />
           )}
 
+          {tab === "accesos" && (
+            <VigilanciaPanel
+              workers={workers}
+              fechaTareo={fechaTareo}
+            />
+          )}
+
+          {tab === "contratista" && (
+            <ContractorPortalPanel />
+          )}
+
+          {tab === "prevencion" && (
+            <PrevencionPanel
+              workers={workers}
+              fechaTareo={fechaTareo}
+            />
+          )}
+
           {tab === "ayuda" && <Help />}
 
           {tab === "config" && isAdminUser && (
@@ -527,7 +569,7 @@ function AppContent() {
 
         {showBottomNav && (
           <nav className="bottom-nav">
-            {visibleTabs.filter(t => !t.hideInBottomNav).map((t) => (
+            {bottomNavTabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}

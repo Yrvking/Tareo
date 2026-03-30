@@ -23,6 +23,7 @@ import {
 } from "../utils/importTemplates"
 import { insertRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
+import UserManagementPanel from "./UserManagementPanel"
 
 export default function Config({
   workers, setWorkers,
@@ -299,6 +300,8 @@ export default function Config({
 
   return (
     <div className="config-container">
+
+      <UserManagementPanel />
 
       {/* ── Feedback ──────────────────────────────────────────────────────────── */}
       {importFeedback && (
