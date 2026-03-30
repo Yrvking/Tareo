@@ -5,10 +5,13 @@ import {
   saveManagedUserRole,
 } from "../utils/supabaseClient"
 import {
+  canManageUsers,
   ROLE_OPTIONS,
   getRoleLabel,
   isSuperAdminEmail,
+  normalizeRole,
 } from "../utils/accessControl"
+import { useAuth } from "../contexts/AuthContext"
 
 const NON_SUPERADMIN_ROLE_OPTIONS = ROLE_OPTIONS.filter((option) => option.value !== "super_admin")
 
@@ -26,6 +29,9 @@ function formatSeenAt(value) {
 }
 
 export default function UserManagementPanel() {
+  const { profile } = useAuth()
+  const currentRole = normalizeRole(profile?.role)
+  const canEditUsers = canManageUsers(currentRole)
   const [managedUsers, setManagedUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,7 +71,7 @@ export default function UserManagementPanel() {
   }
 
   const handleRoleChange = async (entry, nextRole) => {
-    if (!entry?.email) return
+    if (!entry?.email || !canEditUsers) return
     setSaving(true)
     await saveManagedUserRole(entry, nextRole)
     await refreshUsers()
@@ -74,6 +80,11 @@ export default function UserManagementPanel() {
   }
 
   const handleCreateUser = async () => {
+    if (!canEditUsers) {
+      showFeedback("error", "Solo el superadmin puede agregar usuarios o cambiar roles.")
+      return
+    }
+
     const email = String(newEmail || "").trim().toLowerCase()
     if (!email) {
       showFeedback("error", "Ingresa un correo para crear o preparar el acceso.")
@@ -99,7 +110,7 @@ export default function UserManagementPanel() {
     <div className="card" style={{ marginBottom: 20 }}>
       <div className="label" style={{ marginBottom: 12 }}>USUARIOS DEL SISTEMA</div>
       <p style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 0, marginBottom: 14 }}>
-        Desde aquí puedes preparar accesos por correo y cambiar roles. El superadmin reservado es <strong style={{ color: "var(--text-main)" }}>yleon@padovasac.com</strong>.
+        El superadmin reservado es <strong style={{ color: "var(--text-main)" }}>yleon@padovasac.com</strong>. Solo ese rol puede agregar usuarios o cambiar permisos.
       </p>
 
       {feedback && (
@@ -115,12 +126,13 @@ export default function UserManagementPanel() {
           onChange={(event) => setNewEmail(event.target.value)}
           placeholder="nuevo.usuario@empresa.com"
           className="input-field"
+          disabled={!canEditUsers || saving}
         />
         <select
           value={isSuperAdminEmail(newEmail) ? "super_admin" : newRole}
           onChange={(event) => setNewRole(event.target.value)}
           className="input-field"
-          disabled={isSuperAdminEmail(newEmail)}
+          disabled={!canEditUsers || isSuperAdminEmail(newEmail) || saving}
         >
           {(isSuperAdminEmail(newEmail) ? ROLE_OPTIONS : NON_SUPERADMIN_ROLE_OPTIONS).map((option) => (
             <option key={option.value} value={option.value}>
@@ -131,11 +143,17 @@ export default function UserManagementPanel() {
         <button
           onClick={handleCreateUser}
           className="btn-primary"
-          disabled={saving}
+          disabled={!canEditUsers || saving}
         >
           <PlusIcon /> AGREGAR
         </button>
       </div>
+
+      {!canEditUsers && (
+        <div style={{ marginBottom: 14, fontSize: 11, color: "var(--text-dim)" }}>
+          Estás viendo la lista en modo consulta. La administración de usuarios y roles está reservada al <strong style={{ color: "var(--text-main)" }}>superadmin</strong>.
+        </div>
+      )}
 
       <div style={{ border: "1px solid var(--border-dim)", borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1.5fr) minmax(160px, 0.8fr) minmax(160px, 0.8fr)", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", fontSize: 11, color: "var(--text-dim)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -178,7 +196,7 @@ export default function UserManagementPanel() {
                   value={entry.role}
                   onChange={(event) => handleRoleChange(entry, event.target.value)}
                   className="input-field"
-                  disabled={lockedSuperAdmin || saving}
+                  disabled={!canEditUsers || lockedSuperAdmin || saving}
                 >
                   {roleOptions.map((option) => (
                     <option key={option.value} value={option.value}>

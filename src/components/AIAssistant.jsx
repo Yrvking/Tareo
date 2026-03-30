@@ -2,7 +2,16 @@ import React, { useState, useRef, useEffect } from "react"
 import { SendIcon, SparklesIcon, TrashIcon } from "./Icons"
 import { askAssistant, getAvailableModels } from "../utils/aiService"
 
-export default function AIAssistant({ workers, registros, actividades, fechaTareo }) {
+export default function AIAssistant({
+  workers,
+  registros,
+  allRegistros,
+  actividades,
+  partidas,
+  frentes,
+  projectConfig,
+  fechaTareo,
+}) {
   const [messages, setMessages] = useState([
     { role: "assistant", text: "Hola. Soy tu consultor S10 Pro. He activado el nuevo sistema de Failover Arquitectónico. ¿Qué analizamos hoy?" }
   ])
@@ -44,7 +53,14 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
 
     try {
       const response = await askAssistant(apiKey, userMsg, {
-        workers, registros, actividades, fechaTareo
+        workers,
+        registros,
+        allRegistros,
+        actividades,
+        partidas,
+        frentes,
+        projectConfig,
+        fechaTareo,
       })
       setMessages(prev => [...prev, { role: "assistant", text: response }])
     } catch (error) {
@@ -177,7 +193,7 @@ export default function AIAssistant({ workers, registros, actividades, fechaTare
 
       {/* Suggestions */}
       <div style={{ padding: '0 20px', display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-        {["Resumen de hoy", "Top 3 horas extras", "¿Novedades?"].map(s => (
+        {["Resumen ejecutivo", "Top 3 horas extras", "Comparar semanas", "¿Novedades históricas?"].map(s => (
           <button 
             key={s}
             onClick={() => { setInput(s); }}

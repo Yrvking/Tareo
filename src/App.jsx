@@ -518,7 +518,11 @@ function AppContent() {
             <AIAssistant
               workers={workers}
               registros={registros}
+              allRegistros={allRegistros}
               actividades={actividades}
+              partidas={partidas}
+              frentes={frentes}
+              projectConfig={projectConfig}
               fechaTareo={fechaTareo}
             />
           )}

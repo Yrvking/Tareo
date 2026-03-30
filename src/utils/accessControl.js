@@ -64,6 +64,10 @@ export function canAccessConfig(role) {
   return isAdminLikeRole(role)
 }
 
+export function canManageUsers(role) {
+  return normalizeRole(role) === "super_admin"
+}
+
 export function canDeleteTareos(role) {
   return isAdminLikeRole(role)
 }
