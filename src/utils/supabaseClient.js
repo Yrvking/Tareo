@@ -51,6 +51,25 @@ function canReachSupabase() {
   return Boolean(supabase && isNavigatorOnline())
 }
 
+function isRetryableSyncError(error) {
+  const code = String(error?.code || "").toUpperCase()
+  const message = String(error?.message || "").toLowerCase()
+
+  if (code === "DELETE_BLOCKED") return false
+  if (
+    message.includes("rls") ||
+    message.includes("permission") ||
+    message.includes("forbidden") ||
+    message.includes("unauthorized") ||
+    message.includes("not allowed") ||
+    message.includes("row-level security")
+  ) {
+    return false
+  }
+
+  return true
+}
+
 function dispatchBrowserEvent(eventName, detail = {}) {
   if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return
   window.dispatchEvent(new CustomEvent(eventName, { detail }))
@@ -807,6 +826,17 @@ export async function deleteRegistroById(id, options = {}) {
       emitDataChanged({ reason: "delete_synced" })
       return { id: existingRecord.id, syncStatus: "synced" }
     } catch (error) {
+      if (!isRetryableSyncError(error)) {
+        await putRegistroLocal({
+          ...existingRecord,
+          deleted: false,
+          syncStatus: "error",
+          updatedAt: new Date().toISOString(),
+        })
+        await clearQueuedRecord(existingRecord.id)
+        emitDataChanged({ reason: "delete_rejected" })
+        throw error
+      }
       console.warn("Delete offline fallback:", error.message)
     }
   }
@@ -914,11 +944,16 @@ export async function syncPendingRegistros() {
       result.failed++
 
       if (localRecord) {
+        const shouldRestoreDeletedRecord = item.type === "delete" && !isRetryableSyncError(error)
         await putRegistroLocal({
           ...localRecord,
+          deleted: shouldRestoreDeletedRecord ? false : localRecord.deleted,
           syncStatus: "error",
           updatedAt: new Date().toISOString(),
         })
+        if (shouldRestoreDeletedRecord) {
+          await clearQueuedRecord(item.recordId)
+        }
       }
     }
   }
