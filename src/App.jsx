@@ -358,6 +358,7 @@ function AppContent() {
   useEffect(() => {
     let active = true
     let refreshTimer = null
+    let intervalId = null
 
     async function loadData({ syncFirst = false } = {}) {
       if (!user) return
@@ -399,21 +400,47 @@ function AppContent() {
 
     loadData({ syncFirst: isOnline })
 
+    function queueLoad(syncFirst = false, delay = 120) {
+      clearTimeout(refreshTimer)
+      refreshTimer = setTimeout(() => {
+        loadData({ syncFirst })
+      }, delay)
+    }
+
     function handleDataChanged(event) {
       const reason = String(event?.detail?.reason || "")
       const retryPendingSync = !isLocalDevHost && isOnline && /_pending$/.test(reason)
-      clearTimeout(refreshTimer)
-      refreshTimer = setTimeout(() => {
-        loadData({ syncFirst: retryPendingSync })
-      }, 120)
+      queueLoad(retryPendingSync)
+    }
+
+    function handleWindowFocus() {
+      if (!active || isLocalDevHost || !user) return
+      queueLoad(isOnline, 80)
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        handleWindowFocus()
+      }
     }
 
     window.addEventListener(getDataEventName(), handleDataChanged)
+    window.addEventListener("focus", handleWindowFocus)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    if (!isLocalDevHost && user && isOnline) {
+      intervalId = setInterval(() => {
+        loadData({ syncFirst: false })
+      }, 15000)
+    }
 
     return () => {
       active = false
       clearTimeout(refreshTimer)
+      if (intervalId) clearInterval(intervalId)
       window.removeEventListener(getDataEventName(), handleDataChanged)
+      window.removeEventListener("focus", handleWindowFocus)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [user, isOnline, localFixtureRegistros])
 
