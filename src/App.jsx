@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { INITIAL_WORKERS, INITIAL_PARTIDAS, INITIAL_FRENTES, INITIAL_TIPOS_HORA, DEFAULT_PROJECT_CONFIG } from "./data/defaults"
 import { INITIAL_ACTIVIDADES } from "./data/actividades"
 import VoiceRecorder from "./components/VoiceRecorder"
@@ -24,6 +24,7 @@ import {
 } from "./utils/supabaseClient"
 import { getTodayLocalDate, getWeekRange } from "./utils/dateUtils"
 import { normalizeWorkersCollection } from "./utils/workerCategory"
+import { mergeWorkers } from "./utils/s10Importer"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import {
   canAccessConfig,
@@ -144,6 +145,39 @@ function AppContent() {
   const [syncState, setSyncState] = useState({ pendingCount: 0, syncing: false })
   const [localFixtureRegistros, setLocalFixtureRegistros] = useState([])
 
+  const applyCatalogPayload = useCallback((payload, options = {}) => {
+    if (!payload || typeof payload !== "object") return
+
+    const { mergeWorkerCatalog = false } = options
+
+    if (Array.isArray(payload.workers)) {
+      const normalizedRemoteWorkers = normalizeWorkersCollection(payload.workers)
+      setWorkers((current) => (
+        mergeWorkerCatalog
+          ? normalizeWorkersCollection(mergeWorkers(current, normalizedRemoteWorkers))
+          : normalizedRemoteWorkers
+      ))
+    }
+    if (Array.isArray(payload.partidas)) setPartidas(payload.partidas)
+    if (Array.isArray(payload.actividades)) setActividades(payload.actividades)
+    if (Array.isArray(payload.frentes)) setFrentes(payload.frentes)
+    if (Array.isArray(payload.tiposHora)) setTiposHora(payload.tiposHora)
+    if (payload.projectConfig && typeof payload.projectConfig === "object") {
+      setProjectConfig((current) => ({ ...current, ...payload.projectConfig }))
+    }
+  }, [])
+
+  const refreshCatalogs = useCallback(async (options = {}) => {
+    if (!user || isLocalDevHost) return null
+
+    const remotePayload = await fetchAppSettings("catalogs")
+    if (!remotePayload || typeof remotePayload !== "object") return null
+
+    applyCatalogPayload(remotePayload, options)
+    cloudHydratedRef.current = true
+    return remotePayload
+  }, [applyCatalogPayload, user])
+
   useEffect(() => {
     if (!isLocalDevHost) return
 
@@ -156,14 +190,12 @@ function AppContent() {
         const payload = await response.json()
         if (!active || !payload || typeof payload !== "object") return
 
-        if (Array.isArray(payload.workers)) setWorkers(normalizeWorkersCollection(payload.workers))
-        if (Array.isArray(payload.partidas)) setPartidas(payload.partidas)
-        if (Array.isArray(payload.actividades)) setActividades(payload.actividades)
-        if (Array.isArray(payload.frentes)) setFrentes(payload.frentes)
-        if (Array.isArray(payload.tiposHora)) setTiposHora(payload.tiposHora)
-        if (payload.projectConfig && typeof payload.projectConfig === "object") {
-          setProjectConfig({ ...DEFAULT_PROJECT_CONFIG, ...payload.projectConfig })
-        }
+        applyCatalogPayload({
+          ...payload,
+          projectConfig: payload.projectConfig && typeof payload.projectConfig === "object"
+            ? { ...DEFAULT_PROJECT_CONFIG, ...payload.projectConfig }
+            : null,
+        })
         if (Array.isArray(payload.registros)) {
           setLocalFixtureRegistros(payload.registros)
           setAllRegistros((prev) => mergeRegistrosByWorkerDate(prev, payload.registros))
@@ -180,7 +212,7 @@ function AppContent() {
     return () => {
       active = false
     }
-  }, [])
+  }, [applyCatalogPayload])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.workers, JSON.stringify(workers))
@@ -271,19 +303,10 @@ function AppContent() {
     cloudHydratedRef.current = false
 
     async function hydrateCatalogs() {
-      const remotePayload = await fetchAppSettings("catalogs")
-      if (!active || !remotePayload || typeof remotePayload !== "object") {
+      const remotePayload = await refreshCatalogs()
+      if (!active || !remotePayload) {
         cloudHydratedRef.current = true
         return
-      }
-
-      if (Array.isArray(remotePayload.workers)) setWorkers(normalizeWorkersCollection(remotePayload.workers))
-      if (Array.isArray(remotePayload.partidas)) setPartidas(remotePayload.partidas)
-      if (Array.isArray(remotePayload.actividades)) setActividades(remotePayload.actividades)
-      if (Array.isArray(remotePayload.frentes)) setFrentes(remotePayload.frentes)
-      if (Array.isArray(remotePayload.tiposHora)) setTiposHora(remotePayload.tiposHora)
-      if (remotePayload.projectConfig && typeof remotePayload.projectConfig === "object") {
-        setProjectConfig({ ...DEFAULT_PROJECT_CONFIG, ...remotePayload.projectConfig })
       }
 
       cloudHydratedRef.current = true
@@ -294,7 +317,25 @@ function AppContent() {
     return () => {
       active = false
     }
-  }, [user])
+  }, [refreshCatalogs, user])
+
+  useEffect(() => {
+    if (isLocalDevHost || !user) return undefined
+
+    function refreshWhenVisible() {
+      if (document.visibilityState === "visible") {
+        refreshCatalogs({ mergeWorkerCatalog: true })
+      }
+    }
+
+    window.addEventListener("focus", refreshWhenVisible)
+    document.addEventListener("visibilitychange", refreshWhenVisible)
+
+    return () => {
+      window.removeEventListener("focus", refreshWhenVisible)
+      document.removeEventListener("visibilitychange", refreshWhenVisible)
+    }
+  }, [refreshCatalogs, user])
 
   useEffect(() => {
     if (isLocalDevHost) return
@@ -358,10 +399,12 @@ function AppContent() {
 
     loadData({ syncFirst: isOnline })
 
-    function handleDataChanged() {
+    function handleDataChanged(event) {
+      const reason = String(event?.detail?.reason || "")
+      const retryPendingSync = !isLocalDevHost && isOnline && /_pending$/.test(reason)
       clearTimeout(refreshTimer)
       refreshTimer = setTimeout(() => {
-        loadData({ syncFirst: false })
+        loadData({ syncFirst: retryPendingSync })
       }, 120)
     }
 

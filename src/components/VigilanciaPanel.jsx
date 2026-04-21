@@ -291,7 +291,7 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
 
             <div style={{ marginBottom: 12 }}>
               <label className="field-label-sm">QR / DNI / Código</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
+              <div className="responsive-inline-form" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto" }}>
                 <input
                   type="text"
                   value={accessCode}
@@ -304,8 +304,9 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
                   }}
                   className="input-field"
                   placeholder="Escanea QR, pega el token o escribe DNI..."
+                  style={{ minWidth: 0 }}
                 />
-                <button className="btn-secondary" onClick={resolveWorkerFromAccessCode}>
+                <button className="btn-secondary" onClick={resolveWorkerFromAccessCode} style={{ flex: "0 0 auto" }}>
                   RESOLVER
                 </button>
               </div>
@@ -432,7 +433,7 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
                       <span>Egreso</span>
                     </div>
                     {!entry.checkOutTime && (
-                      <button onClick={() => handleRegisterEgreso(entry)} className="btn-pill-sm">
+                      <button onClick={() => handleRegisterEgreso(entry)} className="btn-pill-sm" style={{ maxWidth: "100%" }}>
                         Marcar egreso
                       </button>
                     )}

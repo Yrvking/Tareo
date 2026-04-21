@@ -480,11 +480,18 @@ main {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 4px;
   padding: 8px;
   box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
   z-index: 1000;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottom-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
@@ -500,16 +507,20 @@ main {
   gap: 6px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 68px;
+  min-width: 68px;
   min-height: 62px;
   padding: 10px 4px 8px;
   border-radius: 14px;
 }
 
 .nav-item span {
+  display: block;
   font-size: 11px;
   line-height: 1.05;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .nav-item:hover {
@@ -655,6 +666,13 @@ main {
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s, opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
 }
 
 .btn-primary:hover {
@@ -674,6 +692,13 @@ main {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
 }
 
 .btn-secondary:hover {
@@ -750,6 +775,26 @@ main {
   padding: 0 16px;
 }
 
+.responsive-inline-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.responsive-inline-form > .input-field,
+.responsive-inline-form > input.input-field,
+.responsive-inline-form > textarea.input-field,
+.responsive-inline-form > div {
+  min-width: 0;
+}
+
+.responsive-inline-form > .btn-primary,
+.responsive-inline-form > .btn-secondary,
+.responsive-inline-form > .btn-pill-sm,
+.responsive-inline-form > .btn-pill-danger {
+  flex-shrink: 0;
+}
+
 /* Media Queries */
 @media (max-width: 480px) {
   .app-container {
@@ -764,10 +809,12 @@ main {
     padding: 7px 6px;
   }
   .nav-item {
+    flex-basis: 60px;
+    min-width: 60px;
     min-height: 58px;
     padding: 8px 2px 7px;
   }
-  .nav-item span { font-size: 11px; }
+  .nav-item span { font-size: 10px; }
   .build-version-tag {
     right: 10px;
     bottom: calc(84px + var(--safe-bottom));
@@ -787,6 +834,12 @@ main {
   .weekly-action-secondary {
     width: 100%;
     padding: 12px 16px;
+  }
+  .responsive-inline-form > .btn-primary,
+  .responsive-inline-form > .btn-secondary,
+  .responsive-inline-form > .btn-pill-sm,
+  .responsive-inline-form > .btn-pill-danger {
+    width: 100%;
   }
 }
 
@@ -1118,6 +1171,7 @@ main {
   background: rgba(255,255,255,0.02);
   color: inherit;
   text-align: left;
+  flex-wrap: wrap;
 }
 
 .dashboard-list-row {

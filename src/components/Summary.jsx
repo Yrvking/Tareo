@@ -3,8 +3,10 @@ import { DownloadIcon, FileIcon } from "./Icons"
 import { getAccountingExportIssues } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
 import { getWeekRange } from "../utils/dateUtils"
-import { getWorkerCategoryLabel } from "../utils/workerCategory"
+import { fetchAppSettings } from "../utils/supabaseClient"
+import { getWorkerCategoryLabel, normalizeWorkersCollection } from "../utils/workerCategory"
 import { resolveAccountingPartida } from "../utils/accountingPartidas"
+import { mergeWorkers } from "../utils/s10Importer"
 
 function formatDateLabel(dateString) {
   const date = new Date(`${dateString}T12:00:00`)
@@ -269,11 +271,18 @@ export default function Summary({
     [registros, workers]
   )
 
-  const handleExportS10 = () => {
+  const resolveLatestWorkers = async () => {
+    const remotePayload = await fetchAppSettings("catalogs")
+    if (!Array.isArray(remotePayload?.workers)) return workers
+    return normalizeWorkersCollection(mergeWorkers(workers, normalizeWorkersCollection(remotePayload.workers)))
+  }
+
+  const handleExportS10 = async () => {
     try {
+      const exportWorkers = await resolveLatestWorkers()
       const filename = generateWeeklyXLS({
         registros,
-        workers,
+        workers: exportWorkers,
         partidas,
         tiposHora: tiposHora || [],
         semana: exportSemana,
@@ -310,9 +319,10 @@ export default function Summary({
   const handleExportAccounting = async () => {
     try {
       const { exportAccountingWorkbook } = await import("../utils/planillaExports")
+      const exportWorkers = await resolveLatestWorkers()
       const filename = await exportAccountingWorkbook({
         registros,
-        workers,
+        workers: exportWorkers,
         partidas,
         actividades,
         fechaTareo,

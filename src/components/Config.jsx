@@ -588,9 +588,9 @@ export default function Config({
           {workers.length === 0 && <div className="empty-state">No hay trabajadores registrados.</div>}
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="responsive-inline-form">
           <input type="text" value={newWorkerName} onChange={e => setNewWorkerName(e.target.value)}
-            placeholder="Nuevo trabajador (APELLIDOS, Nombre)..." className="input-field" style={{ flex: 1 }} />
+            placeholder="Nuevo trabajador (APELLIDOS, Nombre)..." className="input-field" style={{ flex: "1 1 220px", minWidth: 0 }} />
           <button
             onClick={() => {
               if (!newWorkerName.trim()) return
@@ -598,6 +598,7 @@ export default function Config({
               setNewWorkerName("")
             }}
             className="btn-primary"
+            style={{ flex: "0 0 auto" }}
           >
             <PlusIcon /> AGREGAR
           </button>
@@ -633,11 +634,11 @@ export default function Config({
           {partidas.length === 0 && <div className="empty-state">No hay partidas registradas.</div>}
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="responsive-inline-form">
           <input type="text" value={newPartidaId} onChange={e => setNewPartidaId(e.target.value)}
-            placeholder="Cód." className="input-field mono" style={{ width: 110 }} />
+            placeholder="Cód." className="input-field mono" style={{ width: 110, flex: "0 0 110px" }} />
           <input type="text" value={newPartidaNombre} onChange={e => setNewPartidaNombre(e.target.value)}
-            placeholder="Nombre partida..." className="input-field" style={{ flex: 1 }} />
+            placeholder="Nombre partida..." className="input-field" style={{ flex: "1 1 220px", minWidth: 0 }} />
           <button
             onClick={() => {
               if (!newPartidaId.trim() || !newPartidaNombre.trim()) return
@@ -645,6 +646,7 @@ export default function Config({
               setNewPartidaId(""); setNewPartidaNombre("")
             }}
             className="btn-primary"
+            style={{ flex: "0 0 auto" }}
           >
             <PlusIcon /> AGREGAR
           </button>
