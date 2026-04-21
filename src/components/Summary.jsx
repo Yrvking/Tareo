@@ -4,6 +4,7 @@ import { getAccountingExportIssues } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
 import { getWeekRange } from "../utils/dateUtils"
 import { getWorkerCategoryLabel } from "../utils/workerCategory"
+import { resolveAccountingPartida } from "../utils/accountingPartidas"
 
 function formatDateLabel(dateString) {
   const date = new Date(`${dateString}T12:00:00`)
@@ -56,6 +57,11 @@ export default function Summary({
       return keys.map((key) => [String(key), worker])
     })),
     [workers]
+  )
+
+  const partidaMap = useMemo(
+    () => new Map((partidas || []).map((partida) => [String(partida.id), partida])),
+    [partidas]
   )
 
   const workerWeeklyData = useMemo(() => {
@@ -193,9 +199,13 @@ export default function Summary({
         const activity = activityMap.get(String(assignment.actividadId))
         const partidaId = activity?.partidaId || assignment.partidaId || "SIN_PARTIDA"
         if (!summary[partidaId]) {
+          const partidaNombre = getPartidaNombre(partidaId)
+          const accountingPartida = resolveAccountingPartida(partidaId, partidaNombre)
           summary[partidaId] = {
             id: partidaId,
-            nombre: getPartidaNombre(partidaId),
+            nombre: partidaNombre,
+            partidaContable: accountingPartida.accountingCode,
+            descripcionContable: accountingPartida.accountingDescription,
             totalHn: 0,
             totalHe: 0,
           }
@@ -206,6 +216,53 @@ export default function Summary({
     })
     return Object.values(summary).sort((a, b) => (b.totalHn + b.totalHe) - (a.totalHn + a.totalHe))
   }, [registros, activityMap, getPartidaNombre])
+
+  const weeklyAccountingDetail = useMemo(() => {
+    const summary = new Map()
+
+    registros.forEach((reg) => {
+      reg.assignments.forEach((assignment) => {
+        const hn = Number(assignment.horasNormales) || 0
+        const he = Number(assignment.horasExtras) || 0
+        if (!hn && !he) return
+
+        const worker = workerMap.get(String(reg.workerId))
+        const activity = activityMap.get(String(assignment.actividadId))
+        const partidaId = String(activity?.partidaId || assignment.partidaId || "SIN_PARTIDA")
+        const partidaNombre = partidaMap.get(partidaId)?.nombre || getPartidaNombre(partidaId)
+        const accountingPartida = resolveAccountingPartida(partidaId, partidaNombre)
+        const key = `${String(reg.workerId)}__${partidaId}`
+
+        if (!summary.has(key)) {
+          summary.set(key, {
+            workerId: String(reg.workerId),
+            workerNombre: worker?.nombre || reg.workerNombre || reg.workerId,
+            categoria: getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }),
+            partidaId,
+            partidaNombre,
+            partidaContable: accountingPartida.accountingCode,
+            descripcionContable: accountingPartida.accountingDescription,
+            totalHn: 0,
+            totalHe: 0,
+          })
+        }
+
+        const row = summary.get(key)
+        row.totalHn += hn
+        row.totalHe += he
+      })
+    })
+
+    return Array.from(summary.values())
+      .map((row) => ({
+        ...row,
+        total: row.totalHn + row.totalHe,
+      }))
+      .sort((a, b) => (
+        a.workerNombre.localeCompare(b.workerNombre, "es") ||
+        a.partidaNombre.localeCompare(b.partidaNombre, "es")
+      ))
+  }, [registros, workerMap, activityMap, partidaMap, getPartidaNombre])
 
   const accountingIssues = useMemo(
     () => getAccountingExportIssues(registros, workers),
@@ -301,67 +358,119 @@ export default function Summary({
       )}
 
       {viewType === "worker_weekly" && (
-        <div className="card full-width-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="card-header-dark summary-header-bar">
-            <span className="label">REPORTE DE TAREO DE PERSONAL OBRERO</span>
-            <span className="summary-helper-text">Exporta visual, contabilidad o S10 desde la barra superior.</span>
+        <>
+          <div className="card full-width-card" style={{ padding: 0, overflow: "hidden", marginBottom: 16 }}>
+            <div className="card-header-dark summary-header-bar">
+              <span className="label">REPORTE DE TAREO DE PERSONAL OBRERO</span>
+              <span className="summary-helper-text">Exporta visual, contabilidad o S10 desde la barra superior.</span>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th rowSpan="2">TRABAJADOR</th>
+                    <th rowSpan="2">CAT.</th>
+                    {weekRange.map((day) => (
+                      <th key={day.date} colSpan="2" className="text-center">{day.label} {day.dayNum}</th>
+                    ))}
+                    <th colSpan="5" className="text-center" style={{ background: "rgba(100,255,218,0.1)" }}>TOTALES</th>
+                  </tr>
+                  <tr>
+                    {weekRange.map((day) => (
+                      <React.Fragment key={`sub-${day.date}`}>
+                        <th className="sub-th">HN</th>
+                        <th className="sub-th">HE</th>
+                      </React.Fragment>
+                    ))}
+                    <th className="sub-th" style={{ color: "var(--accent-gold)", minWidth: "60px" }}>T. NORMAL</th>
+                    <th className="sub-th" style={{ color: "#ef4444", minWidth: "60px" }}>T. EXTRA</th>
+                    <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 60%</th>
+                    <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 100%</th>
+                    <th className="sub-th" style={{ fontWeight: "800", minWidth: "70px" }}>T. TRAB.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(workerWeeklyData).map(([workerId, data]) => {
+                    let rowTotalHn = 0
+                    let rowTotalHe = 0
+                    return (
+                      <tr key={workerId}>
+                        <td className="worker-name-col">{data.nombre}</td>
+                        <td className="text-center cat-col">{data.categoria}</td>
+                        {weekRange.map((day) => {
+                          const cell = data.days[day.date] || { hn: 0, he: 0 }
+                          rowTotalHn += cell.hn
+                          rowTotalHe += cell.he
+                          return (
+                            <React.Fragment key={`${workerId}-${day.date}`}>
+                              <td className="text-center val-col">{cell.hn || "—"}</td>
+                              <td className="text-center val-col he-text">{cell.he || "—"}</td>
+                            </React.Fragment>
+                          )
+                        })}
+                        <td className="text-center val-col total-col-hn">{rowTotalHn}</td>
+                        <td className="text-center val-col total-col-he">{rowTotalHe}</td>
+                        <td className="text-center val-col text-dim">0</td>
+                        <td className="text-center val-col text-dim">0</td>
+                        <td className="text-center val-col total-col-final">{rowTotalHn + rowTotalHe}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th rowSpan="2">TRABAJADOR</th>
-                  <th rowSpan="2">CAT.</th>
-                  {weekRange.map((day) => (
-                    <th key={day.date} colSpan="2" className="text-center">{day.label} {day.dayNum}</th>
-                  ))}
-                  <th colSpan="5" className="text-center" style={{ background: "rgba(100,255,218,0.1)" }}>TOTALES</th>
-                </tr>
-                <tr>
-                  {weekRange.map((day) => (
-                    <React.Fragment key={`sub-${day.date}`}>
-                      <th className="sub-th">HN</th>
-                      <th className="sub-th">HE</th>
-                    </React.Fragment>
-                  ))}
-                  <th className="sub-th" style={{ color: "var(--accent-gold)", minWidth: "60px" }}>T. NORMAL</th>
-                  <th className="sub-th" style={{ color: "#ef4444", minWidth: "60px" }}>T. EXTRA</th>
-                  <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 60%</th>
-                  <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 100%</th>
-                  <th className="sub-th" style={{ fontWeight: "800", minWidth: "70px" }}>T. TRAB.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(workerWeeklyData).map(([workerId, data]) => {
-                  let rowTotalHn = 0
-                  let rowTotalHe = 0
-                  return (
-                    <tr key={workerId}>
-                      <td className="worker-name-col">{data.nombre}</td>
-                      <td className="text-center cat-col">{data.categoria}</td>
-                      {weekRange.map((day) => {
-                        const cell = data.days[day.date] || { hn: 0, he: 0 }
-                        rowTotalHn += cell.hn
-                        rowTotalHe += cell.he
-                        return (
-                          <React.Fragment key={`${workerId}-${day.date}`}>
-                            <td className="text-center val-col">{cell.hn || "—"}</td>
-                            <td className="text-center val-col he-text">{cell.he || "—"}</td>
-                          </React.Fragment>
-                        )
-                      })}
-                      <td className="text-center val-col total-col-hn">{rowTotalHn}</td>
-                      <td className="text-center val-col total-col-he">{rowTotalHe}</td>
-                      <td className="text-center val-col text-dim">0</td>
-                      <td className="text-center val-col text-dim">0</td>
-                      <td className="text-center val-col total-col-final">{rowTotalHn + rowTotalHe}</td>
+
+          <div className="card full-width-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div className="card-header-dark summary-header-stack">
+              <span className="label">DETALLE CONTABLE SEMANAL</span>
+              <span className="summary-helper-text">Cruce por trabajador, partida de control y partida contable.</span>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: "220px" }}>TRABAJADOR</th>
+                    <th style={{ minWidth: "120px" }}>CAT.</th>
+                    <th style={{ minWidth: "110px" }}>P.C.</th>
+                    <th style={{ minWidth: "240px" }}>PARTIDA DE CONTROL</th>
+                    <th style={{ minWidth: "130px" }}>PARTIDA CONTABLE</th>
+                    <th style={{ minWidth: "220px" }}>DESC. PARTIDA CONTABLE</th>
+                    <th className="text-center" style={{ minWidth: "70px" }}>HN</th>
+                    <th className="text-center" style={{ minWidth: "70px" }}>HE</th>
+                    <th className="text-center" style={{ minWidth: "80px" }}>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyAccountingDetail.length === 0 && (
+                    <tr>
+                      <td colSpan={9} style={{ textAlign: "center", padding: "24px", color: "var(--text-muted)" }}>
+                        Sin detalle contable para la semana seleccionada
+                      </td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                  )}
+                  {weeklyAccountingDetail.map((row, index) => (
+                    <tr key={`${row.workerId}-${row.partidaId}-${index}`}>
+                      <td className="worker-name-col">{row.workerNombre}</td>
+                      <td className="text-center">{row.categoria}</td>
+                      <td className="mono" style={{ color: "var(--accent-gold)", fontSize: "11px" }}>{row.partidaId}</td>
+                      <td style={{ fontWeight: 600 }}>{row.partidaNombre}</td>
+                      <td className="mono" style={{ color: row.partidaContable ? "var(--accent-blue)" : "#f87171", fontWeight: 700 }}>
+                        {row.partidaContable || "SIN MAPEO"}
+                      </td>
+                      <td style={{ color: row.descripcionContable ? "var(--text-main)" : "#fca5a5" }}>
+                        {row.descripcionContable || "No se encontro partida contable para esta partida de control"}
+                      </td>
+                      <td className="text-center mono total-col-hn">{row.totalHn.toFixed(1)}</td>
+                      <td className="text-center mono total-col-he">{row.totalHe.toFixed(1)}</td>
+                      <td className="text-center mono total-col-final">{row.total.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {viewType === "activity_daily" && (
@@ -550,6 +659,8 @@ export default function Summary({
                   <tr>
                     <th style={{ minWidth: "120px" }}>CÓDIGO</th>
                     <th>PARTIDA DE CONTROL</th>
+                    <th style={{ minWidth: "120px" }}>PARTIDA CONTABLE</th>
+                    <th style={{ minWidth: "220px" }}>DESC. PARTIDA CONTABLE</th>
                     <th className="text-center" style={{ minWidth: "70px" }}>HN</th>
                     <th className="text-center" style={{ minWidth: "70px" }}>HE</th>
                     <th className="text-center" style={{ minWidth: "80px" }}>TOTAL</th>
@@ -557,12 +668,18 @@ export default function Summary({
                 </thead>
                 <tbody>
                   {weeklyPartidaSummary.length === 0 && (
-                    <tr><td colSpan={5} style={{ textAlign: "center", padding: "24px", color: "var(--text-muted)" }}>Sin registros esta semana</td></tr>
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "var(--text-muted)" }}>Sin registros esta semana</td></tr>
                   )}
                   {weeklyPartidaSummary.map((data, index) => (
                     <tr key={`${data.id}-${index}`}>
                       <td className="mono" style={{ color: "var(--accent-gold)", fontSize: "11px" }}>{data.id}</td>
                       <td style={{ fontWeight: 600 }}>{data.nombre}</td>
+                      <td className="mono" style={{ color: data.partidaContable ? "var(--accent-blue)" : "#f87171", fontWeight: 700 }}>
+                        {data.partidaContable || "SIN MAPEO"}
+                      </td>
+                      <td style={{ color: data.descripcionContable ? "var(--text-main)" : "#fca5a5" }}>
+                        {data.descripcionContable || "No se encontro partida contable"}
+                      </td>
                       <td className="text-center mono" style={{ color: "var(--accent-gold)" }}>{data.totalHn.toFixed(1)}</td>
                       <td className="text-center mono" style={{ color: "#ef4444" }}>{data.totalHe.toFixed(1)}</td>
                       <td className="text-center mono total-col-final">{(data.totalHn + data.totalHe).toFixed(1)}</td>

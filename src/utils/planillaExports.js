@@ -3,6 +3,7 @@ import { parseLocalDate } from "./dateUtils"
 import { getAccountingExportIssues } from "./exportCSV"
 import { getWeekNumber } from "./s10Exporter"
 import { getWorkerCategoryLabel } from "./workerCategory"
+import { resolveAccountingPartida } from "./accountingPartidas"
 
 const APP = {
   dark: "FF0F172A",
@@ -285,6 +286,7 @@ function buildAccountingRows(registros, workers, actividades, partidas, weekRang
       const total100 = weekDays.reduce((sum, day) => sum + (row.days[day.date]?.he100 || 0), 0)
       const total = totalNormal + total60 + total100
       const costoHora = Number(worker.costoHora || 0)
+      const accountingPartida = resolveAccountingPartida(row.partidaId, row.partidaNombre)
 
       return {
         item: index + 1,
@@ -294,6 +296,8 @@ function buildAccountingRows(registros, workers, actividades, partidas, weekRang
         categoria: getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }).toUpperCase(),
         pc: row.partidaId,
         partida: row.partidaNombre,
+        partidaContable: accountingPartida.accountingCode,
+        descripcionContable: accountingPartida.accountingDescription,
         falta: "",
         observation: row.observation,
         costoHora,
@@ -612,7 +616,7 @@ function buildAccountingWorkbook({
 
   const ws = workbook.addWorksheet("TAREO SEMANA")
   ws.views = [{ state: "frozen", ySplit: 9 }]
-  setColumnWidths(ws, [2.5, 6, 12, 18, 18, 14, 12, 28, 10, 6, 6, 6, 6, 6, 6, 6, 10, 10, 10, 24, 12, 14])
+  setColumnWidths(ws, [2.5, 6, 12, 18, 18, 14, 12, 28, 16, 24, 10, 6, 6, 6, 6, 6, 6, 6, 10, 10, 10, 24, 12, 14])
 
   ws.mergeCells("B2:D2")
   ws.getCell("B2").value = projectConfig?.empresa || "INVERSIONES MELCEN S.A."
@@ -637,7 +641,7 @@ function buildAccountingWorkbook({
     ws.getCell(ref).fill = { type: "pattern", pattern: "solid", fgColor: { argb: APP.white } }
   })
 
-  const mergedVertical = ["B8:B9", "C8:C9", "D8:D9", "E8:E9", "F8:F9", "G8:G9", "H8:H9", "I8:I9", "Q8:Q9", "R8:R9", "S8:S9", "T8:T9", "U8:U9", "V8:V9"]
+  const mergedVertical = ["B8:B9", "C8:C9", "D8:D9", "E8:E9", "F8:F9", "G8:G9", "H8:H9", "I8:I9", "J8:J9", "K8:K9", "S8:S9", "T8:T9", "U8:U9", "V8:V9", "W8:W9", "X8:X9"]
   mergedVertical.forEach((range) => ws.mergeCells(range))
 
   const headLabels = {
@@ -648,20 +652,22 @@ function buildAccountingWorkbook({
     F8: "CATEGORIA",
     G8: "P.C",
     H8: "PARTIDA DE CONTROL",
-    I8: "FALTA",
-    J8: "LUN",
-    K8: "MAR",
-    L8: "MIÉ",
-    M8: "JUE",
-    N8: "VIE",
-    O8: "SÁB",
-    P8: "DOM",
-    Q8: "HORAS\nNORMAL",
-    R8: "H.H\n60%",
-    S8: "H.H\n100%",
-    T8: "OBSERVACION",
-    U8: "COSTO\nHORA",
-    V8: "COSTO\nTOTAL",
+    I8: "PARTIDA\nCONTABLE",
+    J8: "DESC.\nCONTABLE",
+    K8: "FALTA",
+    L8: "LUN",
+    M8: "MAR",
+    N8: "MIÉ",
+    O8: "JUE",
+    P8: "VIE",
+    Q8: "SÁB",
+    R8: "DOM",
+    S8: "HORAS\nNORMAL",
+    T8: "H.H\n60%",
+    U8: "H.H\n100%",
+    V8: "OBSERVACION",
+    W8: "COSTO\nHORA",
+    X8: "COSTO\nTOTAL",
   }
   Object.entries(headLabels).forEach(([ref, value]) => {
     const cell = ws.getCell(ref)
@@ -670,7 +676,7 @@ function buildAccountingWorkbook({
   })
 
   weekDays.forEach((day, index) => {
-    const cell = ws.getCell(9, 10 + index)
+    const cell = ws.getCell(9, 12 + index)
     cell.value = day.dayNum
     styleHeaderCell(cell, { fill: APP.white, fontColor: APP.dark })
   })
@@ -683,14 +689,16 @@ function buildAccountingWorkbook({
       row.dni,
       row.apellidos,
       row.nombres,
-      row.categoria,
-      row.pc,
-      row.partida,
-      row.falta,
-      ...row.days.map((day) => day.total || 0),
-      row.totalNormal,
-      row.total60,
-      row.total100,
+        row.categoria,
+        row.pc,
+        row.partida,
+        row.partidaContable,
+        row.descripcionContable,
+        row.falta,
+        ...row.days.map((day) => day.total || 0),
+        row.totalNormal,
+        row.total60,
+        row.total100,
       row.observation,
       row.costoHora,
       row.costoTotal,
@@ -698,23 +706,21 @@ function buildAccountingWorkbook({
     values.forEach((value, columnIndex) => {
       const cell = excelRow.getCell(columnIndex + 1)
       cell.value = value
-      const fill = columnIndex >= 16 && columnIndex <= 18
-        ? [APP.goldSoft, APP.redSoft, APP.redSoft][columnIndex - 16]
-        : columnIndex === 21
+      const fill = columnIndex >= 18 && columnIndex <= 20
+        ? [APP.goldSoft, APP.redSoft, APP.redSoft][columnIndex - 18]
+        : columnIndex === 22
           ? APP.goldSoft
-          : columnIndex === 20
-            ? APP.goldSoft
-            : columnIndex === 21
+            : columnIndex === 23
             ? APP.blueSoft
             : APP.white
       styleDataCell(cell, {
         fill,
-        fontColor: columnIndex === 21 ? APP.blue : APP.dark,
-        horizontal: columnIndex >= 9 && columnIndex <= 18 ? "center" : columnIndex === 3 || columnIndex === 4 || columnIndex === 7 || columnIndex === 19 ? "left" : "center",
-        bold: columnIndex === 2 || columnIndex === 21,
+        fontColor: columnIndex === 23 ? APP.blue : APP.dark,
+        horizontal: columnIndex >= 11 && columnIndex <= 20 ? "center" : columnIndex === 3 || columnIndex === 4 || columnIndex === 7 || columnIndex === 9 || columnIndex === 21 ? "left" : "center",
+        bold: columnIndex === 2 || columnIndex === 23,
       })
-      if (typeof value === "number" && columnIndex >= 9 && columnIndex <= 21) {
-        cell.numFmt = columnIndex >= 21 ? '"S/" #,##0.00' : "0.0"
+      if (typeof value === "number" && columnIndex >= 11 && columnIndex <= 23) {
+        cell.numFmt = columnIndex >= 22 ? '"S/" #,##0.00' : "0.0"
       }
     })
     excelRow.height = 18

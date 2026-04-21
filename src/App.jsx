@@ -56,6 +56,29 @@ const STORAGE_KEYS = {
   projectConfig: "tareador_project_config",
 }
 
+const isLocalDevHost = typeof window !== "undefined"
+  && ["localhost", "127.0.0.1"].includes(window.location.hostname)
+const LOCAL_DEV_FIXTURE_URL = "/dev-consolidado-s10.json"
+
+function buildWorkerDateKey(record) {
+  return `${String(record?.workerId || "")}|${String(record?.date || "")}`
+}
+
+function sortRecordsByDate(records = []) {
+  return [...records].sort((a, b) => {
+    if (a.date !== b.date) return String(a.date).localeCompare(String(b.date))
+    return String(a.timestamp || "").localeCompare(String(b.timestamp || ""))
+  })
+}
+
+function mergeRegistrosByWorkerDate(baseRegistros = [], overrideRegistros = []) {
+  const overrideKeys = new Set(overrideRegistros.map((record) => buildWorkerDateKey(record)))
+  return sortRecordsByDate([
+    ...baseRegistros.filter((record) => !overrideKeys.has(buildWorkerDateKey(record))),
+    ...overrideRegistros,
+  ])
+}
+
 function loadArrayFromStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
@@ -119,6 +142,45 @@ function AppContent() {
   const [fechaTareo, setFechaTareo] = useState(() => getTodayLocalDate())
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false))
   const [syncState, setSyncState] = useState({ pendingCount: 0, syncing: false })
+  const [localFixtureRegistros, setLocalFixtureRegistros] = useState([])
+
+  useEffect(() => {
+    if (!isLocalDevHost) return
+
+    let active = true
+
+    async function loadLocalFixture() {
+      try {
+        const response = await fetch(`${LOCAL_DEV_FIXTURE_URL}?v=200426`, { cache: "no-store" })
+        if (!response.ok) return
+        const payload = await response.json()
+        if (!active || !payload || typeof payload !== "object") return
+
+        if (Array.isArray(payload.workers)) setWorkers(normalizeWorkersCollection(payload.workers))
+        if (Array.isArray(payload.partidas)) setPartidas(payload.partidas)
+        if (Array.isArray(payload.actividades)) setActividades(payload.actividades)
+        if (Array.isArray(payload.frentes)) setFrentes(payload.frentes)
+        if (Array.isArray(payload.tiposHora)) setTiposHora(payload.tiposHora)
+        if (payload.projectConfig && typeof payload.projectConfig === "object") {
+          setProjectConfig({ ...DEFAULT_PROJECT_CONFIG, ...payload.projectConfig })
+        }
+        if (Array.isArray(payload.registros)) {
+          setLocalFixtureRegistros(payload.registros)
+          setAllRegistros((prev) => mergeRegistrosByWorkerDate(prev, payload.registros))
+        }
+        cloudHydratedRef.current = true
+        setSyncState({ pendingCount: 0, syncing: false })
+      } catch (error) {
+        console.warn("No se pudo cargar el fixture local del consolidado:", error)
+      }
+    }
+
+    loadLocalFixture()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.workers, JSON.stringify(workers))
@@ -235,6 +297,7 @@ function AppContent() {
   }, [user])
 
   useEffect(() => {
+    if (isLocalDevHost) return
     if (!user || !cloudHydratedRef.current) return
 
     const timeoutId = setTimeout(() => {
@@ -258,7 +321,7 @@ function AppContent() {
     async function loadData({ syncFirst = false } = {}) {
       if (!user) return
 
-      if (syncFirst && isOnline) {
+      if (syncFirst && isOnline && !isLocalDevHost) {
         setSyncState((prev) => ({ ...prev, syncing: true }))
         try {
           const result = await syncPendingRegistros()
@@ -278,10 +341,17 @@ function AppContent() {
 
       const data = await fetchRegistros()
       if (active) {
-        setAllRegistros(data)
-        const pendingCount = await getPendingSyncCount()
-        if (active) {
-          setSyncState((prev) => ({ ...prev, pendingCount }))
+        const mergedData = isLocalDevHost
+          ? mergeRegistrosByWorkerDate(data, localFixtureRegistros)
+          : data
+        setAllRegistros(mergedData)
+        if (isLocalDevHost) {
+          setSyncState({ pendingCount: 0, syncing: false })
+        } else {
+          const pendingCount = await getPendingSyncCount()
+          if (active) {
+            setSyncState((prev) => ({ ...prev, pendingCount }))
+          }
         }
       }
     }
@@ -302,7 +372,7 @@ function AppContent() {
       clearTimeout(refreshTimer)
       window.removeEventListener(getDataEventName(), handleDataChanged)
     }
-  }, [user, isOnline])
+  }, [user, isOnline, localFixtureRegistros])
 
   useEffect(() => {
     const { dates } = getWeekRange(fechaTareo)
@@ -464,6 +534,7 @@ function AppContent() {
               workers={workers}
               partidas={partidas}
               actividades={actividades}
+              setActividades={setActividades}
               frentes={frentes}
               registros={registros}
               setRegistros={setRegistros}

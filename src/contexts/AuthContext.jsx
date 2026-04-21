@@ -11,6 +11,8 @@ import {
 } from "../utils/accessControl";
 
 const AuthContext = createContext();
+const isLocalDevHost = typeof window !== "undefined"
+  && ["localhost", "127.0.0.1"].includes(window.location.hostname)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -18,6 +20,21 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isLocalDevHost) {
+      setUser({
+        id: "local-dev-user",
+        email: "local@padova.dev",
+      });
+      setProfile({
+        id: "local-dev-user",
+        email: "local@padova.dev",
+        role: "super_admin",
+        roleLabel: getRoleLabel("super_admin"),
+      });
+      setLoading(false);
+      return;
+    }
+
     if (!hasSupabaseConfig || !supabase) {
       setLoading(false);
       return;
@@ -98,6 +115,20 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (email, password) => {
+    if (isLocalDevHost) {
+      setUser({
+        id: "local-dev-user",
+        email: email || "local@padova.dev",
+      });
+      setProfile({
+        id: "local-dev-user",
+        email: email || "local@padova.dev",
+        role: "super_admin",
+        roleLabel: getRoleLabel("super_admin"),
+      });
+      return { user: { id: "local-dev-user", email: email || "local@padova.dev" } };
+    }
+
     if (!hasSupabaseConfig || !supabase) {
       throw new Error("SUPABASE_CONFIG_MISSING");
     }
@@ -108,6 +139,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    if (isLocalDevHost) return;
     if (!hasSupabaseConfig || !supabase) return;
 
     const { error } = await supabase.auth.signOut();

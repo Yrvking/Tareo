@@ -90,12 +90,75 @@ function getRowValue(row, columnMap, key) {
   return String(row[index] ?? "").trim()
 }
 
+function getRawRowValue(row, columnMap, key) {
+  const index = columnMap[key]
+  if (typeof index !== "number" || index < 0) return ""
+  return row[index] ?? ""
+}
+
 function pickFirstFilled(...values) {
   for (const value of values) {
     if (value === null || value === undefined) continue
     if (String(value).trim()) return String(value).trim()
   }
   return ""
+}
+
+function formatDateParts(year, month, day) {
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
+function normalizeExcelDateValue(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatDateParts(value.getFullYear(), value.getMonth() + 1, value.getDate())
+  }
+
+  if (typeof value === "number") {
+    const parsed = XLSX.SSF.parse_date_code(value)
+    if (parsed?.y && parsed?.m && parsed?.d) {
+      return formatDateParts(parsed.y, parsed.m, parsed.d)
+    }
+  }
+
+  const raw = String(value ?? "").trim()
+  if (!raw) return ""
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (isoMatch) {
+    return formatDateParts(isoMatch[1], isoMatch[2], isoMatch[3])
+  }
+
+  const localMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+  if (localMatch) {
+    return formatDateParts(localMatch[3], localMatch[2], localMatch[1])
+  }
+
+  return raw
+}
+
+function normalizeImportedPartidaCode(value) {
+  const digits = String(value ?? "")
+    .trim()
+    .replace(/\.0+$/, "")
+    .replace(/\D/g, "")
+
+  if (!digits) return ""
+  if (digits.length === 8) return `0${digits}`
+  return digits
+}
+
+function resolveImportedHourBucket(tipoHora) {
+  const normalized = normalizeCompact(tipoHora)
+  if (
+    normalized.includes("extra60") ||
+    normalized.includes("extraal60") ||
+    normalized.includes("extra100") ||
+    normalized.includes("extraal100")
+  ) {
+    return "extra"
+  }
+
+  return "normal"
 }
 
 function buildCategoria(categoriaCode, categoria, abrevCategoria) {
@@ -360,7 +423,7 @@ export function parseResumenTareo(fileBuffer) {
   )
 
   const parsed = dataRows.map((row) => {
-    const fecha = getRowValue(row, columnMap, "fecha")
+    const fecha = normalizeExcelDateValue(getRawRowValue(row, columnMap, "fecha"))
     return {
       nombre: getRowValue(row, columnMap, "nombre"),
       proyecto: getRowValue(row, columnMap, "proyecto"),
@@ -373,7 +436,7 @@ export function parseResumenTareo(fileBuffer) {
       fecha,
       horasLaboradas: parseFloat(getRowValue(row, columnMap, "horasLaboradas") || "0") || 0,
       horasDescanso: parseFloat(getRowValue(row, columnMap, "horasDescanso") || "0") || 0,
-      codigoPartida: getRowValue(row, columnMap, "codigoPartida"),
+      codigoPartida: normalizeImportedPartidaCode(getRawRowValue(row, columnMap, "codigoPartida")),
       tipoHora: getRowValue(row, columnMap, "tipoHora"),
       costoHHNormal: parseFloat(getRowValue(row, columnMap, "costoHHNormal") || "0") || 0,
       costoHHExtra60: parseFloat(getRowValue(row, columnMap, "costoHHExtra60") || "0") || 0,
@@ -532,4 +595,131 @@ export function mergeWorkerCosts(existing, importedRows = []) {
       costoHora: imported.costoHora,
     }
   })
+}
+
+export function buildWorkersFromResumenTareo(importedRows = []) {
+  const workers = new Map()
+
+  for (const row of importedRows) {
+    const codigo = String(row.codigo || "").trim()
+    const nombre = String(row.nombre || "").trim()
+    if (!codigo || !nombre) continue
+
+    const current = workers.get(codigo)
+    const costoHora = Number(row.costoHHNormal || row.costoHHExtra60 || row.costoHHExtra100 || 0) || 0
+    workers.set(codigo, normalizeWorkerRecord({
+      ...current,
+      id: codigo,
+      codigo,
+      nombre,
+      costoHora: costoHora || Number(current?.costoHora || 0) || 0,
+    }))
+  }
+
+  return Array.from(workers.values())
+}
+
+export function buildPartidasFromResumenTareo(importedRows = []) {
+  const partidas = new Map()
+
+  for (const row of importedRows) {
+    const id = normalizeImportedPartidaCode(row.codigoPartida)
+    const nombre = String(row.partidaControl || "").trim()
+    if (!id || !nombre) continue
+    partidas.set(id, { id, nombre })
+  }
+
+  return Array.from(partidas.values())
+}
+
+export function buildSyntheticActivitiesFromPartidas(importedPartidas = []) {
+  return importedPartidas
+    .filter((partida) => partida?.id && partida?.nombre)
+    .map((partida) => ({
+      id: partida.id,
+      nombre: partida.nombre,
+      partidaId: partida.id,
+    }))
+}
+
+export function buildRegistrosFromResumenTareo(importedRows = [], workers = [], activities = []) {
+  const workerByCode = new Map()
+  workers.forEach((worker) => {
+    const code = String(worker.codigo || worker.id || "").trim()
+    if (code) workerByCode.set(code, worker)
+    if (worker.id) workerByCode.set(String(worker.id).trim(), worker)
+  })
+
+  const activityById = new Map()
+  const activityByPartida = new Map()
+  activities.forEach((activity) => {
+    const activityId = String(activity.id || "").trim()
+    const partidaId = normalizeImportedPartidaCode(activity.partidaId)
+    if (activityId) activityById.set(activityId, activity)
+    if (!partidaId) return
+
+    const existing = activityByPartida.get(partidaId)
+    const isSynthetic = activityId === partidaId
+    if (!existing || (String(existing.id || "").trim() !== partidaId && isSynthetic)) {
+      activityByPartida.set(partidaId, activity)
+    }
+  })
+
+  const registros = new Map()
+
+  for (const row of importedRows) {
+    const workerCode = String(row.codigo || "").trim()
+    const worker = workerByCode.get(workerCode)
+    const partidaId = normalizeImportedPartidaCode(row.codigoPartida)
+    const date = normalizeExcelDateValue(row.fecha)
+    const actividadNombre = String(row.partidaControl || "").trim() || partidaId
+    const totalHoras = Number(row.horasLaboradas || 0) || 0
+
+    if (!worker || !partidaId || !date || totalHoras <= 0) continue
+
+    const activity = activityById.get(partidaId)
+      || activityByPartida.get(partidaId)
+      || { id: partidaId, nombre: actividadNombre, partidaId }
+
+    const registroKey = `${String(worker.id)}|${date}`
+    if (!registros.has(registroKey)) {
+      registros.set(registroKey, {
+        id: null,
+        workerId: String(worker.id),
+        workerNombre: worker.nombre,
+        frenteId: null,
+        frenteNombre: null,
+        date,
+        timestamp: new Date().toLocaleTimeString("es-PE"),
+        raw: "Importado desde consolidado S10",
+        assignments: [],
+      })
+    }
+
+    const registro = registros.get(registroKey)
+    const assignmentKey = `${String(activity.id)}|${partidaId}`
+    let assignment = registro.assignments.find((item) => item._key === assignmentKey)
+    if (!assignment) {
+      assignment = {
+        _key: assignmentKey,
+        actividadId: String(activity.id),
+        actividadNombre: String(activity.nombre || actividadNombre).trim(),
+        partidaId,
+        horasNormales: 0,
+        horasExtras: 0,
+      }
+      registro.assignments.push(assignment)
+    }
+
+    if (resolveImportedHourBucket(row.tipoHora) === "extra") {
+      assignment.horasExtras += totalHoras
+    } else {
+      assignment.horasNormales += totalHoras
+    }
+  }
+
+  return Array.from(registros.values()).map((registro) => ({
+    ...registro,
+    assignments: registro.assignments.map(({ _key, ...assignment }) => assignment),
+  }))
 }

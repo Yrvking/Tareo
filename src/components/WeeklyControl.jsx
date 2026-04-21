@@ -1,14 +1,14 @@
 import { useState } from "react"
-import { SearchIcon, CheckIcon } from "./Icons"
+import { SearchIcon, CheckIcon, PencilIcon } from "./Icons"
 import Select from "react-select"
-import { insertRegistro } from "../utils/supabaseClient"
+import { insertRegistro, updateRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
 import { getWeekRange } from "../utils/dateUtils"
 import { getWorkerCategoryLabel } from "../utils/workerCategory"
 import { getNormalHourCap, getExtraHourCap } from "../utils/tareoLogic"
 
 export default function WeeklyControl({ 
-  workers, partidas, actividades, frentes, 
+  workers, partidas, actividades, setActividades, frentes, 
   registros, setRegistros, fechaTareo 
 }) {
   const normalCap = getNormalHourCap(fechaTareo)
@@ -18,6 +18,47 @@ export default function WeeklyControl({
   const [newActivity, setNewActivity] = useState(null)
   const [newHn, setNewHn] = useState(0)
   const [newHe, setNewHe] = useState(0)
+  const [feedbackMessage, setFeedbackMessage] = useState(null)
+  const [editingAssignment, setEditingAssignment] = useState(null)
+
+  const partidaOptions = partidas.map((partida) => ({
+    value: partida.id,
+    label: `${partida.id} - ${partida.nombre}`,
+    nombre: partida.nombre,
+  }))
+
+  const showFeedback = (type, message) => {
+    setFeedbackMessage({ type, message })
+    setTimeout(() => setFeedbackMessage(null), 4000)
+  }
+
+  const getPartidaById = (partidaId) => partidas.find((partida) => String(partida.id) === String(partidaId))
+  const getActividadById = (actividadId) => actividades.find((actividad) => String(actividad.id) === String(actividadId))
+
+  const buildSyntheticActivity = (partida) => ({
+    id: `PARTIDA-${partida.id}`,
+    nombre: partida.nombre,
+    partidaId: partida.id,
+  })
+
+  const buildActivityOption = (actividad) => ({
+    value: actividad.id,
+    label: `${actividad.id} - ${actividad.nombre}`,
+    partidaId: actividad.partidaId,
+    nombre: actividad.nombre,
+  })
+
+  const getActivityOptionsForPartida = (partidaId) => {
+    const matchedActivities = actividades
+      .filter((actividad) => String(actividad.partidaId) === String(partidaId))
+      .map(buildActivityOption)
+
+    if (matchedActivities.length > 0) return matchedActivities
+
+    const partida = getPartidaById(partidaId)
+    if (!partida) return []
+    return [buildActivityOption(buildSyntheticActivity(partida))]
+  }
 
   // Calculate current week range (Mon-Sat) — usando hora local para evitar bug UTC
   const dayNamesShort = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"]
@@ -35,6 +76,14 @@ export default function WeeklyControl({
   const getDayRecords = (workerId, date) => (
     registros.filter(r => String(r.workerId) === String(workerId) && r.date === date)
   )
+
+  const resetDayEntry = () => {
+    setSelectedDay(null)
+    setNewActivity(null)
+    setNewHn(0)
+    setNewHe(0)
+    setEditingAssignment(null)
+  }
 
   const getDayTotal = (workerId, date) => {
     return getDayRecords(workerId, date).reduce((regSum, reg) => (
@@ -73,18 +122,132 @@ export default function WeeklyControl({
       if (result?.id) savedReg.id = result.id
       if (result?.syncStatus) savedReg.syncStatus = result.syncStatus
       setRegistros(prev => [...prev, savedReg])
-      
-      setSelectedDay(null)
-      setNewActivity(null)
-      setNewHn(0)
-      setNewHe(0)
+      resetDayEntry()
+      showFeedback("success", `Registro agregado para ${worker.nombre}.`)
     } catch (err) {
-      alert(err.message || "No se pudo guardar el registro.")
+      showFeedback("error", err.message || "No se pudo guardar el registro.")
+    }
+  }
+
+  const startEditingAssignment = (record, assignment, assignmentIndex) => {
+    const partidaId = assignment?.partidaId || getActividadById(assignment?.actividadId)?.partidaId || ""
+    const selectedPartida = getPartidaById(partidaId)
+    const partidaOption = selectedPartida
+      ? {
+          value: selectedPartida.id,
+          label: `${selectedPartida.id} - ${selectedPartida.nombre}`,
+          nombre: selectedPartida.nombre,
+        }
+      : null
+
+    const activityOptions = getActivityOptionsForPartida(partidaId)
+    const currentActivity = activityOptions.find((option) => String(option.value) === String(assignment?.actividadId)) || activityOptions[0] || null
+
+    setEditingAssignment({
+      recordId: record.id,
+      assignmentIndex,
+      partidaOption,
+      activityOption: currentActivity,
+      horasNormales: String(assignment?.horasNormales ?? 0),
+      horasExtras: String(assignment?.horasExtras ?? 0),
+    })
+  }
+
+  const handleEditingPartidaChange = (selectedPartida) => {
+    const nextActivity = selectedPartida ? getActivityOptionsForPartida(selectedPartida.value)[0] || null : null
+    setEditingAssignment((prev) => (
+      prev
+        ? {
+            ...prev,
+            partidaOption: selectedPartida,
+            activityOption: nextActivity,
+          }
+        : prev
+    ))
+  }
+
+  const handleSaveAssignmentEdit = async () => {
+    if (!editingAssignment?.recordId || editingAssignment.assignmentIndex == null) return
+    if (!editingAssignment.partidaOption || !editingAssignment.activityOption) {
+      showFeedback("error", "Selecciona la nueva partida y actividad.")
+      return
+    }
+
+    const targetRecord = registros.find((record) => String(record.id) === String(editingAssignment.recordId))
+    if (!targetRecord) {
+      showFeedback("error", "No se encontró el registro a editar.")
+      return
+    }
+
+    const selectedPartida = getPartidaById(editingAssignment.partidaOption.value)
+    if (!selectedPartida) {
+      showFeedback("error", "La partida seleccionada ya no existe.")
+      return
+    }
+
+    const syntheticActivity =
+      getActividadById(editingAssignment.activityOption.value) ||
+      (String(editingAssignment.activityOption.partidaId) === String(selectedPartida.id)
+        ? buildSyntheticActivity(selectedPartida)
+        : null)
+
+    const updatedAssignments = (targetRecord.assignments || []).map((assignment, index) => (
+      index === editingAssignment.assignmentIndex
+        ? {
+            ...assignment,
+            actividadId: editingAssignment.activityOption.value,
+            partidaId: selectedPartida.id,
+            horasNormales: parseFloat(editingAssignment.horasNormales) || 0,
+            horasExtras: parseFloat(editingAssignment.horasExtras) || 0,
+          }
+        : assignment
+    ))
+
+    const updatedRecord = {
+      ...targetRecord,
+      assignments: updatedAssignments,
+      raw: targetRecord.raw || "Edición manual de asignación",
+    }
+
+    try {
+      const result = await updateRegistro(updatedRecord, {
+        source: "weekly_assignment_edit",
+        beforeData: targetRecord,
+      })
+
+      const savedRecord = result?.record
+        ? { ...updatedRecord, ...result.record }
+        : updatedRecord
+
+      if (result?.id) savedRecord.id = result.id
+      if (result?.syncStatus) savedRecord.syncStatus = result.syncStatus
+
+      if (syntheticActivity && typeof setActividades === "function") {
+        setActividades((prev) => (
+          prev.some((activity) => String(activity.id) === String(syntheticActivity.id))
+            ? prev
+            : [...prev, syntheticActivity]
+        ))
+      }
+
+      setRegistros((prev) => prev.map((record) => (
+        String(record.id) === String(savedRecord.id) ? savedRecord : record
+      )))
+      setEditingAssignment(null)
+      showFeedback("success", `Asignación actualizada a ${selectedPartida.nombre}.`)
+    } catch (error) {
+      showFeedback("error", error.message || "No se pudo actualizar la asignación.")
     }
   }
 
   return (
     <div className="weekly-control-container">
+      {feedbackMessage && (
+        <div className={`feedback-banner ${feedbackMessage.type}`} style={{ marginBottom: 16 }}>
+          {feedbackMessage.message}
+        </div>
+      )}
+
       <div className="search-container" style={{ marginBottom: 20 }}>
         <SearchIcon />
         <input 
@@ -148,7 +311,10 @@ export default function WeeklyControl({
                 return (
                   <button
                     key={day.date}
-                    onClick={() => setSelectedDay({ workerId: w.id, date: day.date })}
+                    onClick={() => {
+                      setEditingAssignment(null)
+                      setSelectedDay({ workerId: w.id, date: day.date })
+                    }}
                     style={{
                       flex: 1,
                       minWidth: '46px',
@@ -180,7 +346,13 @@ export default function WeeklyControl({
 
                 {(() => {
                   const dayRecords = getDayRecords(w.id, selectedDay.date)
-                  const dayAssignments = dayRecords.flatMap(reg => reg.assignments || [])
+                  const dayAssignments = dayRecords.flatMap((reg) => (
+                    (reg.assignments || []).map((assignment, assignmentIndex) => ({
+                      assignment,
+                      assignmentIndex,
+                      record: reg,
+                    }))
+                  ))
 
                   if (dayAssignments.length === 0) return null
 
@@ -189,22 +361,122 @@ export default function WeeklyControl({
                       <div className="field-label-sm" style={{ marginBottom: 8 }}>
                         REGISTROS EXISTENTES ({dayRecords.length})
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {dayAssignments.map((assignment, index) => {
-                          const actividad = actividades.find(a => a.id === assignment.actividadId)
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {dayAssignments.map(({ assignment, assignmentIndex, record }, index) => {
+                          const actividad = getActividadById(assignment.actividadId)
+                          const partida = getPartidaById(assignment.partidaId || actividad?.partidaId)
                           const total = (assignment.horasNormales || 0) + (assignment.horasExtras || 0)
                           return (
-                            <span key={`${assignment.actividadId}-${index}`} className="hora-badge">
-                              <span style={{ color: 'var(--accent-blue)' }}>{total}h</span>
-                              <span style={{ opacity: 0.35 }}>|</span>
-                              <span>{actividad?.nombre || assignment.actividadId}</span>
-                            </span>
+                            <div
+                              key={`${record.id || "reg"}-${assignment.actividadId}-${index}`}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 10,
+                                flexWrap: 'wrap',
+                                padding: '8px 10px',
+                                borderRadius: 8,
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                background: 'rgba(15,23,42,0.55)',
+                              }}
+                            >
+                              <div style={{ display: 'grid', gap: 3 }}>
+                                <div className="hora-badge" style={{ width: 'fit-content' }}>
+                                  <span style={{ color: 'var(--accent-blue)' }}>{total}h</span>
+                                  <span style={{ opacity: 0.35 }}>|</span>
+                                  <span>{actividad?.nombre || assignment.actividadId}</span>
+                                </div>
+                                <div className="mono" style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                                  {partida ? `${partida.id} - ${partida.nombre}` : assignment.partidaId || "Sin partida"}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-pill-sm"
+                                onClick={() => startEditingAssignment(record, assignment, assignmentIndex)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                              >
+                                <PencilIcon /> Editar partida
+                              </button>
+                            </div>
                           )
                         })}
                       </div>
                     </div>
                   )
                 })()}
+
+                {editingAssignment && selectedDay?.workerId === w.id && (
+                  <div style={{ marginBottom: 14, padding: '12px', borderRadius: 10, background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
+                    <div className="field-label-sm" style={{ marginBottom: 10, color: 'var(--accent-blue)' }}>
+                      EDITAR ASIGNACIÓN EXISTENTE
+                    </div>
+
+                    <div style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
+                      <div>
+                        <label className="field-label-sm">Partida</label>
+                        <Select
+                          options={partidaOptions}
+                          value={editingAssignment.partidaOption}
+                          onChange={handleEditingPartidaChange}
+                          styles={selectStyles}
+                          placeholder="Seleccione partida..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="field-label-sm">Actividad</label>
+                        <Select
+                          options={getActivityOptionsForPartida(editingAssignment.partidaOption?.value)}
+                          value={editingAssignment.activityOption}
+                          onChange={(selectedOption) => setEditingAssignment((prev) => prev ? { ...prev, activityOption: selectedOption } : prev)}
+                          styles={selectStyles}
+                          placeholder="Seleccione actividad..."
+                          isDisabled={!editingAssignment.partidaOption}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="weekly-hour-grid">
+                      <div className="weekly-hour-field">
+                        <label className="field-label-sm">Horas Normales (max {normalCap})</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max={normalCap}
+                          className="input-field"
+                          value={editingAssignment.horasNormales}
+                          onChange={(e) => setEditingAssignment((prev) => prev ? { ...prev, horasNormales: e.target.value } : prev)}
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div className="weekly-hour-field">
+                        <label className="field-label-sm">Horas Extras (max {extraCap})</label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max={extraCap}
+                          className="input-field"
+                          value={editingAssignment.horasExtras}
+                          onChange={(e) => setEditingAssignment((prev) => prev ? { ...prev, horasExtras: e.target.value } : prev)}
+                          style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="weekly-action-row">
+                      <button onClick={handleSaveAssignmentEdit} className="btn-primary weekly-action-primary">
+                        <CheckIcon /> GUARDAR CAMBIO
+                      </button>
+                      <button onClick={() => setEditingAssignment(null)} className="btn-pill-sm weekly-action-secondary">
+                        CANCELAR
+                      </button>
+                    </div>
+                  </div>
+                )}
                 
                 <div style={{ marginBottom: 12 }}>
                   <label className="field-label-sm">Actividad</label>
@@ -232,7 +504,7 @@ export default function WeeklyControl({
                   <button onClick={handleSaveDay} className="btn-primary weekly-action-primary">
                     <CheckIcon /> AGREGAR REGISTRO
                   </button>
-                  <button onClick={() => setSelectedDay(null)} className="btn-pill-sm weekly-action-secondary">
+                  <button onClick={resetDayEntry} className="btn-pill-sm weekly-action-secondary">
                     CANCELAR
                   </button>
                 </div>

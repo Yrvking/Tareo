@@ -7,6 +7,10 @@ import {
   parsePartidasProyectoXLS,
   parseTipoHoraFromXLS,
   parseResumenTareo,
+  buildWorkersFromResumenTareo,
+  buildPartidasFromResumenTareo,
+  buildSyntheticActivitiesFromPartidas,
+  buildRegistrosFromResumenTareo,
   mergeWorkers,
   mergeWorkerCosts,
   readFileAsArrayBuffer,
@@ -21,7 +25,7 @@ import {
   downloadS10ModeloTemplate,
   downloadS10CostosTemplate,
 } from "../utils/importTemplates"
-import { insertRegistro } from "../utils/supabaseClient"
+import { deleteRegistroById, fetchRegistros, insertRegistro, updateRegistro } from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
 import UserManagementPanel from "./UserManagementPanel"
 
@@ -60,10 +64,10 @@ export default function Config({
       onDownload: downloadS10ModeloTemplate,
     },
     {
-      title: "Consolidado de costos",
-      detail: "Aquí las horas sí son obligatorias. Este archivo alimenta costos y valida la trazabilidad por tipo de hora y partida.",
+      title: "Consolidado S10",
+      detail: "Este archivo ahora actualiza costos, crea partidas/actividades faltantes y reasigna los tareos según la partida de control vigente en S10.",
       required: "Código, Apellidos y Nombres, Fecha, Horas laboradas, Tipo Hora, Código Partida de Control, Partida de Control, Costo HH Normal",
-      complementary: "Proyecto, Año, Periodo Semanal, Tipo de Nómina, Horas descanso, Costo HH Extra60, Costo HH Extra100",
+      complementary: "Proyecto, Año, Periodo Semanal, Tipo de Nómina, Horas descanso, Costo HH Extra60, Costo HH Extra100. Se usa como fuente de verdad por trabajador y fecha.",
       template: "Código | Apellidos y Nombres | Fecha | Horas laboradas | Tipo Hora | Código Partida de Control | Partida de Control | Costo HH Normal",
       onDownload: downloadS10CostosTemplate,
     },
@@ -96,6 +100,7 @@ export default function Config({
   const [importMode,      setImportMode]      = useState("merge")
   const [tempApiKey,      setTempApiKey]      = useState(localStorage.getItem("gemini_api_key") || "")
   const [tareoImporting,  setTareoImporting]  = useState(false)
+  const [costosImporting, setCostosImporting] = useState(false)
 
   const personalFileRef   = useRef(null)
   const partidasFileRef   = useRef(null)
@@ -109,6 +114,27 @@ export default function Config({
   const showFeedback = (msg, type = "success") => {
     setImportFeedback({ message: msg, type })
     setTimeout(() => setImportFeedback(null), 5000)
+  }
+
+  const mergePartidasCatalog = (existingPartidas, importedPartidas) => {
+    const merged = new Map(existingPartidas.map((partida) => [String(partida.id), partida]))
+    importedPartidas.forEach((partida) => {
+      const key = String(partida.id || "").trim()
+      if (!key) return
+      const previous = merged.get(key)
+      merged.set(key, previous ? { ...previous, nombre: partida.nombre || previous.nombre } : partida)
+    })
+    return Array.from(merged.values())
+  }
+
+  const mergeActivitiesCatalog = (existingActivities, importedActivities) => {
+    const merged = new Map(existingActivities.map((activity) => [String(activity.id), activity]))
+    importedActivities.forEach((activity) => {
+      const key = String(activity.id || "").trim()
+      if (!key || merged.has(key)) return
+      merged.set(key, activity)
+    })
+    return Array.from(merged.values())
   }
 
   const setTareoDateClosed = (targetDate, closed) => {
@@ -191,15 +217,109 @@ export default function Config({
   const handleImportCostos = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setCostosImporting(true)
     try {
       const buffer = await readFileAsArrayBuffer(file)
-      const imported = parseResumenTareo(buffer)
-      const updatedWorkers = mergeWorkerCosts(workers, imported)
-      setWorkers(updatedWorkers)
-      showFeedback(`✓ Costos actualizados desde ${file.name}.`)
+      const importedRows = parseResumenTareo(buffer)
+      const importedWorkers = buildWorkersFromResumenTareo(importedRows)
+      const importedPartidas = buildPartidasFromResumenTareo(importedRows)
+      const importedActivities = buildSyntheticActivitiesFromPartidas(importedPartidas)
+
+      const mergedWorkers = mergeWorkerCosts(
+        mergeWorkers(workers, importedWorkers),
+        importedRows
+      )
+      const mergedPartidas = mergePartidasCatalog(partidas, importedPartidas)
+      const mergedActivities = mergeActivitiesCatalog(actividades, importedActivities)
+
+      setWorkers(mergedWorkers)
+      setPartidas(mergedPartidas)
+      setActividades(mergedActivities)
+
+      const importedRegistros = buildRegistrosFromResumenTareo(importedRows, mergedWorkers, mergedActivities)
+      if (importedRegistros.length === 0) {
+        throw new Error("El consolidado no produjo tareos válidos. Verifica trabajadores, fechas y códigos de partida.")
+      }
+
+      const importedDates = importedRegistros.map((registro) => registro.date).sort()
+      const startDate = importedDates[0]
+      const endDate = importedDates[importedDates.length - 1]
+      const existingRegistros = await fetchRegistros(startDate, endDate)
+      const existingByWorkerDate = new Map()
+
+      existingRegistros.forEach((registro) => {
+        const key = `${String(registro.workerId)}|${registro.date}`
+        if (!existingByWorkerDate.has(key)) {
+          existingByWorkerDate.set(key, [])
+        }
+        existingByWorkerDate.get(key).push(registro)
+      })
+
+      let inserted = 0
+      let updated = 0
+      let deleted = 0
+      let failed = 0
+      let lastError = ""
+
+      for (const importedRegistro of importedRegistros) {
+        const key = `${String(importedRegistro.workerId)}|${importedRegistro.date}`
+        const existingGroup = [...(existingByWorkerDate.get(key) || [])]
+        const primary = existingGroup[0] || null
+        const extraRecords = existingGroup.slice(1)
+        const sourceLabel = `Importado desde consolidado S10: ${file.name}`
+
+        try {
+          for (const extraRecord of extraRecords) {
+            await deleteRegistroById(extraRecord.id, {
+              beforeData: extraRecord,
+              source: sourceLabel,
+            })
+            deleted++
+          }
+
+          if (primary) {
+            await updateRegistro(
+              {
+                ...primary,
+                workerId: importedRegistro.workerId,
+                workerNombre: importedRegistro.workerNombre,
+                date: importedRegistro.date,
+                raw: sourceLabel,
+                assignments: importedRegistro.assignments,
+              },
+              {
+                beforeData: primary,
+                source: sourceLabel,
+              }
+            )
+            updated++
+          } else {
+            await insertRegistro({
+              ...importedRegistro,
+              raw: sourceLabel,
+            })
+            inserted++
+          }
+        } catch (error) {
+          failed++
+          lastError = error?.message || "No se pudo aplicar una reasignación del consolidado."
+        }
+      }
+
+      if (failed > 0) {
+        showFeedback(
+          `Actualizados ${updated}, nuevos ${inserted}, eliminados ${deleted}, fallaron ${failed}. ${lastError}`,
+          "error"
+        )
+      } else {
+        showFeedback(
+          `✓ Consolidado aplicado. Actualizados ${updated}, nuevos ${inserted}, eliminados ${deleted}, trabajadores ${importedWorkers.length}, partidas ${importedPartidas.length}.`
+        )
+      }
     } catch (err) {
       showFeedback(`Error: ${err.message}`, "error")
     }
+    setCostosImporting(false)
     e.target.value = ""
   }
 
@@ -326,8 +446,8 @@ export default function Config({
           <button onClick={() => modeloFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
             <UploadIcon /> Modelo TMO
           </button>
-          <button onClick={() => costosFileRef.current?.click()} className="btn-import" style={{ flex: 1 }}>
-            <UploadIcon /> Consolidado Costos
+          <button onClick={() => costosFileRef.current?.click()} className="btn-import" style={{ flex: 1 }} disabled={costosImporting}>
+            <UploadIcon /> {costosImporting ? "Aplicando consolidado..." : "Consolidado S10"}
           </button>
         </div>
         <div style={{ marginTop: 10 }}>
