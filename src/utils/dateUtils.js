@@ -42,3 +42,58 @@ export function getWeekRange(dateStr) {
 
   return { dates, monday }
 }
+
+/**
+ * Retorna el número de semana ISO 8601.
+ */
+export function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+}
+
+/**
+ * Genera opciones de semanas para un selector.
+ * @param {number} count - Cantidad de semanas hacia atrás.
+ * @param {number} futureCount - Cantidad de semanas hacia adelante.
+ */
+export function getWeekOptions(count = 12, futureCount = 2) {
+  const options = []
+  const today = new Date()
+  
+  // Retroceder hasta el lunes de la semana actual
+  const currentMonday = getWeekRange(formatLocalDate(today)).monday
+
+  for (let i = -futureCount; i <= count; i++) {
+    const monday = new Date(currentMonday)
+    monday.setDate(currentMonday.getDate() - (i * 7))
+    
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    
+    const year = monday.getFullYear()
+    const week = getWeekNumber(monday)
+    
+    const label = `SEMANA N° ${String(week).padStart(2, '0')} - ${year} (DEL ${formatDatePeru(monday)} AL ${formatDatePeru(sunday)})`
+    
+    options.push({
+      value: `${year}_${week}`,
+      label,
+      year,
+      week,
+      startDate: formatLocalDate(monday),
+      endDate: formatLocalDate(sunday)
+    })
+  }
+  
+  return options
+}
+
+function formatDatePeru(date) {
+  const dd = String(date.getDate()).padStart(2, "0")
+  const mm = String(date.getMonth() + 1).padStart(2, "0")
+  const yyyy = date.getFullYear()
+  return `${dd}/${mm}/${yyyy}`
+}

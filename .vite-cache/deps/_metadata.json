@@ -1,0 +1,127 @@
+{
+  "hash": "547efd59",
+  "configHash": "ac161d34",
+  "lockfileHash": "49ae4d14",
+  "browserHash": "584d2234",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "42d05d0b",
+      "needsInterop": true
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "8263bbcf",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "e3cfe539",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "09f62cbe",
+      "needsInterop": true
+    },
+    "@capacitor/core": {
+      "src": "../../node_modules/@capacitor/core/dist/index.js",
+      "file": "@capacitor_core.js",
+      "fileHash": "ea179198",
+      "needsInterop": false
+    },
+    "@google/generative-ai": {
+      "src": "../../node_modules/@google/generative-ai/dist/index.mjs",
+      "file": "@google_generative-ai.js",
+      "fileHash": "dec41e39",
+      "needsInterop": false
+    },
+    "@supabase/supabase-js": {
+      "src": "../../node_modules/@supabase/supabase-js/dist/index.mjs",
+      "file": "@supabase_supabase-js.js",
+      "fileHash": "6d87b8fd",
+      "needsInterop": false
+    },
+    "exceljs": {
+      "src": "../../node_modules/exceljs/dist/exceljs.min.js",
+      "file": "exceljs.js",
+      "fileHash": "178d407b",
+      "needsInterop": true
+    },
+    "fuse.js": {
+      "src": "../../node_modules/fuse.js/dist/fuse.mjs",
+      "file": "fuse__js.js",
+      "fileHash": "75984fd4",
+      "needsInterop": false
+    },
+    "jspdf": {
+      "src": "../../node_modules/jspdf/dist/jspdf.es.min.js",
+      "file": "jspdf.js",
+      "fileHash": "75289cdc",
+      "needsInterop": false
+    },
+    "jspdf-autotable": {
+      "src": "../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
+      "file": "jspdf-autotable.js",
+      "fileHash": "9abf0cbd",
+      "needsInterop": false
+    },
+    "qrcode": {
+      "src": "../../node_modules/qrcode/lib/browser.js",
+      "file": "qrcode.js",
+      "fileHash": "0d531740",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "992300ae",
+      "needsInterop": true
+    },
+    "react-select": {
+      "src": "../../node_modules/react-select/dist/react-select.esm.js",
+      "file": "react-select.js",
+      "fileHash": "43c387a1",
+      "needsInterop": false
+    },
+    "xlsx": {
+      "src": "../../node_modules/xlsx/xlsx.mjs",
+      "file": "xlsx.js",
+      "fileHash": "a4e613c8",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "purify.es-J6FZKIRM": {
+      "file": "purify__es-J6FZKIRM.js"
+    },
+    "index.es-OMHUZW2A": {
+      "file": "index__es-OMHUZW2A.js"
+    },
+    "chunk-XG5IKD4O": {
+      "file": "chunk-XG5IKD4O.js"
+    },
+    "chunk-ZGG2XPR5": {
+      "file": "chunk-ZGG2XPR5.js"
+    },
+    "chunk-SITVF2AJ": {
+      "file": "chunk-SITVF2AJ.js"
+    },
+    "html2canvas.esm-2AEFYFCS": {
+      "file": "html2canvas__esm-2AEFYFCS.js"
+    },
+    "chunk-GS63ZPYG": {
+      "file": "chunk-GS63ZPYG.js"
+    },
+    "chunk-KOS6HUMP": {
+      "file": "chunk-KOS6HUMP.js"
+    },
+    "chunk-KEXKKQVW": {
+      "file": "chunk-KEXKKQVW.js"
+    }
+  }
+}

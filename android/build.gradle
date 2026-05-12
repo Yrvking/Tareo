@@ -1,5 +1,11 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
+
 buildscript {
     
     repositories {
@@ -26,4 +32,101 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+def clearHiddenAttributeRecursively = { File rootDir ->
+    if (!rootDir?.exists()) return
+
+    Files.walkFileTree(rootDir.toPath(), new SimpleFileVisitor<Path>() {
+        @Override
+        FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            try {
+                Files.setAttribute(dir, "dos:hidden", false)
+            } catch (Exception ignored) {
+            }
+            return FileVisitResult.CONTINUE
+        }
+
+        @Override
+        FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            try {
+                Files.setAttribute(file, "dos:hidden", false)
+            } catch (Exception ignored) {
+            }
+            return FileVisitResult.CONTINUE
+        }
+    })
+}
+
+def forceDeleteRecursively = { File rootDir ->
+    if (!rootDir?.exists()) return
+
+    clearHiddenAttributeRecursively(rootDir)
+    Files.walkFileTree(rootDir.toPath(), new SimpleFileVisitor<Path>() {
+        @Override
+        FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            try {
+                Files.deleteIfExists(file)
+            } catch (Exception ignored) {
+            }
+            return FileVisitResult.CONTINUE
+        }
+
+        @Override
+        FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            try {
+                Files.deleteIfExists(dir)
+            } catch (Exception ignored) {
+            }
+            return FileVisitResult.CONTINUE
+        }
+    })
+}
+
+gradle.projectsEvaluated {
+    subprojects { subproject ->
+        subproject.tasks.matching { task ->
+            task.name in ["verifyDebugResources", "verifyReleaseResources"]
+        }.configureEach {
+            doFirst {
+                clearHiddenAttributeRecursively(new File(subproject.buildDir, "intermediates/merged_res"))
+                forceDeleteRecursively(new File(subproject.buildDir, "intermediates/verified_library_resources/release/verifyReleaseResources"))
+                forceDeleteRecursively(new File(subproject.buildDir, "intermediates/verified_library_resources/debug/verifyDebugResources"))
+            }
+        }
+
+        subproject.tasks.matching { task ->
+            task.name in ["dexBuilderDebug", "dexBuilderRelease", "packageDebug", "packageRelease"]
+        }.configureEach {
+            doFirst {
+                forceDeleteRecursively(new File(subproject.buildDir, "intermediates/project_dex_archive/release/dexBuilderRelease/out"))
+                forceDeleteRecursively(new File(subproject.buildDir, "intermediates/project_dex_archive/debug/dexBuilderDebug/out"))
+                forceDeleteRecursively(new File(subproject.buildDir, "intermediates/incremental/packageRelease/tmp"))
+                forceDeleteRecursively(new File(subproject.projectDir, "release"))
+            }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def taskNames = taskGraph.allTasks.collect { it.path }
+    def appProject = findProject(":app")
+    def capacitorProject = findProject(":capacitor-android")
+    def cordovaPluginsProject = findProject(":capacitor-cordova-android-plugins")
+
+    if (taskNames.any { it == ":app:dexBuilderRelease" || it == ":app:packageRelease" }) {
+        forceDeleteRecursively(new File(appProject.buildDir, "intermediates/project_dex_archive/release/dexBuilderRelease/out"))
+        forceDeleteRecursively(new File(appProject.buildDir, "intermediates/incremental/packageRelease/tmp"))
+        forceDeleteRecursively(new File(appProject.projectDir, "release"))
+    }
+
+    if (taskNames.any { it == ":capacitor-android:verifyReleaseResources" }) {
+        clearHiddenAttributeRecursively(new File(capacitorProject.buildDir, "intermediates/merged_res"))
+        forceDeleteRecursively(new File(capacitorProject.buildDir, "intermediates/verified_library_resources/release/verifyReleaseResources"))
+    }
+
+    if (taskNames.any { it == ":capacitor-cordova-android-plugins:verifyReleaseResources" }) {
+        clearHiddenAttributeRecursively(new File(cordovaPluginsProject.buildDir, "intermediates/merged_res"))
+        forceDeleteRecursively(new File(cordovaPluginsProject.buildDir, "intermediates/verified_library_resources/release/verifyReleaseResources"))
+    }
 }

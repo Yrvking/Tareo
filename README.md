@@ -1,208 +1,494 @@
-# Tareador - Control de Horas Hombre por Voz
+# Tareador Padova
 
-Sistema de registro de horas hombre mediante reconocimiento de voz.
-Permite asignar horas por partida de control a cada trabajador usando comandos de voz o ingreso manual.
+Aplicacion de control de horas hombre para obra, con registro manual, carga grupal, ingreso por voz, dashboard operativo/ejecutivo, exportaciones S10/Excel, sincronizacion cloud y despliegue web + movil.
+
+## Estado actual del proyecto
+
+El repositorio corresponde a una SPA en React/Vite que hoy opera en tres modalidades:
+
+1. **Web de escritorio o tablet** para operacion diaria.
+2. **Web movil / PWA** accesible desde celulares.
+3. **App Android con Capacitor** que embebe el build web compilado.
+
+La aplicacion usa almacenamiento local para cache, catalogos y cola offline, pero el acceso actual al sistema esta amarrado al flujo de autenticacion con **Supabase**. En otras palabras: **sin credenciales de Supabase no hay ingreso funcional a la app actual**, aunque la capa local siga existiendo en el codigo.
+
+## Funcionalidades implementadas
+
+### Registro de tareo
+
+- **Carga grupal** para asignar una misma actividad a varios trabajadores.
+- **Ingreso manual** con multiples actividades por trabajador.
+- **Registro por voz** con comandos en espanol usando `SpeechRecognition` / `webkitSpeechRecognition`.
+- **Control semanal** con vista por trabajador y por dias de la semana activa.
+- **Planilla / Resumen** con consolidado por trabajador, actividad y partida.
+
+### Analitica y reportes
+
+- **Dashboard operativo y ejecutivo** con filtros por trabajador, frente, categoria, actividad y horas extra.
+- **Drill-down** sobre tarjetas y rankings.
+- **Exportacion a PDF** del dashboard.
+- **Exportacion a Excel visual** y **Excel contable** desde planilla.
+- **Exportacion S10 (.xls)** por semana.
+
+### Integraciones y soporte operativo
+
+- **Supabase** para autenticacion, persistencia compartida y sincronizacion.
+- **Google Gemini** para consultas en lenguaje natural.
+- **Modo offline** con cola de sincronizacion en IndexedDB.
+- **Importadores S10 / XLSX** para personal, partidas, modelo TMO, costos, actividades y tareos.
+- **Portal contratista** con padron, estados y QR.
+- **Vigilancia** con ingresos/salidas y validacion por QR, DNI o codigo.
+- **Prevencion / SOMA** con checklist documental por persona.
+- **Gestion de usuarios** dentro de Configuracion.
+
+## Arquitectura real
+
+### Frontend
+
+- React 18
+- Vite 6
+- CSS nativo
+- `react-select`
+
+### Persistencia
+
+- `localStorage` para catalogos y configuracion local
+- **IndexedDB** (`src/utils/offlineDb.js`) para registros locales y cola de sincronizacion
+- **Supabase** para autenticacion y almacenamiento compartido
+
+### Exportaciones e importaciones
+
+- `xlsx`
+- `exceljs`
+- `jspdf`
+- `jspdf-autotable`
+- `qrcode`
+
+### Movil y PWA
+
+- `vite-plugin-pwa`
+- `@capacitor/core`, `@capacitor/android`, `@capacitor/cli`
+
+### IA
+
+- `@google/generative-ai`
+
+## Como se conecta con celulares
+
+El proyecto **si tiene salida movil** y hoy contempla tres escenarios:
+
+| Modalidad | Como funciona | Estado actual |
+|---|---|---|
+| Navegador movil | Abrir la URL de la app desde el celular | Disponible |
+| PWA | Instalable desde navegador compatible | Disponible |
+| App Android | Build nativo via Capacitor con `webDir: dist` | Disponible |
+
+### 1. Uso desde celular por navegador
+
+En desarrollo, Vite esta configurado con `host: true` y puerto `3000`, por lo que puedes abrir la app desde un celular conectado a la misma red usando:
+
+```bash
+http://IP_DE_TU_PC:3000
+```
+
+Esto sirve para pruebas en campo sin compilar APK.
+
+### 2. PWA instalable
+
+La app genera `manifest.webmanifest`, `sw.js` y assets PWA durante el build. Eso permite instalarla como acceso directo en Android y usar cache local.
+
+### 3. App Android con Capacitor
+
+La carpeta `android/` contiene el proyecto nativo. La configuracion actual:
+
+- `appId`: `com.melcen.tareador`
+- `appName`: `Tareador`
+- `webDir`: `dist`
+
+El `AndroidManifest.xml` ya declara:
+
+- `android.permission.INTERNET`
+- `android.permission.RECORD_AUDIO`
+- `android.permission.MODIFY_AUDIO_SETTINGS`
+
+Eso confirma que la app Android esta preparada para conectarse a internet y usar microfono.
+
+> Nota: el registro por voz depende de soporte del entorno WebView/navegador para `SpeechRecognition`. En navegador de escritorio el objetivo operativo actual es Chrome o Edge.
+
+## Flujo de datos
+
+1. El usuario inicia sesion con Supabase.
+2. La app carga catalogos y configuracion.
+3. Los registros se guardan localmente.
+4. Si hay conectividad y credenciales, se sincronizan con Supabase.
+5. Si no hay internet, quedan en cola en IndexedDB hasta reintento.
+
+Indicadores visibles en la cabecera:
+
+- **Sin conexion**
+- **Sincronizando...**
+- **X pendientes**
+- **En linea**
+
+## Reglas operativas ya implementadas
+
+- Semana activa basada en la fecha seleccionada.
+- Rango semanal principal: **Lunes a Sabado**.
+- Tope de **Horas Normales**: `8.5h` por dia.
+- Tope de **Horas Extras**: `2.5h` por dia.
+- No existe conversion automatica entre HN y HE.
+- Configuracion permite **cerrar fechas de tareo** para restringir eliminaciones/ediciones.
+
+## Modulos principales
+
+### Dashboard
+
+- Vista operativa y ejecutiva
+- Indicadores semanales y acumulados
+- Filtros y exportacion PDF
+
+### Carga Grupal
+
+- Seleccion multiple de personal
+- Registro masivo de actividad, frente, HN y HE
+
+### Control Semanal
+
+- Matriz por trabajador / dia
+- Edicion rapida sobre la semana activa
+
+### Manual
+
+- Registro individual con varias asignaciones
+
+### Voz
+
+- Sesion continua por trabajador
+- Comandos de registrar, corregir, modificar y cambiar trabajador
+
+### Planilla
+
+- Vista semanal por trabajador
+- Vista por actividad
+- Resumen semanal
+- Exportacion S10, Excel visual y Excel contable
+
+### Asistente IA
+
+- Preguntas en lenguaje natural
+- Usa Gemini con clave local o por variable de entorno
+
+### Configuracion
+
+- Gestion de trabajadores, partidas, frentes, actividades y tipos de hora
+- Datos de proyecto
+- Carga de plantillas e importaciones
+- Cierre de fechas
+- Gestion de usuarios
+
+### Portal Contratista
+
+- Empresas
+- Padron de personal externo
+- Estados: apto, pendiente, bloqueado
+- Generacion y lectura de QR
+
+### Vigilancia
+
+- Ingreso/salida de personal interno y contratista
+- Resolucion por QR, DNI o codigo
+- Resumen por empresa
+
+### Prevencion
+
+- Checklist documental por persona
+- Seguimiento de cumplimiento por empresa
+
+## Roles y accesos
+
+El proyecto mantiene estos roles:
+
+- `super_admin`
+- `admin`
+- `user`
+- `contratista`
+- `vigilancia`
+- `prevencion`
+
+Puntos importantes del estado actual:
+
+- `super_admin` y `admin` acceden a **Config**.
+- Solo `super_admin` puede **gestionar usuarios**.
+- Las pestañas operativas principales (`Dashboard`, `Carga Grupal`, `Control Semanal`, `Manual`, `Voz`, `Planilla`, `Asistente`) estan visibles para `super_admin`, `admin` y `user`.
+- En la navegacion actual, `Portal Contratista`, `Vigilancia` y `Prevencion` estan expuestas desde tabs de `super_admin`.
+
+## Estructura principal del repositorio
+
+```text
+Tareo/
+|-- src/
+|   |-- App.jsx
+|   |-- main.jsx
+|   |-- components/
+|   |   |-- Dashboard.jsx
+|   |   |-- MobileEntry.jsx
+|   |   |-- WeeklyControl.jsx
+|   |   |-- ManualEntry.jsx
+|   |   |-- VoiceRecorder.jsx
+|   |   |-- Summary.jsx
+|   |   |-- AIAssistant.jsx
+|   |   |-- Config.jsx
+|   |   |-- Login.jsx
+|   |   |-- UserManagementPanel.jsx
+|   |   |-- ContractorPortalPanel.jsx
+|   |   |-- VigilanciaPanel.jsx
+|   |   |-- PrevencionPanel.jsx
+|   |   `-- Help.jsx
+|   |-- contexts/
+|   |   `-- AuthContext.jsx
+|   |-- data/
+|   |   |-- defaults.js
+|   |   `-- actividades.js
+|   `-- utils/
+|       |-- supabaseClient.js
+|       |-- offlineDb.js
+|       |-- voiceParser.js
+|       |-- aiService.js
+|       |-- s10Importer.js
+|       |-- s10Exporter.js
+|       |-- planillaExports.js
+|       |-- exportCSV.js
+|       |-- contractorPortal.js
+|       |-- tareoLogic.js
+|       `-- accessControl.js
+|-- public/
+|-- scripts/
+|   |-- supabase_app_settings.sql
+|   |-- supabase_registros_policies.sql
+|   |-- supabase_registros_logs.sql
+|   `-- audit_ai_traffic.py
+|-- android/
+|-- server.mjs
+|-- vite.config.js
+|-- capacitor.config.json
+|-- package.json
+|-- Formato_Obra/
+|-- Formatos_S10/
+|-- Partidas_Control/
+`-- README.md
+```
+
+## Carpetas y archivos auxiliares relevantes
+
+Ademas del codigo principal, el repo incluye insumos operativos:
+
+- `Formato_Obra/`: archivos base de obra usados para analisis o consolidacion.
+- `Formatos_S10/`: ejemplos/exportaciones semanales S10.
+- `Partidas_Control/`: plantillas/modelos auxiliares.
+- `analyze_tareo.js`, `generate_maestro.js`, `merge_files.js`, `update.js`: scripts puntuales de soporte y preparacion de datos.
+- `actividades_log.txt`: salida generada en procesos de analisis/importacion.
+
+Estos archivos **no forman parte del runtime principal** de la app, pero si del contexto operativo del proyecto.
 
 ## Requisitos
 
-- Node.js 18 o superior
-- Navegador Chrome o Edge (para reconocimiento de voz)
+- Node.js 18+
+- npm 9+
+- Chrome o Edge para el flujo web de voz recomendado
+- Cuenta Supabase para modo colaborativo
+- API Key de Gemini para asistente IA
+- Android Studio si vas a compilar APK
 
-## Instalación
+## Instalacion
 
 ```bash
-cd C:\Users\Yrving\Tareo
 npm install
 ```
 
-## Ejecutar en desarrollo
+## Variables de entorno
+
+Crea un archivo `.env` en la raiz:
+
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+VITE_GEMINI_API_KEY=tu-api-key-gemini
+```
+
+Notas:
+
+- Sin `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`, el login no funcionara en el flujo productivo.
+- `VITE_GEMINI_API_KEY` es opcional si la clave se carga manualmente desde Configuracion.
+- `.env` ya esta ignorado por git.
+
+## Comandos disponibles
+
+| Comando | Descripcion |
+|---|---|
+| `npm run dev` | Levanta Vite en puerto 3000 |
+| `npm run build` | Genera `dist/` y artefactos PWA |
+| `npm run preview` | Preview local del build |
+| `npm start` | Sirve `dist/` con `server.mjs` |
+
+## Desarrollo local
+
+### Web / escritorio
 
 ```bash
 npm run dev
 ```
 
-Se abrirá automáticamente en http://localhost:3000
+### Acceso desde celular en la misma red
 
-## Configurar Gemini API Key (gratis)
-
-### 1) Crear la key en Google AI Studio
-
-1. Abre: https://aistudio.google.com/app/apikey
-2. Inicia sesión con tu cuenta de Google.
-3. Haz clic en **Create API key**.
-4. Si te pide proyecto, crea o selecciona uno.
-5. Copia la key generada.
-
-### 2) Cargar la key dentro de la app
-
-1. Ejecuta el proyecto con `npm run dev`.
-2. En la app, entra a la pestaña **Configuración**.
-3. Baja hasta **CONFIGURACIÓN DEL ASISTENTE IA**.
-4. Pega la key en el campo **Pega tu nueva API Key aquí...**.
-5. Haz clic en **GUARDAR**.
-6. Ve a la pestaña del asistente y prueba una consulta.
-
-### 3) Opción alternativa por variable de entorno local
-
-Si prefieres configurar por archivo local:
-
-1. Crea/edita `.env` en la raíz del proyecto.
-2. Agrega:
-
-```env
-VITE_GEMINI_API_KEY=TU_API_KEY_AQUI
+```bash
+npm run dev
 ```
 
-3. Reinicia `npm run dev`.
+Luego abre en el celular:
 
-### 4) Seguridad (muy importante)
+```bash
+http://IP_DE_TU_PC:3000
+```
 
-- Nunca subas la key a git.
-- Este proyecto ya ignora `.env` en `.gitignore`.
-- Si compartiste una key por chat o captura, rótala y crea una nueva.
+### Flujo de trabajo que venias usando para Android
 
-### 5) Error 404 de modelo (ya corregido)
+Si trabajabas en **VS Code** y luego abrias **Android Studio** para ver los cambios en la app, ese flujo correcto es este:
 
-Si viste este error:
+1. Editar el proyecto en VS Code.
+2. Generar el nuevo build web con `npm run build`.
+3. Sincronizar Capacitor con `npx cap sync android`.
+4. Abrir Android Studio con `npx cap open android`.
+5. Desde Android Studio, volver a compilar o ejecutar la app en emulador/celular.
 
-`models/gemini-pro is not found for API version v1beta`
+Esto es importante porque la app Android **no lee directamente `src/`**: consume el contenido compilado de `dist/`, y `cap sync` copia ese build al proyecto nativo.
 
-ya está corregido en el proyecto. Ahora el sistema consulta el catálogo real de modelos disponibles y usa solo modelos compatibles con `generateContent`.
+### Produccion local
 
-## Auditoria de cambios de tareo (logs)
+```bash
+npm run build
+npm start
+```
 
-Para registrar historial de correcciones (ediciones y eliminaciones) en la nube:
+## Build Android
 
-1. Abre Supabase SQL Editor.
-2. Ejecuta el script [scripts/supabase_registros_logs.sql](scripts/supabase_registros_logs.sql).
-3. Vuelve a desplegar o recarga la app.
+```bash
+npm run build
+npx cap sync android
+npx cap open android
+```
 
-La app seguira funcionando sin esa tabla, pero no guardara bitacora en la nube hasta crearla.
+Luego compila el APK/AAB desde Android Studio.
 
-## Permisos RLS para eliminar/editar registros
+Si quieres ejecutar en dispositivo Android conectado:
 
-Si borras y al recargar vuelven a aparecer, normalmente es por politicas RLS de Supabase en tabla `registros`.
+```bash
+npx cap run android
+```
 
-1. Abre Supabase SQL Editor.
-2. Ejecuta [scripts/supabase_registros_policies.sql](scripts/supabase_registros_policies.sql).
-3. Vuelve a probar eliminar y recargar.
+### Cuando haces cambios en el proyecto
 
-Con esto, usuarios autenticados podran leer, insertar, editar y eliminar registros en la nube.
+Para actualizar la app Android despues de cualquier cambio en el frontend, usa este ciclo:
 
-## Persistencia colaborativa de catalogos y configuracion
+```bash
+npm run build
+npx cap sync android
+npx cap open android
+```
 
-Para compartir trabajadores, partidas, actividades, frentes y configuracion del proyecto entre dispositivos:
+Si Android Studio ya estaba abierto, igual conviene volver a ejecutar al menos:
 
-1. Abre Supabase SQL Editor.
-2. Ejecuta [scripts/supabase_app_settings.sql](scripts/supabase_app_settings.sql).
-3. Recarga la app.
+```bash
+npm run build
+npx cap sync android
+```
 
-Si no ejecutas este script, la app seguira funcionando con almacenamiento local en cada dispositivo.
+Luego recompilas desde Android Studio para ver los cambios en el dispositivo o emulador.
 
-## Importaciones S10
+## Configuracion de Supabase
 
-El importador S10 ahora busca las columnas por nombre y no por posicion fija. Esto significa:
+Los scripts de `scripts/` cubren la puesta en marcha base:
 
-- Si el usuario mueve columnas dentro del Excel, la importacion sigue funcionando.
-- Si el archivo trae columnas extra que el sistema no usa, se ignoran.
-- Solo deben existir los campos minimos requeridos para cada archivo.
+### 1. Persistencia compartida de catalogos y configuracion
 
-### 1) Personal S10
+Ejecuta:
 
-Campos obligatorios:
+```sql
+scripts/supabase_app_settings.sql
+```
 
-- `Codigo`
-- `Nombre`
+Sirve para compartir entre dispositivos:
 
-Campos opcionales que el sistema aprovecha si existen:
+- trabajadores
+- partidas
+- actividades
+- frentes
+- tipos de hora
+- configuracion del proyecto
+- usuarios gestionados
+- accesos
+- empresas/roster contratista
 
-- `Codigo categoria`
-- `Categoria`
-- `Abreviatura Categoria`
-- `DNI`
-- `Costo hora promedio`
-- `Fecha Ingreso`
-- `Ocupacion`
-- `Activo Proyecto`
+### 2. Politicas sobre `registros`
 
-### 2) Partidas por proyecto
+Ejecuta:
 
-Campos obligatorios:
+```sql
+scripts/supabase_registros_policies.sql
+```
 
-- `Codigo de partida`
-- `Descripcion` o `Nombre`
+Habilita lectura/insercion/edicion/eliminacion segun politicas del proyecto.
 
-Notas:
+### 3. Bitacora de cambios
 
-- El archivo puede traer jerarquia, niveles o columnas adicionales.
-- El sistema toma la partida hoja final y su descripcion.
+Ejecuta:
 
-### 3) Modelo TMO - hoja de Partidas
+```sql
+scripts/supabase_registros_logs.sql
+```
 
-Campos obligatorios:
+Registra historial de cambios sobre tareos.
 
-- `Codigo`
-- `Descripcion` o `Nombre`
+## Gemini
 
-Campos opcionales:
+La app usa `@google/generative-ai` y consulta el catalogo real de modelos compatibles con `generateContent`.
 
-- Cualquier otra columna del modelo se ignora.
+Puedes configurar la clave de dos formas:
 
-### 4) Modelo TMO - hoja TipoHora
+1. `.env` con `VITE_GEMINI_API_KEY`
+2. Desde la pestaña **Config** guardandola en `localStorage` (`gemini_api_key`)
 
-Campos obligatorios:
+## Importaciones y plantillas
 
-- `Descripcion`
+Desde Configuracion existen flujos para:
 
-Campos opcionales:
+- importar personal S10
+- importar partidas por proyecto
+- importar modelo TMO
+- importar consolidado de costos
+- importar actividades
+- importar tareo desde Excel
+- descargar plantillas base para cada flujo
 
-- `Codigo`
-- `Abreviatura`
+El proyecto tolera archivos `.xlsx` y `.xls` en varias de estas entradas.
 
-### Plantillas esperadas
+## Servidor de produccion
 
-No necesitas reordenar columnas manualmente si el archivo vino desde S10. El sistema esta preparado para trabajar con los reportes descargados desde S10 tal como salen, y tambien tolera reordenamientos de columnas siempre que los encabezados sigan presentes.
+`server.mjs` es un servidor HTTP nativo de Node que:
 
-## Compilar para producción
+- sirve `dist/`
+- usa puerto `3000` por defecto
+- resuelve rutas SPA devolviendo `index.html`
+
+## Estado de automatizacion
+
+Hoy el repositorio **no define tests automatizados ni scripts de lint** en `package.json`.
+
+El comando operativo vigente de validacion es:
 
 ```bash
 npm run build
 ```
 
-Los archivos compilados quedan en la carpeta `dist/`.
+## Uso interno
 
-## Estructura del proyecto
-
-```
-Tareo/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   ├── Config.jsx          # Tab de configuración
-│   │   ├── Icons.jsx           # Iconos SVG
-│   │   ├── ManualEntry.jsx     # Tab de ingreso manual
-│   │   ├── Summary.jsx         # Tab de resumen y exportación
-│   │   └── VoiceRecorder.jsx   # Tab de registro por voz
-│   ├── data/
-│   │   └── defaults.js         # Datos iniciales de ejemplo
-│   ├── utils/
-│   │   ├── exportCSV.js        # Lógica de exportación CSV
-│   │   └── voiceParser.js      # Parser de comandos de voz
-│   ├── App.css                 # Estilos globales de componentes
-│   ├── App.jsx                 # Componente principal
-│   ├── index.css               # Reset CSS base
-│   └── main.jsx                # Punto de entrada React
-├── index.html
-├── package.json
-└── vite.config.js
-```
-
-## Uso de comandos de voz
-
-Formato: "[Nombre], [X] horas partida [código], [Y] horas partida [código]"
-
-Ejemplos:
-- "Juan Pérez, 4 horas partida 101, 3 horas partida 201"
-- "Carlos García, 8 horas partida 102"
-- "María López, 5 horas excavación, 3 horas concreto"
+Proyecto de uso privado para **Constructora Padova SAC**.

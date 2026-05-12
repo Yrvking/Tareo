@@ -1,12 +1,13 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import Select from "react-select"
-import { PlusIcon, UploadIcon, PencilIcon } from "./Icons"
+import { PlusIcon, UploadIcon, PencilIcon, TrashIcon } from "./Icons"
 import {
   parsePersonalXLSX,
   parsePartidasFromXLS,
   parsePartidasProyectoXLS,
   parseTipoHoraFromXLS,
   parseResumenTareo,
+  parseNetosFinanzasXLSX,
   buildWorkersFromResumenTareo,
   buildPartidasFromResumenTareo,
   buildSyntheticActivitiesFromPartidas,
@@ -25,8 +26,16 @@ import {
   downloadS10ModeloTemplate,
   downloadS10CostosTemplate,
 } from "../utils/importTemplates"
-import { deleteRegistroById, fetchRegistros, insertRegistro, updateRegistro } from "../utils/supabaseClient"
+import {
+  deleteRegistroById,
+  fetchRegistros,
+  insertRegistro,
+  updateRegistro,
+  saveNetosFinanzas,
+  clearNetosFinanzas,
+} from "../utils/supabaseClient"
 import { selectStyles } from "../utils/selectTheme"
+import { getWeekOptions } from "../utils/dateUtils"
 import UserManagementPanel from "./UserManagementPanel"
 
 export default function Config({
@@ -101,13 +110,18 @@ export default function Config({
   const [tempApiKey,      setTempApiKey]      = useState(localStorage.getItem("gemini_api_key") || "")
   const [tareoImporting,  setTareoImporting]  = useState(false)
   const [costosImporting, setCostosImporting] = useState(false)
+  const [netosImporting,  setNetosImporting]  = useState(false)
 
   const personalFileRef   = useRef(null)
   const partidasFileRef   = useRef(null)
   const modeloFileRef     = useRef(null)
   const costosFileRef     = useRef(null)
+  const netosFileRef      = useRef(null)
   const actividadesFileRef = useRef(null)
   const tareoFileRef      = useRef(null)
+
+  const weekOptions = useMemo(() => getWeekOptions(12, 2), [])
+  const [selectedWeek, setSelectedWeek] = useState(weekOptions[2])
   const closedTareoDates = Array.isArray(projectConfig.closedTareoDates) ? projectConfig.closedTareoDates : []
   const isSelectedDateClosed = Boolean(fechaTareo && closedTareoDates.includes(fechaTareo))
 
@@ -369,6 +383,53 @@ export default function Config({
     } catch (err) { showFeedback(`Error: ${err.message}`, "error") }
     setTareoImporting(false)
     e.target.value = ""
+  }
+
+  // ── Importación de netos (Finanzas) ─────────────────────────────────────────
+  const handleImportNetos = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedWeek) return
+
+    const weekLabel = selectedWeek.label.split('(')[0].trim()
+    const dateRange = selectedWeek.label.match(/\((.*?)\)/)?.[1] || ""
+    const confirmMsg = `¿Está seguro que va a cargar los costos netos a la ${weekLabel} con fechas del ${dateRange}?`
+    
+    if (!window.confirm(confirmMsg)) {
+      e.target.value = ""
+      return
+    }
+
+    setNetosImporting(true)
+    try {
+      const buffer = await readFileAsArrayBuffer(file)
+      const netosMap = parseNetosFinanzasXLSX(buffer)
+      const count = Object.keys(netosMap).length
+
+      if (count === 0) {
+        throw new Error("No se encontraron netos válidos en el archivo. Verifica las columnas DNI/Código y Neto.")
+      }
+
+      await saveNetosFinanzas(selectedWeek.year, selectedWeek.week, netosMap)
+      showFeedback(`✓ Planilla de Finanzas cargada: ${count} netos asignados a la semana ${selectedWeek.week}.`)
+    } catch (err) {
+      showFeedback(`Error: ${err.message}`, "error")
+    }
+    setNetosImporting(false)
+    e.target.value = ""
+  }
+
+  const handleClearNetos = async () => {
+    if (!selectedWeek) return
+    if (!window.confirm(`¿Está seguro que desea ELIMINAR la carga de netos de la SEMANA ${selectedWeek.week}? Esta acción no se puede deshacer.`)) return
+
+    setNetosImporting(true)
+    try {
+      await clearNetosFinanzas(selectedWeek.year, selectedWeek.week)
+      showFeedback(`✓ Datos de netos eliminados para la semana ${selectedWeek.week}.`)
+    } catch (err) {
+      showFeedback(`Error: ${err.message}`, "error")
+    }
+    setNetosImporting(false)
   }
 
   // ── Borrados masivos ─────────────────────────────────────────────────────────
@@ -930,6 +991,46 @@ export default function Config({
             Cuando una fecha está cerrada, un usuario común no podrá eliminar tareos de esa fecha desde la pestaña Voz. Admin y super admin sí podrán hacerlo.
           </div>
         </div>
+      </div>
+
+      {/* ── Finanzas ────────────────────────────────────────────────────────── */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="label" style={{ marginBottom: 12, color: 'var(--accent-gold)' }}>ÁREA DE FINANZAS — CARGA DE PLANILLAS</div>
+        <p style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 12 }}>
+          Selecciona la semana correspondiente y sube el Excel de netos calculado por contabilidad. Esto permitirá cruzar los pagos con el tareo de obra. <strong>Si subes un archivo nuevo, sobrescribirá el anterior de esa semana.</strong>
+        </p>
+
+        <div style={{ marginBottom: 12 }}>
+          <label className="field-label-sm">Semana a cargar</label>
+          <Select
+            options={weekOptions}
+            value={selectedWeek}
+            onChange={setSelectedWeek}
+            styles={selectStyles}
+            placeholder="Selecciona la semana..."
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => netosFileRef.current?.click()}
+            className="btn-import"
+            style={{ flex: 1 }}
+            disabled={netosImporting || !selectedWeek}
+          >
+            <UploadIcon /> {netosImporting ? "Cargando..." : "SUBIR EXCEL DE NETOS"}
+          </button>
+          <button
+            onClick={handleClearNetos}
+            className="btn-pill-danger"
+            style={{ padding: '0 15px' }}
+            disabled={netosImporting || !selectedWeek}
+            title="Limpiar carga de esta semana"
+          >
+            <TrashIcon />
+          </button>
+        </div>
+        <input ref={netosFileRef} type="file" hidden onChange={handleImportNetos} accept=".xlsx,.xls" />
       </div>
 
       {/* ── Asistente IA ─────────────────────────────────────────────────────── */}

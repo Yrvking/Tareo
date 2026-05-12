@@ -3,7 +3,7 @@ import { DownloadIcon, FileIcon } from "./Icons"
 import { getAccountingExportIssues } from "../utils/exportCSV"
 import { generateWeeklyXLS, getWeekNumber } from "../utils/s10Exporter"
 import { getWeekRange } from "../utils/dateUtils"
-import { fetchAppSettings } from "../utils/supabaseClient"
+import { fetchAppSettings, fetchNetosFinanzas } from "../utils/supabaseClient"
 import { getWorkerCategoryLabel, normalizeWorkersCollection } from "../utils/workerCategory"
 import { resolveAccountingPartida } from "../utils/accountingPartidas"
 import { mergeWorkers } from "../utils/s10Importer"
@@ -31,12 +31,21 @@ export default function Summary({
   const [exportSemana, setExportSemana] = useState(getWeekNumber(today))
   const [exportAnio, setExportAnio] = useState(today.getFullYear())
   const [exportFeedback, setExportFeedback] = useState(null)
+  const [netosFinanzas, setNetosFinanzas] = useState({})
 
   useEffect(() => {
     if (!fechaTareo) return
     const selected = new Date(`${fechaTareo}T12:00:00`)
-    setExportSemana(getWeekNumber(selected))
-    setExportAnio(selected.getFullYear())
+    const semana = getWeekNumber(selected)
+    const anio = selected.getFullYear()
+    setExportSemana(semana)
+    setExportAnio(anio)
+
+    // Cargar netos de finanzas para esta semana
+    fetchNetosFinanzas(anio, semana).then(setNetosFinanzas).catch(err => {
+      console.error("Error al cargar netos de finanzas:", err)
+      setNetosFinanzas({})
+    })
   }, [fechaTareo])
 
   const weekRange = useMemo(() => {
@@ -383,7 +392,7 @@ export default function Summary({
                     {weekRange.map((day) => (
                       <th key={day.date} colSpan="2" className="text-center">{day.label} {day.dayNum}</th>
                     ))}
-                    <th colSpan="5" className="text-center" style={{ background: "rgba(100,255,218,0.1)" }}>TOTALES</th>
+                    <th colSpan="6" className="text-center" style={{ background: "rgba(100,255,218,0.1)" }}>TOTALES</th>
                   </tr>
                   <tr>
                     {weekRange.map((day) => (
@@ -397,12 +406,17 @@ export default function Summary({
                     <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 60%</th>
                     <th className="sub-th" style={{ color: "#ff6b6b", fontSize: "9px" }}>EXT 100%</th>
                     <th className="sub-th" style={{ fontWeight: "800", minWidth: "70px" }}>T. TRAB.</th>
+                    <th className="sub-th" style={{ color: "var(--accent-blue)", fontWeight: "800", minWidth: "90px" }}>NETO FINANZAS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(workerWeeklyData).map(([workerId, data]) => {
                     let rowTotalHn = 0
                     let rowTotalHe = 0
+                    const worker = workerMap.get(String(workerId))
+                    // El neto puede estar asociado al ID o al DNI o al Código
+                    const neto = netosFinanzas[workerId] || netosFinanzas[worker?.dni] || netosFinanzas[worker?.codigo] || 0
+                    
                     return (
                       <tr key={workerId}>
                         <td className="worker-name-col">{data.nombre}</td>
@@ -423,6 +437,9 @@ export default function Summary({
                         <td className="text-center val-col text-dim">0</td>
                         <td className="text-center val-col text-dim">0</td>
                         <td className="text-center val-col total-col-final">{rowTotalHn + rowTotalHe}</td>
+                        <td className="text-center val-col" style={{ fontWeight: "800", color: neto > 0 ? "var(--accent-blue)" : "var(--text-dim)" }}>
+                          {neto > 0 ? neto.toLocaleString("es-PE", { minimumFractionDigits: 2 }) : "—"}
+                        </td>
                       </tr>
                     )
                   })}

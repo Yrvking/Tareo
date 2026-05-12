@@ -385,16 +385,14 @@ async function upsertRemoteRowsIntoLocal(rows = [], startDate = null, endDate = 
     await putManyRegistrosLocal(updates)
   }
 
-  if (startDate || endDate) {
-    const localRecords = await getRegistrosLocalByRange(startDate, endDate)
-    for (const localRecord of localRecords) {
-      if (
-        localRecord.remoteId &&
-        localRecord.syncStatus === "synced" &&
-        !remoteIds.has(localRecord.remoteId)
-      ) {
-        await deleteRegistroLocal(localRecord.id)
-      }
+  const localRecords = await getRegistrosLocalByRange(startDate, endDate)
+  for (const localRecord of localRecords) {
+    if (
+      localRecord.remoteId &&
+      localRecord.syncStatus === "synced" &&
+      !remoteIds.has(localRecord.remoteId)
+    ) {
+      await deleteRegistroLocal(localRecord.id)
     }
   }
 }
@@ -974,4 +972,35 @@ export function getDataEventName() {
 
 export function getSyncEventName() {
   return SYNC_EVENT
+}
+
+// ── Finanzas: Netos a Pagar ──────────────────────────────────────────────────
+
+function getFinanzasKey(year, week) {
+  return `finanzas_netos_${year}_${week}`
+}
+
+/**
+ * Obtiene los netos cargados por finanzas para una semana.
+ */
+export async function fetchNetosFinanzas(year, week) {
+  const key = getFinanzasKey(year, week)
+  const payload = await fetchAppSettings(key)
+  return payload?.netos || {}
+}
+
+/**
+ * Guarda los netos de finanzas para una semana.
+ */
+export async function saveNetosFinanzas(year, week, netosMap) {
+  const key = getFinanzasKey(year, week)
+  return await saveAppSettings({ netos: netosMap }, key)
+}
+
+/**
+ * Limpia los netos de finanzas para una semana.
+ */
+export async function clearNetosFinanzas(year, week) {
+  const key = getFinanzasKey(year, week)
+  return await saveAppSettings({ netos: {} }, key)
 }

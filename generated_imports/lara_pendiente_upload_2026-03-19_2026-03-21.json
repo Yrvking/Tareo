@@ -1,0 +1,105 @@
+{
+  "worker": {
+    "id": "22001988",
+    "codigo": "22001988",
+    "nombre": "LARA LOPEZ, JORGE LUIS",
+    "categoriaCode": "003",
+    "categoria": "003 Operario",
+    "abrevCategoria": "ope",
+    "dni": "46476755",
+    "costoHora": 25,
+    "fechaIngreso": "18/03/2026",
+    "ocupacionCode": "01004001",
+    "ocupacion": "Operario Albañil",
+    "activo": "Si"
+  },
+  "activities": [
+    {
+      "id": "A091",
+      "nombre": "DESMONTAJE IIEE",
+      "partidaId": "010201060"
+    },
+    {
+      "id": "A092",
+      "nombre": "TENDIDO DE TUBERIAS DE AGUA",
+      "partidaId": "010201060"
+    }
+  ],
+  "registros": [
+    {
+      "workerId": "22001988",
+      "workerNombre": "LARA LOPEZ, JORGE LUIS",
+      "frenteId": null,
+      "frenteNombre": null,
+      "date": "2026-03-19",
+      "timestamp": "2026-03-19T12:00:00.000Z",
+      "raw": "Importado desde tareo semanal Sunny",
+      "assignments": [
+        {
+          "actividadId": "A014",
+          "horas": 2.5,
+          "partidaId": "010201060",
+          "actividadNombre": "CERCO PERIMETRICO PROVISIONAL",
+          "partidaNombre": "varios - Obras Provisionales"
+        },
+        {
+          "actividadId": "A061",
+          "horas": 2,
+          "partidaId": "010202020",
+          "actividadNombre": "PROBETAS",
+          "partidaNombre": "Concreto Muros Anclados"
+        },
+        {
+          "actividadId": "A044",
+          "horas": 4,
+          "partidaId": "010202005",
+          "actividadNombre": "HUMEDECER TERRENO",
+          "partidaNombre": "Movimiento de Tierras"
+        }
+      ]
+    },
+    {
+      "workerId": "22001988",
+      "workerNombre": "LARA LOPEZ, JORGE LUIS",
+      "frenteId": null,
+      "frenteNombre": null,
+      "date": "2026-03-20",
+      "timestamp": "2026-03-20T12:00:00.000Z",
+      "raw": "Importado desde tareo semanal Sunny",
+      "assignments": [
+        {
+          "actividadId": "A044",
+          "horas": 6,
+          "partidaId": "010202005",
+          "actividadNombre": "HUMEDECER TERRENO",
+          "partidaNombre": "Movimiento de Tierras"
+        },
+        {
+          "actividadId": "A061",
+          "horas": 2.5,
+          "partidaId": "010202020",
+          "actividadNombre": "PROBETAS",
+          "partidaNombre": "Concreto Muros Anclados"
+        }
+      ]
+    },
+    {
+      "workerId": "22001988",
+      "workerNombre": "LARA LOPEZ, JORGE LUIS",
+      "frenteId": null,
+      "frenteNombre": null,
+      "date": "2026-03-21",
+      "timestamp": "2026-03-21T12:00:00.000Z",
+      "raw": "Importado desde tareo semanal Sunny",
+      "assignments": [
+        {
+          "actividadId": "A044",
+          "horas": 5.5,
+          "partidaId": "010202005",
+          "actividadNombre": "HUMEDECER TERRENO",
+          "partidaNombre": "Movimiento de Tierras"
+        }
+      ]
+    }
+  ]
+}

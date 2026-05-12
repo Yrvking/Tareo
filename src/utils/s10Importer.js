@@ -723,3 +723,42 @@ export function buildRegistrosFromResumenTareo(importedRows = [], workers = [], 
     assignments: registro.assignments.map(({ _key, ...assignment }) => assignment),
   }))
 }
+
+/**
+ * Parsea el Excel de Finanzas que contiene los netos a pagar.
+ * Retorna un mapa { workerIdentifier: netoValue }
+ */
+export function parseNetosFinanzasXLSX(fileBuffer) {
+  const wb = XLSX.read(fileBuffer, { type: "array" })
+  const sheet = wb.Sheets[wb.SheetNames[0]]
+  const rows = getSheetRows(sheet)
+  
+  const fields = [
+    { key: "dni", label: "DNI", aliases: ["dni", "documento", "nro dni", "numero dni"] },
+    { key: "codigo", label: "Código", aliases: ["codigo", "cod", "codigopersonal"] },
+    { key: "neto", label: "Neto a Pagar", required: true, aliases: ["neto", "neto a pagar", "pagar", "total neto", "valor neto", "neto pagar"] },
+  ]
+
+  const headerRowIndex = findHeaderRowIndex(rows, fields)
+  if (headerRowIndex < 0) {
+    throw new Error("No se encontró una columna de 'Neto a Pagar' en el archivo.")
+  }
+
+  const columnMap = createColumnMap(rows[headerRowIndex], fields)
+  const dataRows = rows.slice(headerRowIndex + 1)
+  const netosMap = {}
+
+  for (const row of dataRows) {
+    const dni = getRowValue(row, columnMap, "dni")
+    const codigo = getRowValue(row, columnMap, "codigo")
+    const netoRaw = getRawRowValue(row, columnMap, "neto")
+    const neto = parseFloat(String(netoRaw || "0").replace(/[^0-9.]/g, "")) || 0
+
+    if ((dni || codigo) && neto > 0) {
+      if (dni) netosMap[dni] = neto
+      if (codigo) netosMap[codigo] = neto
+    }
+  }
+
+  return netosMap
+}
