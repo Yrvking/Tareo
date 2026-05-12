@@ -330,17 +330,38 @@ function buildPersonalRows(registros, workers) {
   return Array.from(seen.values())
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || ""), "es"))
     .map((worker, index) => ({
-      item: index + 1,
-      dni: worker.dni || "",
-      nombre: worker.nombre || "",
-      categoria: getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }).toUpperCase(),
-      fechaIngreso: worker.fechaIngreso || "",
-      codigo: worker.codigo || worker.id || "",
-      ocupacion: worker.ocupacion || "",
-      costoHora: Number(worker.costoHora || 0),
-      banco: worker.banco || "",
-      cuenta: worker.cuenta || "",
-      cci: worker.cci || "",
+      item:             index + 1,
+      dni:              worker.dni || "",
+      nombre:           worker.nombre || "",
+      categoria:        getWorkerCategoryLabel(worker, { fallback: "SIN CATEGORIA" }).toUpperCase(),
+      planilla:         worker.planilla || "",
+      fechaIngreso:     worker.fechaIngreso || "",
+      fechaCese:        worker.fechaCese || "",
+      activo:           worker.activo || "",
+      codigo:           worker.codigo || worker.id || "",
+      cussp:            worker.cussp || "",
+      ocupacion:        worker.ocupacion || "",
+      costoHora:        Number(worker.costoHora || 0),
+      costoHoraExtra60: Number(worker.costoHoraExtra60 || 0),
+      costoHoraExtra100:Number(worker.costoHoraExtra100 || 0),
+      banco:            worker.banco || "",
+      cuenta:           worker.cuenta || "",
+      cci:              worker.cci || "",
+      regimenPension:   worker.regimenPension || "",
+      afp:              worker.afp || "",
+      cantidadHijos:    Number(worker.cantidadHijos || 0),
+      dh1_dni:          worker.dh1_dni || "",
+      dh1_nombre:       worker.dh1_nombre || "",
+      dh1_fechaNac:     worker.dh1_fechaNac || "",
+      dh2_dni:          worker.dh2_dni || "",
+      dh2_nombre:       worker.dh2_nombre || "",
+      dh2_fechaNac:     worker.dh2_fechaNac || "",
+      dh3_dni:          worker.dh3_dni || "",
+      dh3_nombre:       worker.dh3_nombre || "",
+      dh3_fechaNac:     worker.dh3_fechaNac || "",
+      dh4_dni:          worker.dh4_dni || "",
+      dh4_nombre:       worker.dh4_nombre || "",
+      dh4_fechaNac:     worker.dh4_fechaNac || "",
     }))
 }
 
@@ -726,21 +747,96 @@ function buildAccountingWorkbook({
     excelRow.height = 18
   })
 
+  // ── HOJA: DATOS PERSONALES ─────────────────────────────────────────────
   const personalSheet = workbook.addWorksheet("DATOS PERSONALES")
   personalSheet.views = [{ state: "frozen", ySplit: 5 }]
-  setColumnWidths(personalSheet, [6, 14, 34, 18, 14, 12, 20, 12, 18, 18, 18])
-  personalSheet.mergeCells("B4:D4")
-  personalSheet.getCell("B4").value = "DATOS PERSONAL"
+  setColumnWidths(personalSheet, [
+    6,   // N°
+    14,  // DNI
+    34,  // Nombre
+    18,  // Categoria
+    14,  // Planilla
+    14,  // F. Ingreso
+    14,  // F. Cese
+    10,  // Estado
+    12,  // Codigo
+    14,  // CUSSP
+    22,  // Ocupacion
+    14,  // HH Normal
+    14,  // HH 60%
+    14,  // HH 100%
+    16,  // Banco
+    18,  // Cuenta
+    22,  // CCI
+    18,  // Regimen Pension
+    16,  // AFP
+    10,  // N° Hijos
+    14,  // DH1 DNI
+    28,  // DH1 Nombre
+    14,  // DH1 F.Nac
+    14,  // DH2 DNI
+    28,  // DH2 Nombre
+    14,  // DH2 F.Nac
+    14,  // DH3 DNI
+    28,  // DH3 Nombre
+    14,  // DH3 F.Nac
+    14,  // DH4 DNI
+    28,  // DH4 Nombre
+    14,  // DH4 F.Nac
+  ])
+
+  personalSheet.mergeCells("B4:F4")
+  personalSheet.getCell("B4").value = "DATOS PERSONAL — PROYECTO " + (projectConfig?.codigoProyecto || "")
   personalSheet.getCell("B4").font = { bold: true, size: 12, color: { argb: APP.dark } }
   personalSheet.getCell("B4").alignment = { horizontal: "center", vertical: "middle" }
   personalSheet.getCell("B4").fill = { type: "pattern", pattern: "solid", fgColor: { argb: APP.lightBlue } }
 
-  const personalHeaders = ["N°", "DNI / CPP", "PLANILLA APELLIDOS Y NOMBRES", "CATEGORIA PLANILLA", "FECHA DE INGRESO", "CODIGO", "OCUPACION", "MONTO NETO POR HORA", "BANCO", "CCI", "CUENTA"]
+  const personalHeaders = [
+    "N°",
+    "DNI / CPP",
+    "APELLIDOS Y NOMBRES",
+    "CATEGORIA",
+    "PLANILLA",
+    "F. INGRESO",
+    "F. CESE",
+    "ESTADO",
+    "CODIGO",
+    "CUSSP",
+    "OCUPACION",
+    "MONTO HH\nNORMAL",
+    "MONTO HH\n60%",
+    "MONTO HH\n100%",
+    "BANCO",
+    "CUENTA",
+    "CCI",
+    "REGIMEN\nPENSION",
+    "AFP",
+    "N°\nHIJOS",
+    "DH1\nDNI",
+    "DH1 NOMBRE",
+    "DH1\nF.NAC",
+    "DH2\nDNI",
+    "DH2 NOMBRE",
+    "DH2\nF.NAC",
+    "DH3\nDNI",
+    "DH3 NOMBRE",
+    "DH3\nF.NAC",
+    "DH4\nDNI",
+    "DH4 NOMBRE",
+    "DH4\nF.NAC",
+  ]
+  const personalHeaderRow = personalSheet.getRow(5)
   personalHeaders.forEach((header, index) => {
-    const cell = personalSheet.getRow(5).getCell(index + 1)
+    const cell = personalHeaderRow.getCell(index + 1)
     cell.value = header
-    styleHeaderCell(cell, { fill: APP.lightBlue, fontColor: APP.dark })
+    styleHeaderCell(cell, { fill: APP.lightBlue, fontColor: APP.dark, wrapText: true })
   })
+  personalHeaderRow.height = 30
+
+  // Columnas numéricas (índice base-0)
+  const personalNumCols = new Set([11, 12, 13, 19])
+  // Columnas con texto alineado a la izquierda
+  const personalLeftCols = new Set([2, 10, 14, 21, 24, 27, 30])
 
   personalRows.forEach((row, index) => {
     const excelRow = personalSheet.getRow(6 + index)
@@ -749,24 +845,52 @@ function buildAccountingWorkbook({
       row.dni,
       row.nombre,
       row.categoria,
+      row.planilla,
       row.fechaIngreso,
+      row.fechaCese,
+      row.activo,
       row.codigo,
+      row.cussp,
       row.ocupacion,
       row.costoHora,
+      row.costoHoraExtra60,
+      row.costoHoraExtra100,
       row.banco,
-      row.cci,
       row.cuenta,
+      row.cci,
+      row.regimenPension,
+      row.afp,
+      row.cantidadHijos,
+      row.dh1_dni,
+      row.dh1_nombre,
+      row.dh1_fechaNac,
+      row.dh2_dni,
+      row.dh2_nombre,
+      row.dh2_fechaNac,
+      row.dh3_dni,
+      row.dh3_nombre,
+      row.dh3_fechaNac,
+      row.dh4_dni,
+      row.dh4_nombre,
+      row.dh4_fechaNac,
     ]
-    values.forEach((value, columnIndex) => {
-      const cell = excelRow.getCell(columnIndex + 1)
+    const zebra = index % 2 === 0 ? APP.white : "FFF8FAFC"
+    values.forEach((value, colIdx) => {
+      const cell = excelRow.getCell(colIdx + 1)
       cell.value = value
       styleDataCell(cell, {
-        fill: index % 2 === 0 ? APP.white : "FFF8FAFC",
-        fontColor: APP.dark,
-        horizontal: columnIndex === 2 || columnIndex >= 8 ? "left" : "center",
-        bold: columnIndex === 2,
+        fill: colIdx === 7
+          ? (row.activo === "ACTIVO" ? "FFD1FAE5" : "FFFEE2E2")
+          : zebra,
+        fontColor: colIdx === 7
+          ? (row.activo === "ACTIVO" ? "FF065F46" : APP.red)
+          : APP.dark,
+        horizontal: personalLeftCols.has(colIdx) ? "left" : "center",
+        bold: colIdx === 2,
       })
-      if (columnIndex === 7) cell.numFmt = '"S/" #,##0.00'
+      if (personalNumCols.has(colIdx) && typeof value === "number") {
+        cell.numFmt = colIdx === 19 ? "0" : '"S/" #,##0.00'
+      }
     })
     excelRow.height = 18
   })
