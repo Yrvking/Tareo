@@ -916,3 +916,139 @@ export async function exportAccountingWorkbook(payload) {
   await saveWorkbook(workbook, filename)
   return filename
 }
+
+export async function exportReportePlanilla(payload) {
+  const { registros, workers, fechaTareo, projectConfig, weekRange, netosFinanzas = {} } = payload
+  const workerMap = buildWorkerMap(workers)
+  const weekDays = getWeekDays(weekRange)
+  
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = "Codex"
+  workbook.created = new Date()
+
+  const weekNum = getWeekNumber(parseLocalDate(fechaTareo))
+  const year = parseLocalDate(fechaTareo).getFullYear()
+  const sheetName = `REPORTE PLANILLA SEM ${weekNum}`
+  const ws = workbook.addWorksheet(sheetName)
+
+  // Headers
+  const baseHeaders = ["ITEM", "DNI", "APELLIDOS Y NOMBRES", "CATEGORIA"]
+  const dayHeaders = weekDays.flatMap(d => [`${d.label} ${d.dayNum} HN`, `${d.label} ${d.dayNum} HE`])
+  const totalHeaders = ["TOT HN", "TOT HE", "EXT 60%", "EXT 100%", "TOTAL HORAS", "NETO FINANZAS"]
+  const bankHeaders = ["BANCO", "CUENTA", "CCI"]
+  
+  const headers = [...baseHeaders, ...dayHeaders, ...totalHeaders, ...bankHeaders]
+  
+  // Title
+  ws.mergeCells(1, 1, 1, headers.length)
+  ws.getCell(1, 1).value = `REPORTE DE PLANILLA - SEMANA ${weekNum} - ${year}`
+  ws.getCell(1, 1).font = { bold: true, size: 14 }
+  ws.getCell(1, 1).alignment = { horizontal: "center" }
+
+  ws.mergeCells(2, 1, 2, headers.length)
+  ws.getCell(2, 1).value = `OBRA: ${projectConfig?.obra || "TODAS"} | PERIODO: DEL ${formatDateEs(weekDays[0]?.date)} AL ${formatDateEs(weekDays[weekDays.length - 1]?.date)}`
+  ws.getCell(2, 1).alignment = { horizontal: "center" }
+
+  const headerRow = ws.getRow(4)
+  headers.forEach((h, i) => {
+    const cell = headerRow.getCell(i + 1)
+    cell.value = h
+    styleHeaderCell(cell, { 
+      fill: i >= baseHeaders.length + dayHeaders.length && i < baseHeaders.length + dayHeaders.length + totalHeaders.length ? APP.lightBlue : APP.card, 
+      fontColor: i >= baseHeaders.length + dayHeaders.length && i < baseHeaders.length + dayHeaders.length + totalHeaders.length ? APP.dark : APP.text 
+    })
+  })
+
+  // Data
+  const groupMap = new Map()
+  registros.forEach(reg => {
+    const workerId = String(reg.workerId)
+    if (!groupMap.has(workerId)) {
+      const worker = workerMap.get(workerId)
+      groupMap.set(workerId, {
+        id: workerId,
+        dni: worker?.dni || "",
+        codigo: worker?.codigo || "",
+        nombre: worker?.nombre || reg.workerNombre || workerId,
+        categoria: getWorkerCategoryLabel(worker, { fallback: "PEÓN" }).toUpperCase(),
+        banco: worker?.banco || "",
+        cuenta: worker?.cuenta || "",
+        cci: worker?.cci || "",
+        days: Object.fromEntries(weekDays.map(d => [d.date, { hn: 0, he: 0 }]))
+      })
+    }
+    const row = groupMap.get(workerId)
+    reg.assignments?.forEach(as => {
+      if (row.days[reg.date]) {
+        row.days[reg.date].hn += (Number(as.horasNormales) || 0)
+        row.days[reg.date].he += (Number(as.horasExtras) || 0)
+      }
+    })
+  })
+
+  const rows = Array.from(groupMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+  
+  rows.forEach((row, i) => {
+    const excelRow = ws.getRow(5 + i)
+    let totalHn = 0
+    let totalHe = 0
+    const dayValues = weekDays.flatMap(d => {
+      const h = row.days[d.date] || { hn: 0, he: 0 }
+      totalHn += h.hn
+      totalHe += h.he
+      return [h.hn || null, h.he || null]
+    })
+
+    const neto = netosFinanzas[row.id] || netosFinanzas[row.dni] || netosFinanzas[row.codigo] || 0
+
+    const values = [
+      i + 1,
+      row.dni,
+      row.nombre,
+      row.categoria,
+      ...dayValues,
+      totalHn,
+      totalHe,
+      0, // EXT 60%
+      0, // EXT 100%
+      totalHn + totalHe,
+      neto || null,
+      row.banco,
+      row.cuenta,
+      row.cci
+    ]
+
+    values.forEach((v, colIdx) => {
+      const cell = excelRow.getCell(colIdx + 1)
+      cell.value = v
+      styleDataCell(cell, {
+        fill: i % 2 === 0 ? APP.white : "FFF9FAFB",
+        fontColor: colIdx === baseHeaders.length + dayHeaders.length + 5 ? APP.blue : APP.dark, // NETO FINANZAS blue
+        horizontal: colIdx === 2 || colIdx >= headers.length - 3 ? "left" : "center",
+        bold: colIdx === 2 || colIdx === baseHeaders.length + dayHeaders.length + 4 || colIdx === baseHeaders.length + dayHeaders.length + 5
+      })
+      
+      // Numbers format
+      if (typeof v === "number") {
+        if (colIdx >= baseHeaders.length && colIdx < baseHeaders.length + dayHeaders.length + 5) {
+          cell.numFmt = "0.0"
+        } else if (colIdx === baseHeaders.length + dayHeaders.length + 5) {
+          cell.numFmt = '"S/" #,##0.00'
+        }
+      }
+    })
+  })
+
+  // Widths
+  const widths = [
+    5, 12, 35, 15, // Base
+    ...weekDays.flatMap(() => [6, 6]), // Days
+    10, 10, 10, 10, 12, 14, // Totals
+    15, 20, 25 // Bank
+  ]
+  setColumnWidths(ws, widths)
+
+  const filename = `REPORTE PLANILLA - ${projectConfig?.obra || "OBRA"} - SEM ${weekNum}.xlsx`
+  await saveWorkbook(workbook, filename)
+  return filename
+}

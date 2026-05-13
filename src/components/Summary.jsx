@@ -345,6 +345,25 @@ export default function Summary({
     }
   }
 
+  const handleExportReportePlanilla = async () => {
+    try {
+      const { exportReportePlanilla } = await import("../utils/planillaExports")
+      const exportWorkers = await resolveLatestWorkers()
+      const filename = await exportReportePlanilla({
+        registros,
+        workers: exportWorkers,
+        fechaTareo,
+        projectConfig,
+        weekRange,
+        netosFinanzas,
+      })
+      setExportFeedback(`✓ Exportado Reporte Planilla: ${filename}`)
+      setTimeout(() => setExportFeedback(null), 5000)
+    } catch (err) {
+      setExportFeedback(`Error: ${err.message}`)
+    }
+  }
+
   return (
     <div className="summary-container">
       <div className="summary-toolbar">
@@ -354,6 +373,9 @@ export default function Summary({
           <button onClick={() => setViewType("activity_weekly")} className={`pill-btn ${viewType === "activity_weekly" ? "active" : ""}`}>RESUMEN SEMANAL</button>
         </div>
         <div className="summary-toolbar-actions">
+          <button onClick={handleExportReportePlanilla} className="btn-export-sm" style={{ background: "#22c55e", color: "white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>
+            <FileIcon /> REPORTE PLANILLA
+          </button>
           <button onClick={handleExportPlanillaExcel} className="btn-export-sm" style={{ background: "var(--border-dim)" }}>
             <FileIcon /> EXPORTAR CUADROS EXCEL
           </button>

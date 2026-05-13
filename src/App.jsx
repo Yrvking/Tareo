@@ -708,7 +708,7 @@ function AppContent() {
 
           {/* Build Version Tag */}
           <div className="build-version-tag">
-            v1.1.10-DYNAMIC
+            v1.1.11-DYNAMIC
           </div>
         </main>
 
