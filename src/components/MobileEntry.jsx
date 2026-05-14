@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import Select from "react-select"
 import { SearchIcon, CheckIcon, PlusIcon, UserGroupIcon, TrashIcon } from "./Icons"
 import { insertRegistro, fetchRegistros } from "../utils/supabaseClient"
@@ -14,9 +14,11 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedActivity, setSelectedActivity] = useState(null)
   const [selectedFrente, setSelectedFrente] = useState(null)
-  const [hn, setHn] = useState(cap)
+  const [hn, setHn] = useState("")
   const [he, setHe] = useState("")
   const [feedback, setFeedback] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const isSavingRef = useRef(false)
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message })
@@ -37,11 +39,14 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
   }
 
   const handleRegisterBatch = async () => {
+    if (isSaving || isSavingRef.current) return
     if (selectedWorkers.length === 0 || !selectedActivity) {
       showFeedback("error", "Seleccione trabajadores y una actividad")
       return
     }
 
+    isSavingRef.current = true
+    setIsSaving(true)
     const currentFrenteObj = selectedFrente ? frentes.find(f => f.id === selectedFrente.value) : null
     const currentActObj = actividades.find(a => a.id === selectedActivity.value)
 
@@ -54,7 +59,6 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
       if (!worker) continue
 
       const newReg = {
-        id: Date.now() + Math.random(),
         workerId: worker.id,
         workerNombre: worker.nombre,
         frenteId: currentFrenteObj?.id || null,
@@ -101,6 +105,8 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
     )
     setSelectedWorkers([])
     setSearchQuery("")
+    setIsSaving(false)
+    isSavingRef.current = false
   }
 
   return (
@@ -126,6 +132,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 placeholder="Seleccione actividad..."
                 styles={selectStyles}
                 isClearable={false}
+                isDisabled={isSaving}
               />
             </div>
 
@@ -140,12 +147,13 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 placeholder="Seleccione frente..."
                 styles={selectStyles}
                 isClearable={false}
+                isDisabled={isSaving}
               />
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label className="field-label-sm" htmlFor="mobile-hn">Horas Normales (HN, max {cap})</label>
+                <label className="field-label-sm" htmlFor="mobile-hn">Hrs. Normales/Noct. (max {cap})</label>
                 <input 
                   id="mobile-hn"
                   aria-label="Horas normales"
@@ -157,6 +165,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                   onChange={e => setHn(e.target.value)}
                   className="input-field mono"
                   style={{ width: '100%', boxSizing: 'border-box' }}
+                  disabled={isSaving}
                 />
               </div>
               <div style={{ flex: 1 }}>
@@ -172,6 +181,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                   onChange={e => setHe(e.target.value)}
                   className="input-field mono"
                   style={{ width: '100%', boxSizing: 'border-box' }}
+                  disabled={isSaving}
                 />
               </div>
             </div>
@@ -186,10 +196,10 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
             <button 
               onClick={handleRegisterBatch}
               className="btn-primary" 
-              style={{ width: '100%', padding: '18px', fontSize: '16px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)' }}
-              disabled={selectedWorkers.length === 0}
+              style={{ width: '100%', padding: '18px', fontSize: '16px', borderRadius: '14px', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)', opacity: isSaving ? 0.7 : 1 }}
+              disabled={selectedWorkers.length === 0 || isSaving}
             >
-              <UserGroupIcon /> REGISTRAR TAREO GRUPAL
+              <UserGroupIcon /> {isSaving ? "REGISTRANDO..." : "REGISTRAR TAREO GRUPAL"}
             </button>
           </div>
         </section>
@@ -209,6 +219,7 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
               className="search-input"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
+              disabled={isSaving}
             />
           </div>
 
@@ -218,8 +229,9 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
                 {selectedWorkers.length} DE {filteredWorkers.length} SELECCIONADOS
               </span>
               <button 
-                onClick={() => setSelectedWorkers(selectedWorkers.length === filteredWorkers.length ? [] : filteredWorkers.map(w => w.id))}
-                style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '11px', fontWeight: '800', cursor: 'pointer', textTransform: 'uppercase' }}
+                onClick={() => !isSaving && setSelectedWorkers(selectedWorkers.length === filteredWorkers.length ? [] : filteredWorkers.map(w => w.id))}
+                style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '11px', fontWeight: '800', cursor: isSaving ? 'not-allowed' : 'pointer', textTransform: 'uppercase', opacity: isSaving ? 0.5 : 1 }}
+                disabled={isSaving}
               >
                 {selectedWorkers.length === filteredWorkers.length ? "Deseleccionar" : "Seleccionar Todo"}
               </button>
@@ -228,8 +240,9 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
             {filteredWorkers.map(w => (
               <div 
                 key={w.id} 
-                onClick={() => toggleWorker(w.id)}
-                className={`worker-row-selectable ${selectedWorkers.includes(w.id) ? 'selected' : ''}`}
+                onClick={() => !isSaving && toggleWorker(w.id)}
+                className={`worker-row-selectable ${selectedWorkers.includes(w.id) ? 'selected' : ''} ${isSaving ? 'disabled' : ''}`}
+                style={{ pointerEvents: isSaving ? 'none' : 'auto', opacity: isSaving ? 0.7 : 1 }}
               >
                 <div className="checkbox-circle">
                   {selectedWorkers.includes(w.id) && <CheckIcon />}

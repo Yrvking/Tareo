@@ -23,6 +23,7 @@ export default function Summary({
   actividades, tiposHora, projectConfig,
   getPartidaNombre,
   fechaTareo,
+  setTab,
 }) {
   const [viewType, setViewType] = useState("worker_weekly")
   const [activityViewMode, setActivityViewMode] = useState("daily")
@@ -391,10 +392,19 @@ export default function Summary({
       {exportFeedback && <div className="alert-success" style={{ marginBottom: 16 }}>{exportFeedback}</div>}
 
       {viewType === "worker_weekly" && accountingIssues.length > 0 && (
-        <div className="alert-error" style={{ marginBottom: 16 }}>
-          <strong>Contabilidad requiere datos completos por trabajador.</strong> Faltan DNI, Categoría o Fecha de Ingreso en {accountingIssues.length} trabajador(es):{" "}
-          {accountingIssues.slice(0, 6).map((issue) => `${issue.nombre} [${issue.missing.join(", ")}]`).join(" · ")}
-          {accountingIssues.length > 6 ? " ..." : ""}
+        <div className="alert-error" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <strong>Contabilidad requiere datos completos por trabajador.</strong> Faltan DNI, Categoría o Fecha de Ingreso en {accountingIssues.length} trabajador(es):{" "}
+            {accountingIssues.slice(0, 6).map((issue) => `${issue.nombre} [${issue.missing.join(", ")}]`).join(" · ")}
+            {accountingIssues.length > 6 ? " ..." : ""}
+          </div>
+          <button 
+            onClick={() => setTab("config")}
+            className="btn-pill-danger" 
+            style={{ padding: '6px 12px', fontSize: 11, background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', flexShrink: 0 }}
+          >
+            IR A CONFIGURACIÓN
+          </button>
         </div>
       )}
 

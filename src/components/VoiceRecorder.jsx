@@ -22,6 +22,8 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   const [selectedRegistroIds, setSelectedRegistroIds] = useState([])
   const [sessionTime, setSessionTime] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const isSavingRef = useRef(false)
 
   const recognitionRef = useRef(null)
   const shouldRestartRef = useRef(false)
@@ -64,10 +66,11 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
   }
 
   const commitCurrentWorker = useCallback(async () => {
-    if (!currentWorker || sessionAssignments.length === 0) return
+    if (isSaving || isSavingRef.current || !currentWorker || sessionAssignments.length === 0) return
 
+    isSavingRef.current = true
+    setIsSaving(true)
     const newReg = {
-      id: editingRegistroId || Date.now(),
       workerId: currentWorker.id,
       workerNombre: currentWorker.nombre,
       frenteId: currentFrente?.id || null,
@@ -80,6 +83,7 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
     
     try {
       if (editingRegistroId) {
+        newReg.id = editingRegistroId
         const result = await updateRegistro(newReg, { source: "voice_edit" })
         const savedReg = result?.record ? { ...newReg, ...result.record } : { ...newReg }
         if (result?.id) savedReg.id = result.id
@@ -97,8 +101,11 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
       setEditingRegistroId(null)
     } catch (e) {
       setFeedbackMessage({ type: "error", message: e.message || "No se pudo guardar el registro.", timeout: 5000 })
+    } finally {
+      setIsSaving(false)
+      isSavingRef.current = false
     }
-  }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo, editingRegistroId])
+  }, [currentWorker, currentFrente, sessionAssignments, setRegistros, fechaTareo, editingRegistroId, isSaving])
 
   const startEditingRegistro = useCallback((targetReg) => {
     if (!targetReg) return
@@ -857,8 +864,8 @@ export default function VoiceRecorder({ workers, partidas, actividades, frentes,
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <button onClick={manualCommit} className="btn-confirm" style={{ fontSize: 12 }}>
-                  <CheckIcon /> Registrar
+                <button onClick={manualCommit} className="btn-confirm" style={{ fontSize: 12, opacity: isSaving ? 0.7 : 1 }} disabled={isSaving}>
+                  <CheckIcon /> {isSaving ? "Registrando..." : "Registrar"}
                 </button>
               </div>
             </>

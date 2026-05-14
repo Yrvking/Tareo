@@ -20,6 +20,7 @@ export default function WeeklyControl({
   const [newHe, setNewHe] = useState(0)
   const [feedbackMessage, setFeedbackMessage] = useState(null)
   const [editingAssignment, setEditingAssignment] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const partidaOptions = partidas.map((partida) => ({
     value: partida.id,
@@ -95,12 +96,13 @@ export default function WeeklyControl({
   }
 
   const handleSaveDay = async () => {
-    if (!selectedDay || !newActivity) return
+    if (isSaving || !selectedDay || !newActivity) return
 
     const { workerId, date } = selectedDay
     const worker = workers.find(w => w.id === workerId)
     if (!worker) return
 
+    setIsSaving(true)
     const newReg = {
       workerId,
       workerNombre: worker.nombre,
@@ -126,6 +128,8 @@ export default function WeeklyControl({
       showFeedback("success", `Registro agregado para ${worker.nombre}.`)
     } catch (err) {
       showFeedback("error", err.message || "No se pudo guardar el registro.")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -167,7 +171,7 @@ export default function WeeklyControl({
   }
 
   const handleSaveAssignmentEdit = async () => {
-    if (!editingAssignment?.recordId || editingAssignment.assignmentIndex == null) return
+    if (isSaving || !editingAssignment?.recordId || editingAssignment.assignmentIndex == null) return
     if (!editingAssignment.partidaOption || !editingAssignment.activityOption) {
       showFeedback("error", "Selecciona la nueva partida y actividad.")
       return
@@ -185,6 +189,7 @@ export default function WeeklyControl({
       return
     }
 
+    setIsSaving(true)
     const syntheticActivity =
       getActividadById(editingAssignment.activityOption.value) ||
       (String(editingAssignment.activityOption.partidaId) === String(selectedPartida.id)
@@ -237,6 +242,8 @@ export default function WeeklyControl({
       showFeedback("success", `Asignación actualizada a ${selectedPartida.nombre}.`)
     } catch (error) {
       showFeedback("error", error.message || "No se pudo actualizar la asignación.")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -256,6 +263,7 @@ export default function WeeklyControl({
           className="search-input"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
+          disabled={isSaving}
         />
       </div>
 
@@ -312,6 +320,7 @@ export default function WeeklyControl({
                   <button
                     key={day.date}
                     onClick={() => {
+                      if (isSaving) return
                       setEditingAssignment(null)
                       setSelectedDay({ workerId: w.id, date: day.date })
                     }}
@@ -322,10 +331,12 @@ export default function WeeklyControl({
                       border: '1px solid ' + (isActive ? 'var(--accent-blue)' : (hasHours ? 'rgba(37,99,235,0.3)' : 'var(--border-dim)')),
                       borderRadius: '8px',
                       padding: '5px 2px',
-                      cursor: 'pointer',
+                      cursor: isSaving ? 'not-allowed' : 'pointer',
                       transition: 'all 0.15s',
-                      textAlign: 'center'
+                      textAlign: 'center',
+                      opacity: isSaving ? 0.7 : 1
                     }}
+                    disabled={isSaving}
                   >
                     <div style={{ fontSize: 9, color: isActive ? 'white' : 'var(--text-dim)', fontWeight: 700 }}>{day.label} {day.dayNum}</div>
                     <div className="mono" style={{ fontSize: 12, fontWeight: 800, color: isActive ? 'white' : (hasHours ? 'var(--text-main)' : 'var(--text-dim)') }}>
@@ -379,6 +390,7 @@ export default function WeeklyControl({
                                 borderRadius: 8,
                                 border: '1px solid rgba(255,255,255,0.06)',
                                 background: 'rgba(15,23,42,0.55)',
+                                opacity: isSaving ? 0.7 : 1
                               }}
                             >
                               <div style={{ display: 'grid', gap: 3 }}>
@@ -394,8 +406,9 @@ export default function WeeklyControl({
                               <button
                                 type="button"
                                 className="btn-pill-sm"
-                                onClick={() => startEditingAssignment(record, assignment, assignmentIndex)}
+                                onClick={() => !isSaving && startEditingAssignment(record, assignment, assignmentIndex)}
                                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                disabled={isSaving}
                               >
                                 <PencilIcon /> Editar partida
                               </button>
@@ -422,6 +435,7 @@ export default function WeeklyControl({
                           onChange={handleEditingPartidaChange}
                           styles={selectStyles}
                           placeholder="Seleccione partida..."
+                          isDisabled={isSaving}
                         />
                       </div>
 
@@ -433,14 +447,14 @@ export default function WeeklyControl({
                           onChange={(selectedOption) => setEditingAssignment((prev) => prev ? { ...prev, activityOption: selectedOption } : prev)}
                           styles={selectStyles}
                           placeholder="Seleccione actividad..."
-                          isDisabled={!editingAssignment.partidaOption}
+                          isDisabled={!editingAssignment.partidaOption || isSaving}
                         />
                       </div>
                     </div>
 
                     <div className="weekly-hour-grid">
                       <div className="weekly-hour-field">
-                        <label className="field-label-sm">Horas Normales (max {normalCap})</label>
+                        <label className="field-label-sm">Hrs. Normales/Noct. (max {normalCap})</label>
                         <input
                           type="number"
                           step="0.5"
@@ -450,6 +464,7 @@ export default function WeeklyControl({
                           value={editingAssignment.horasNormales}
                           onChange={(e) => setEditingAssignment((prev) => prev ? { ...prev, horasNormales: e.target.value } : prev)}
                           style={{ width: '100%', boxSizing: 'border-box' }}
+                          disabled={isSaving}
                         />
                       </div>
                       <div className="weekly-hour-field">
@@ -463,15 +478,21 @@ export default function WeeklyControl({
                           value={editingAssignment.horasExtras}
                           onChange={(e) => setEditingAssignment((prev) => prev ? { ...prev, horasExtras: e.target.value } : prev)}
                           style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }}
+                          disabled={isSaving}
                         />
                       </div>
                     </div>
 
                     <div className="weekly-action-row">
-                      <button onClick={handleSaveAssignmentEdit} className="btn-primary weekly-action-primary">
-                        <CheckIcon /> GUARDAR CAMBIO
+                      <button 
+                        onClick={handleSaveAssignmentEdit} 
+                        className="btn-primary weekly-action-primary"
+                        disabled={isSaving}
+                        style={{ opacity: isSaving ? 0.7 : 1 }}
+                      >
+                        <CheckIcon /> {isSaving ? "GUARDANDO..." : "GUARDAR CAMBIO"}
                       </button>
-                      <button onClick={() => setEditingAssignment(null)} className="btn-pill-sm weekly-action-secondary">
+                      <button onClick={() => setEditingAssignment(null)} className="btn-pill-sm weekly-action-secondary" disabled={isSaving}>
                         CANCELAR
                       </button>
                     </div>
@@ -486,25 +507,31 @@ export default function WeeklyControl({
                     onChange={setNewActivity}
                     styles={selectStyles}
                     placeholder="Seleccione..."
+                    isDisabled={isSaving}
                   />
                 </div>
 
                 <div className="weekly-hour-grid">
                   <div className="weekly-hour-field">
-                    <label className="field-label-sm">Horas Normales (max {normalCap})</label>
-                    <input type="number" step="0.5" min="0" max={normalCap} className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} />
+                    <label className="field-label-sm">Hrs. Normales/Noct. (max {normalCap})</label>
+                    <input type="number" step="0.5" min="0" max={normalCap} className="input-field" value={newHn} onChange={e => setNewHn(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }} disabled={isSaving} />
                   </div>
                   <div className="weekly-hour-field">
                     <label className="field-label-sm">Horas Extras (max {extraCap})</label>
-                    <input type="number" step="0.5" min="0" max={extraCap} className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }} />
+                    <input type="number" step="0.5" min="0" max={extraCap} className="input-field" value={newHe} onChange={e => setNewHe(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', borderColor: '#ef4444' }} disabled={isSaving} />
                   </div>
                 </div>
 
                 <div className="weekly-action-row">
-                  <button onClick={handleSaveDay} className="btn-primary weekly-action-primary">
-                    <CheckIcon /> AGREGAR REGISTRO
+                  <button 
+                    onClick={handleSaveDay} 
+                    className="btn-primary weekly-action-primary"
+                    disabled={isSaving}
+                    style={{ opacity: isSaving ? 0.7 : 1 }}
+                  >
+                    <CheckIcon /> {isSaving ? "AGREGANDO..." : "AGREGAR REGISTRO"}
                   </button>
-                  <button onClick={resetDayEntry} className="btn-pill-sm weekly-action-secondary">
+                  <button onClick={resetDayEntry} className="btn-pill-sm weekly-action-secondary" disabled={isSaving}>
                     CANCELAR
                   </button>
                 </div>

@@ -617,15 +617,6 @@ function buildAccountingWorkbook({
   projectConfig,
   weekRange,
 }) {
-  const issues = getAccountingExportIssues(registros, workers)
-  if (issues.length > 0) {
-    const detail = issues
-      .slice(0, 8)
-      .map((issue) => `${issue.nombre}: ${issue.missing.join(", ")}`)
-      .join(" | ")
-    throw new Error(`No se puede exportar a contabilidad. Faltan datos obligatorios en trabajadores: ${detail}${issues.length > 8 ? "..." : ""}`)
-  }
-
   const workbook = new ExcelJS.Workbook()
   workbook.creator = "Codex"
   workbook.created = new Date()

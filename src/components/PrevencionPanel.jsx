@@ -34,6 +34,7 @@ export default function PrevencionPanel({ workers, fechaTareo }) {
   const [statusFilter, setStatusFilter] = useState("all")
   const [feedback, setFeedback] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     let mounted = true

@@ -63,6 +63,7 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [feedback, setFeedback] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -187,7 +188,7 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
   }
 
   const handleRegisterIngreso = async () => {
-    if (!selectedWorker?.worker) {
+    if (isSaving || !selectedWorker?.worker) {
       showFeedback("error", "Selecciona un trabajador para registrar su ingreso.")
       return
     }
@@ -202,6 +203,7 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
       return
     }
 
+    setIsSaving(true)
     const nextEntry = {
       workerId: String(selectedWorker.worker.id),
       workerNombre: selectedWorker.worker.nombreAcceso || selectedWorker.worker.nombre,
@@ -230,14 +232,20 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
       updatedAt: new Date().toISOString(),
     }
 
-    await persistEntries([...entries, nextEntry])
-    showFeedback("success", `Ingreso registrado para ${selectedWorker.worker.nombreAcceso || selectedWorker.worker.nombre}.`)
-    setNotes("")
-    setAccessCode("")
+    try {
+      await persistEntries([...entries, nextEntry])
+      showFeedback("success", `Ingreso registrado para ${selectedWorker.worker.nombreAcceso || selectedWorker.worker.nombre}.`)
+      setNotes("")
+      setAccessCode("")
+    } catch (err) {
+      showFeedback("error", "No se pudo registrar el ingreso.")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleRegisterEgreso = async (targetEntry = selectedOpenEntry) => {
-    if (!targetEntry) {
+    if (isSaving || !targetEntry) {
       showFeedback("error", "No hay ingreso abierto para registrar egreso.")
       return
     }
@@ -254,8 +262,12 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
           }
     ))
 
-    await persistEntries(nextEntries)
-    showFeedback("success", `Egreso registrado para ${targetEntry.workerNombre}.`)
+    try {
+      await persistEntries(nextEntries)
+      showFeedback("success", `Egreso registrado para ${targetEntry.workerNombre}.`)
+    } catch (err) {
+      showFeedback("error", "No se pudo registrar el egreso.")
+    }
   }
 
   return (
@@ -353,11 +365,21 @@ export default function VigilanciaPanel({ workers, fechaTareo }) {
             </div>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-              <button onClick={handleRegisterIngreso} className="btn-primary">
-                <CheckIcon /> REGISTRAR INGRESO
+              <button 
+                onClick={handleRegisterIngreso} 
+                className="btn-primary" 
+                disabled={isSaving}
+                style={{ opacity: isSaving ? 0.7 : 1 }}
+              >
+                <CheckIcon /> {isSaving ? "REGISTRANDO..." : "REGISTRAR INGRESO"}
               </button>
-              <button onClick={() => handleRegisterEgreso()} className="btn-secondary">
-                REGISTRAR EGRESO
+              <button 
+                onClick={() => handleRegisterEgreso()} 
+                className="btn-secondary" 
+                disabled={isSaving}
+                style={{ opacity: isSaving ? 0.7 : 1 }}
+              >
+                {isSaving ? "EGRESANDO..." : "REGISTRAR EGRESO"}
               </button>
             </div>
 

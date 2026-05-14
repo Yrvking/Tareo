@@ -220,11 +220,20 @@ export function parsePersonalXLSX(fileBuffer) {
     { key: "categoriaCode", label: "Código categoría", aliases: ["codigo categoria", "cod categoria", "codigocategoria"] },
     { key: "categoria", label: "Categoría", aliases: ["categoria", "categoria laboral"] },
     { key: "abrevCategoria", label: "Abreviatura Categoría", aliases: ["abreviatura categoria", "abreviacion categoria", "abrev categoria"] },
-    { key: "dni", label: "DNI", aliases: ["dni", "documento identidad", "nro dni", "numero dni"] },
+    { key: "dni", label: "DNI", aliases: ["dni", "documento identidad", "nro dni", "numero dni", "cpp"] },
     { key: "costoHora", label: "Costo hora promedio", aliases: ["costo hora promedio", "costo hh promedio", "costo hora", "costohorapromedio"] },
     { key: "fechaIngreso", label: "Fecha Ingreso", aliases: ["fecha ingreso", "fecha de ingreso", "f ingreso"] },
     { key: "ocupacion", label: "Ocupación", aliases: ["ocupacion", "cargo"] },
     { key: "activo", label: "Activo Proyecto", aliases: ["activo proyecto", "activo en proyecto", "proyecto activo"] },
+    { key: "planilla", label: "Planilla", aliases: ["planilla", "tipo planilla"] },
+    { key: "fechaCese", label: "Fecha Cese", aliases: ["fecha cese", "cese", "f cese", "fecha de cese"] },
+    { key: "banco", label: "Banco", aliases: ["banco", "entidad bancaria"] },
+    { key: "cuenta", label: "Cuenta", aliases: ["cuenta", "nro cuenta", "numero cuenta", "cuenta bancaria"] },
+    { key: "cci", label: "CCI", aliases: ["cci", "cuenta interbancaria"] },
+    { key: "cantidadHijos", label: "N° Hijos", aliases: ["cantidad hijos", "hijos", "nro hijos", "numero hijos"] },
+    { key: "cussp", label: "CUSSP", aliases: ["cussp", "codigo afp", "cod afp"] },
+    { key: "regimenPension", label: "Régimen Pensión", aliases: ["regimen pension", "regimen pensionario", "regimen"] },
+    { key: "afp", label: "AFP", aliases: ["afp", "nombre afp"] },
   ]
 
   const { rows: dataRows, columnMap } = getParsedRows(
@@ -252,9 +261,18 @@ export function parsePersonalXLSX(fileBuffer) {
         abrevCategoria,
         dni: getRowValue(row, columnMap, "dni"),
         costoHora,
-        fechaIngreso: getRowValue(row, columnMap, "fechaIngreso"),
+        fechaIngreso: normalizeExcelDateValue(getRawRowValue(row, columnMap, "fechaIngreso")),
         ocupacion: getRowValue(row, columnMap, "ocupacion"),
         activo: getRowValue(row, columnMap, "activo"),
+        planilla: getRowValue(row, columnMap, "planilla"),
+        fechaCese: normalizeExcelDateValue(getRawRowValue(row, columnMap, "fechaCese")),
+        banco: getRowValue(row, columnMap, "banco"),
+        cuenta: getRowValue(row, columnMap, "cuenta"),
+        cci: getRowValue(row, columnMap, "cci"),
+        cantidadHijos: parseInt(getRowValue(row, columnMap, "cantidadHijos") || "0", 10) || 0,
+        cussp: getRowValue(row, columnMap, "cussp"),
+        regimenPension: getRowValue(row, columnMap, "regimenPension"),
+        afp: getRowValue(row, columnMap, "afp"),
       })
     })
     .filter((worker) => worker.codigo && worker.nombre)
@@ -564,6 +582,12 @@ export function mergeWorkers(existing, imported, replaceAll = false) {
         cuenta: pickFirstFilled(w.cuenta, previous.cuenta),
         cci: pickFirstFilled(w.cci, previous.cci),
         costoHora: Number(w.costoHora || 0) || Number(previous.costoHora || 0) || 0,
+        planilla: pickFirstFilled(w.planilla, previous.planilla),
+        fechaCese: pickFirstFilled(w.fechaCese, previous.fechaCese),
+        cantidadHijos: Number(w.cantidadHijos || 0) || Number(previous.cantidadHijos || 0) || 0,
+        cussp: pickFirstFilled(w.cussp, previous.cussp),
+        regimenPension: pickFirstFilled(w.regimenPension, previous.regimenPension),
+        afp: pickFirstFilled(w.afp, previous.afp),
       }))
   }
 

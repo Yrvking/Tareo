@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Select from "react-select"
 import { PlusIcon, TrashIcon } from "./Icons"
 import { insertRegistro } from "../utils/supabaseClient"
@@ -10,8 +10,10 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
   const extraCap = getExtraHourCap(fechaTareo)
   const [manualWorker, setManualWorker] = useState(null)
   const [manualFrente, setManualFrente] = useState(null)
-  const [manualEntries, setManualEntries] = useState([{ actividad: null, horasNormales: cap, horasExtras: "" }])
+  const [manualEntries, setManualEntries] = useState([{ actividad: null, horasNormales: "", horasExtras: "" }])
   const [feedbackMessage, setFeedbackMessage] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const isSavingRef = useRef(false)
 
   const workerOptions = workers.map(w => ({ value: w.id, label: w.nombre }))
   const frenteOptions = frentes.map(f => ({ value: f.id, label: `${f.id} - ${f.nombre}` }))
@@ -23,6 +25,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
   }
 
   const addManualEntry = async () => {
+    if (isSaving || isSavingRef.current) return
     if (!manualWorker) {
       showFeedback("error", "Faltan datos. Requerido: 1) Trabajador")
       return
@@ -39,10 +42,14 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       return
     }
 
+    // Immediate block
+    isSavingRef.current = true
+    setIsSaving(true)
+    
     const frente = manualFrente ? frentes.find((f) => f.id === manualFrente.value) : null
 
     const newReg = {
-      id: Date.now(),
+      // Avoid sending a numeric ID to let insertRegistro generate a proper unique string ID
       workerId: worker.id,
       workerNombre: worker.nombre,
       frenteId: frente?.id || null,
@@ -79,6 +86,9 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
       )
     } catch (e) {
       showFeedback("error", e.message || "No se pudo guardar el registro.")
+    } finally {
+      setIsSaving(false)
+      isSavingRef.current = false
     }
   }
 
@@ -102,6 +112,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
             placeholder="Buscar trabajador..."
             styles={selectStyles}
             isClearable
+            isDisabled={isSaving}
           />
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
@@ -113,6 +124,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
             placeholder="Seleccionar frente..."
             styles={selectStyles}
             isClearable
+            isDisabled={isSaving}
           />
         </div>
       </div>
@@ -132,10 +144,11 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
               placeholder="Buscar actividad..."
               styles={selectStyles}
               isClearable
+              isDisabled={isSaving}
             />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
-            <label className="field-label-sm">Horas Norm. (max {cap})</label>
+            <label className="field-label-sm">Horas Norm./Noct. (max {cap})</label>
             <input
               type="number"
               step="0.5"
@@ -149,6 +162,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
               }}
               placeholder="0"
               className="input-field mono"
+              disabled={isSaving}
             />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
@@ -166,6 +180,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
               }}
               placeholder="0"
               className="input-field mono"
+              disabled={isSaving}
             />
           </div>
           {manualEntries.length > 1 && (
@@ -173,6 +188,7 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
               onClick={() => setManualEntries(manualEntries.filter((_, i) => i !== idx))}
               className="btn-icon-danger"
               style={{ padding: "10px 4px", alignSelf: "center", marginBottom: "4px" }}
+              disabled={isSaving}
             >
               <TrashIcon />
             </button>
@@ -182,13 +198,19 @@ export default function ManualEntry({ workers, partidas, actividades, frentes, s
 
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button
-          onClick={() => setManualEntries([...manualEntries, { actividad: null, horasNormales: cap, horasExtras: "" }])}
+          onClick={() => setManualEntries([...manualEntries, { actividad: null, horasNormales: "", horasExtras: "" }])}
           className="btn-dashed"
+          disabled={isSaving}
         >
           <PlusIcon /> Otra actividad
         </button>
-        <button onClick={addManualEntry} className="btn-primary" style={{ marginLeft: "auto" }}>
-          Registrar
+        <button 
+          onClick={addManualEntry} 
+          className="btn-primary" 
+          style={{ marginLeft: "auto", minWidth: 120, opacity: isSaving ? 0.7 : 1 }}
+          disabled={isSaving}
+        >
+          {isSaving ? "Guardando..." : "Registrar"}
         </button>
       </div>
     </div>

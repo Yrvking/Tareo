@@ -49,7 +49,7 @@ export const validateAssignmentsByDailyLimits = ({
   const errors = []
 
   if (totalNormal > normalCap) {
-    errors.push(`Las Horas Normales del día suman ${totalNormal}h y el tope es ${normalCap}h.`)
+    errors.push(`Las Horas Normales y Nocturnas del día suman ${totalNormal}h y el tope máximo permitido es ${normalCap}h.`)
   }
 
   if (totalExtra > extraCap) {

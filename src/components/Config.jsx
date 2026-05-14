@@ -84,6 +84,33 @@ export default function Config({
 
   // ── Estado: forms de agregar ────────────────────────────────────────────────
   const [newWorkerName, setNewWorkerName]       = useState("")
+  const [editingWorker, setEditingWorker]       = useState(null)
+  const [editWorkerDni, setEditWorkerDni]       = useState("")
+  const [editWorkerCategoria, setEditWorkerCategoria] = useState("")
+  const [editWorkerFechaIngreso, setEditWorkerFechaIngreso] = useState("")
+  const [editWorkerCostoHora, setEditWorkerCostoHora] = useState("")
+
+  const startEditWorker = (w) => {
+    setEditingWorker(w)
+    setEditWorkerDni(w.dni || "")
+    setEditWorkerCategoria(w.categoria || "")
+    setEditWorkerFechaIngreso(w.fechaIngreso || "")
+    setEditWorkerCostoHora(w.costoHora || "")
+  }
+
+  const saveWorkerEdit = () => {
+    if (!editingWorker) return
+    setWorkers(prev => prev.map(w => w.id === editingWorker.id ? {
+      ...w,
+      dni: editWorkerDni.trim(),
+      categoria: editWorkerCategoria.trim(),
+      fechaIngreso: editWorkerFechaIngreso.trim(),
+      costoHora: parseFloat(editWorkerCostoHora) || 0,
+    } : w))
+    setEditingWorker(null)
+    showFeedback("✓ Trabajador actualizado")
+  }
+
   const [newPartidaId, setNewPartidaId]         = useState("")
   const [newPartidaNombre, setNewPartidaNombre] = useState("")
   const [newFrenteId, setNewFrenteId]           = useState("")
@@ -111,6 +138,7 @@ export default function Config({
   const [tareoImporting,  setTareoImporting]  = useState(false)
   const [costosImporting, setCostosImporting] = useState(false)
   const [netosImporting,  setNetosImporting]  = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const personalFileRef   = useRef(null)
   const partidasFileRef   = useRef(null)
@@ -637,10 +665,21 @@ export default function Config({
                   {!isCompactMode && <td className="mono" style={{ fontSize: 11, color: 'var(--accent-gold)' }}>{w.codigo || w.id}</td>}
                   <td style={{ fontWeight: 600 }}>{w.nombre}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <input type="checkbox"
-                      checked={selectedWorkers.includes(w.id)}
-                      onChange={() => setSelectedWorkers(prev => prev.includes(w.id) ? prev.filter(id => id !== w.id) : [...prev, w.id])}
-                    />
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <button
+                        onClick={() => startEditWorker(w)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-blue)', padding: '4px', opacity: 0.7 }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
+                        title="Completar datos para contabilidad"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <input type="checkbox"
+                        checked={selectedWorkers.includes(w.id)}
+                        onChange={() => setSelectedWorkers(prev => prev.includes(w.id) ? prev.filter(id => id !== w.id) : [...prev, w.id])}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -648,6 +687,53 @@ export default function Config({
           </table>
           {workers.length === 0 && <div className="empty-state">No hay trabajadores registrados.</div>}
         </div>
+
+        {/* ── Modal de Edición de Trabajador ──────────────────────────────── */}
+        {editingWorker && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', zIndex: 2000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+          }}>
+            <div className="card" style={{ width: '100%', maxWidth: 500, border: '1px solid var(--accent-blue)' }}>
+              <div className="label" style={{ marginBottom: 16, color: 'var(--accent-blue)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>EDITAR DATOS: {editingWorker.nombre}</span>
+                <button onClick={() => setEditingWorker(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>✕</button>
+              </div>
+              
+              <div className="desktop-grid" style={{ gap: 12 }}>
+                <div>
+                  <label className="field-label-sm">DNI / Documento</label>
+                  <input type="text" value={editWorkerDni} onChange={e => setEditWorkerDni(e.target.value)} 
+                    className="input-field mono" placeholder="Indispensable para contabilidad" />
+                </div>
+                <div>
+                  <label className="field-label-sm">Categoría</label>
+                  <input type="text" value={editWorkerCategoria} onChange={e => setEditWorkerCategoria(e.target.value)} 
+                    className="input-field" placeholder="Ej: 003 Operario" />
+                </div>
+              </div>
+
+              <div className="desktop-grid" style={{ gap: 12, marginTop: 12 }}>
+                <div>
+                  <label className="field-label-sm">Fecha Ingreso</label>
+                  <input type="text" value={editWorkerFechaIngreso} onChange={e => setEditWorkerFechaIngreso(e.target.value)} 
+                    className="input-field mono" placeholder="DD/MM/YYYY" />
+                </div>
+                <div>
+                  <label className="field-label-sm">Costo Hora</label>
+                  <input type="number" value={editWorkerCostoHora} onChange={e => setEditWorkerCostoHora(e.target.value)} 
+                    className="input-field mono" placeholder="0.00" />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+                <button onClick={saveWorkerEdit} className="btn-primary" style={{ flex: 1 }}>GUARDAR CAMBIOS</button>
+                <button onClick={() => setEditingWorker(null)} className="btn-pill-sm" style={{ flex: 0.4 }}>CANCELAR</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="responsive-inline-form">
           <input type="text" value={newWorkerName} onChange={e => setNewWorkerName(e.target.value)}

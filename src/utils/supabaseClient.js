@@ -169,7 +169,7 @@ async function applyDailyNormalCap(reg, excludeRecordId = null) {
 
   if (!validation.valid) {
     const error = new Error(
-      `${validation.errors.join(" ")} Ingresa las Horas Extras manualmente y recuerda que su tope es ${validation.extraCap}h por día.`
+      `Tope excedido: ${validation.errors.join(" ")} Solo puedes registrar hasta ${validation.normalCap}h normales por día. El exceso debe ir en la casilla de Horas Extras.`
     )
     error.code = "DAILY_HOUR_LIMIT_EXCEEDED"
     error.validation = validation

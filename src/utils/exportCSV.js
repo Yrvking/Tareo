@@ -49,15 +49,6 @@ export function getAccountingExportIssues(registros = [], workers = []) {
 }
 
 export function exportDatabaseXLSX(registros, workers, partidas, actividades) {
-  const issues = getAccountingExportIssues(registros, workers)
-  if (issues.length > 0) {
-    const detail = issues
-      .slice(0, 8)
-      .map((issue) => `${issue.nombre}: ${issue.missing.join(", ")}`)
-      .join(" | ")
-    throw new Error(`No se puede exportar a contabilidad. Faltan datos obligatorios en trabajadores: ${detail}${issues.length > 8 ? "..." : ""}`)
-  }
-
   const workerMap = buildWorkerMap(workers)
   const actividadMap = new Map(actividades.map((a) => [String(a.id), a]))
   const partidaMap = new Map(partidas.map((p) => [String(p.id), p]))
