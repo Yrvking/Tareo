@@ -292,17 +292,37 @@ function shouldSilenceAppSettings(error) {
 async function fetchRemoteRegistros(startDate = null, endDate = null) {
   if (!supabase) return []
 
-  let query = supabase.from("registros").select("*").order("tareo_date", { ascending: true })
+  const PAGE_SIZE = 1000
+  const allRows = []
+  let from = 0
 
-  if (startDate && endDate) {
-    query = query.gte("tareo_date", startDate).lte("tareo_date", endDate)
-  } else if (startDate) {
-    query = query.eq("tareo_date", startDate)
+  // PostgREST limita cada respuesta a PAGE_SIZE filas por defecto; sin paginar,
+  // las filas más recientes (al ordenar por fecha ascendente) quedaban fuera
+  // en cuanto la tabla superaba ese límite.
+  while (true) {
+    let query = supabase
+      .from("registros")
+      .select("*")
+      .order("tareo_date", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (startDate && endDate) {
+      query = query.gte("tareo_date", startDate).lte("tareo_date", endDate)
+    } else if (startDate) {
+      query = query.eq("tareo_date", startDate)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+
+    const rows = data || []
+    allRows.push(...rows)
+
+    if (rows.length < PAGE_SIZE) break
+    from += PAGE_SIZE
   }
 
-  const { data, error } = await query
-  if (error) throw error
-  return data || []
+  return allRows
 }
 
 async function remoteInsertRegistroRow(row, source = null) {
