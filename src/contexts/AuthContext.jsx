@@ -47,14 +47,27 @@ export function AuthProvider({ children }) {
       else setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        setUser(session.user);
         fetchProfile(session.user.id, session.user);
-      } else {
-        setProfile(null);
-        setLoading(false);
+        return;
       }
+
+      // Supabase puede emitir una sesión nula transitoria (p.ej. un refresh de
+      // token que falla por una red móvil inestable) sin que el usuario haya
+      // cerrado sesión realmente. Antes de tirar abajo toda la UI (y perder
+      // lo que el usuario esté llenando), reconfirmamos con getSession().
+      const { data: { session: confirmedSession } } = await supabase.auth.getSession();
+      if (confirmedSession?.user) {
+        setUser(confirmedSession.user);
+        fetchProfile(confirmedSession.user.id, confirmedSession.user);
+        return;
+      }
+
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

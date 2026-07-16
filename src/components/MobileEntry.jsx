@@ -103,8 +103,12 @@ export default function MobileEntry({ workers, frentes, actividades, setRegistro
         ? `✓ ${successCount} trabajadores registrados. ${pendingCount} quedaron pendientes de sincronización.`
         : `✓ Se registraron ${successCount} trabajadores`}${failedCount > 0 ? ` Fallaron ${failedCount}. ${lastError}` : ""}`
     )
-    setSelectedWorkers([])
-    setSearchQuery("")
+    // Solo limpiar la selección si TODOS se guardaron bien; si algo falló,
+    // se mantiene para que el usuario vea qué quedó pendiente y pueda reintentar.
+    if (failedCount === 0) {
+      setSelectedWorkers([])
+      setSearchQuery("")
+    }
     setIsSaving(false)
     isSavingRef.current = false
   }
