@@ -2,6 +2,14 @@ function normalizeCategoryValue(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim()
 }
 
+// Corrige artefactos de captura/importación: caracteres "|" sueltos pegados
+// al final del nombre (ej. copy-paste desde Excel/S10). No toca nada si no
+// hay "|" al final, así que nunca altera un nombre correcto.
+function sanitizeWorkerName(value) {
+  if (typeof value !== "string") return value
+  return value.replace(/\s*\|+\s*$/, "")
+}
+
 function mapCategoryAbbreviation(value) {
   const normalized = normalizeCategoryValue(value).toLowerCase()
   if (!normalized) return ""
@@ -78,6 +86,7 @@ export function normalizeWorkerRecord(worker) {
 
   return {
     ...worker,
+    nombre: sanitizeWorkerName(worker.nombre),
     categoriaCode: categoriaCode || worker.categoriaCode || "",
     categoriaNombre: categoriaNombre || worker.categoriaNombre || "",
     categoria: categoria || worker.categoria || "",
