@@ -130,6 +130,10 @@ export default function Config({
   const [selectedFrentes,    setSelectedFrentes]    = useState([])
   const [selectedActividades, setSelectedActividades] = useState([])
 
+  // ── Estado: orden de la tabla de actividades ─────────────────────────────────
+  const [actSortBy, setActSortBy] = useState(null)
+  const [actSortDir, setActSortDir] = useState("asc")
+
   // ── Varios ──────────────────────────────────────────────────────────────────
   const [isCompactMode,   setIsCompactMode]   = useState(true)
   const [importFeedback,  setImportFeedback]  = useState(null)
@@ -147,6 +151,34 @@ export default function Config({
   const netosFileRef      = useRef(null)
   const actividadesFileRef = useRef(null)
   const tareoFileRef      = useRef(null)
+
+  const sortedActividades = useMemo(() => {
+    if (!actSortBy) return actividades
+
+    const partidaNombreById = new Map(partidas.map(p => [p.id, p.nombre]))
+    const dir = actSortDir === "desc" ? -1 : 1
+
+    return [...actividades].sort((a, b) => {
+      let valA = ""
+      let valB = ""
+      if (actSortBy === "id") { valA = a.id; valB = b.id }
+      else if (actSortBy === "nombre") { valA = a.nombre; valB = b.nombre }
+      else if (actSortBy === "partida") {
+        valA = partidaNombreById.get(a.partidaId) || a.partidaId || ""
+        valB = partidaNombreById.get(b.partidaId) || b.partidaId || ""
+      }
+      return dir * String(valA).localeCompare(String(valB), "es", { numeric: true })
+    })
+  }, [actividades, partidas, actSortBy, actSortDir])
+
+  const toggleActSort = (column) => {
+    if (actSortBy === column) {
+      setActSortDir(prev => (prev === "asc" ? "desc" : "asc"))
+    } else {
+      setActSortBy(column)
+      setActSortDir("asc")
+    }
+  }
 
   const weekOptions = useMemo(() => getWeekOptions(12, 2), [])
   const [selectedWeek, setSelectedWeek] = useState(weekOptions[2])
@@ -885,13 +917,19 @@ export default function Config({
         <div style={{ maxHeight: 380, overflowY: 'auto', marginBottom: 12, border: '1px solid var(--border-dim)', borderRadius: 8 }}>
           {/* Encabezado de tabla */}
           <div style={{ display: 'flex', padding: '5px 10px', background: 'var(--bg-dark)', position: 'sticky', top: 0, zIndex: 5, borderBottom: '1px solid var(--border-dim)' }}>
-            <span style={{ width: 50, fontSize: 10, fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase' }}>ID</span>
-            <span style={{ flex: 2, fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Actividad</span>
-            <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Partida de control</span>
+            <span onClick={() => toggleActSort("id")} style={{ width: 50, fontSize: 10, fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' }}>
+              ID{actSortBy === "id" ? (actSortDir === "asc" ? " ▲" : " ▼") : ""}
+            </span>
+            <span onClick={() => toggleActSort("nombre")} style={{ flex: 2, fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' }}>
+              Actividad{actSortBy === "nombre" ? (actSortDir === "asc" ? " ▲" : " ▼") : ""}
+            </span>
+            <span onClick={() => toggleActSort("partida")} style={{ flex: 1, fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', cursor: 'pointer', userSelect: 'none' }}>
+              Partida de control{actSortBy === "partida" ? (actSortDir === "asc" ? " ▲" : " ▼") : ""}
+            </span>
             <span style={{ width: 24 }}></span>
           </div>
 
-          {actividades.map(a => {
+          {sortedActividades.map(a => {
             const partida = partidas.find(p => p.id === a.partidaId)
             const isEditing = editingActId === a.id
 

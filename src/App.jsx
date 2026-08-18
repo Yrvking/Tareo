@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
+import { Capacitor } from "@capacitor/core"
 import { INITIAL_WORKERS, INITIAL_PARTIDAS, INITIAL_FRENTES, INITIAL_TIPOS_HORA, DEFAULT_PROJECT_CONFIG } from "./data/defaults"
 import { INITIAL_ACTIVIDADES } from "./data/actividades"
 import VoiceRecorder from "./components/VoiceRecorder"
@@ -57,7 +58,11 @@ const STORAGE_KEYS = {
   projectConfig: "tareador_project_config",
 }
 
+// Capacitor sirve la app empaquetada desde "https://localhost" por defecto,
+// asi que el hostname solo no basta para distinguir el dev server de Vite
+// de la app nativa real corriendo en un dispositivo/emulador.
 const isLocalDevHost = typeof window !== "undefined"
+  && !Capacitor.isNativePlatform()
   && ["localhost", "127.0.0.1"].includes(window.location.hostname)
 const LOCAL_DEV_FIXTURE_URL = "/dev-consolidado-s10.json"
 
@@ -128,6 +133,7 @@ function AppContent() {
   const currentRole = normalizeRole(profile?.role)
   const isAdminUser = canAccessConfig(currentRole)
   const cloudHydratedRef = useRef(false)
+  const lastLocalEditRef = useRef(0)
   const [tab, setTab] = useState("dashboard")
   const [showBottomNav, setShowBottomNav] = useState(() => (
     typeof window === "undefined" ? true : window.innerWidth < 900
@@ -170,8 +176,14 @@ function AppContent() {
   const refreshCatalogs = useCallback(async (options = {}) => {
     if (!user || isLocalDevHost) return null
 
+    const requestedAt = Date.now()
     const remotePayload = await fetchAppSettings("catalogs")
     if (!remotePayload || typeof remotePayload !== "object") return null
+
+    // Si hubo una edicion local (ej. una importacion) mientras este fetch
+    // estaba en vuelo, el dato remoto que acabamos de traer ya quedo
+    // desactualizado - aplicarlo pisaria lo que el usuario recien cargo.
+    if (lastLocalEditRef.current > requestedAt) return null
 
     applyCatalogPayload(remotePayload, options)
     cloudHydratedRef.current = true
@@ -340,6 +352,8 @@ function AppContent() {
   useEffect(() => {
     if (isLocalDevHost) return
     if (!user || !cloudHydratedRef.current) return
+
+    lastLocalEditRef.current = Date.now()
 
     const timeoutId = setTimeout(() => {
       saveAppSettings({

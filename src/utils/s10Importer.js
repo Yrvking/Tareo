@@ -560,7 +560,7 @@ export function mergeWorkers(existing, imported, replaceAll = false) {
     const key = w.codigo || w.id
     const previous = merged.get(key)
     if (!previous) {
-      merged.set(key, w)
+      merged.set(key, { ...w, id: w.id || w.codigo })
       continue
     }
 

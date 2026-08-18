@@ -56,6 +56,12 @@ function isRetryableSyncError(error) {
   const message = String(error?.message || "").toLowerCase()
 
   if (code === "DELETE_BLOCKED") return false
+  if (code === "DAILY_HOUR_LIMIT_EXCEEDED") return false
+  // P0001 = excepcion levantada a mano por un trigger en Postgres (ej. el tope
+  // diario de horas). No es un problema de red: el servidor SI recibio la
+  // solicitud y la rechazo a proposito. Reintentarla mas tarde por la cola
+  // offline solo crearia un fantasma local que nunca sincroniza.
+  if (code === "P0001" || message.includes("tope excedido")) return false
   if (
     message.includes("rls") ||
     message.includes("permission") ||
@@ -133,23 +139,51 @@ function sanitizeAssignments(assignments = []) {
   return Array.isArray(assignments) ? assignments.map((assignment) => ({ ...assignment })) : []
 }
 
-async function getExistingDailyHourTotals(workerId, date, excludeRecordId = null) {
+function sumAssignmentHours(assignments) {
+  return sanitizeAssignments(assignments).reduce(
+    (recordSum, assignment) => ({
+      hn: recordSum.hn + (Number(assignment?.horasNormales) || 0),
+      he: recordSum.he + (Number(assignment?.horasExtras) || 0),
+    }),
+    { hn: 0, he: 0 }
+  )
+}
+
+async function getExistingDailyHourTotals(workerId, date, excludeLocalId = null, excludeRemoteId = null) {
   if (!workerId || !date) return { hn: 0, he: 0 }
+
+  // Si hay conexion, se valida contra la base de datos real en vez de la copia
+  // local (IndexedDB) — asi una entrada fantasma vieja en la cache de este
+  // dispositivo (de una sincronizacion fallida anterior) no puede volver a
+  // inflar el total del dia ni bloquear guardados legitimos.
+  if (canReachSupabase()) {
+    try {
+      const { data, error } = await supabase
+        .from("registros")
+        .select("id, assignments")
+        .eq("worker_id", String(workerId))
+        .eq("tareo_date", date)
+
+      if (error) throw error
+
+      return (data || []).reduce((sum, row) => {
+        if (excludeRemoteId && String(row.id) === String(excludeRemoteId)) return sum
+        const totals = sumAssignmentHours(row.assignments)
+        return { hn: sum.hn + totals.hn, he: sum.he + totals.he }
+      }, { hn: 0, he: 0 })
+    } catch (error) {
+      console.warn("No se pudo validar el tope de horas contra el servidor, se usa la copia local:", error.message)
+    }
+  }
 
   const localRecords = await getRegistrosLocalByRange(date, date)
   return localRecords.reduce((sum, record) => {
     if (record.deleted) return sum
-    if (excludeRecordId && String(record.id) === String(excludeRecordId)) return sum
+    if (excludeLocalId && String(record.id) === String(excludeLocalId)) return sum
     if (String(record.workerId) !== String(workerId)) return sum
     if (record.date !== date) return sum
 
-    const totals = sanitizeAssignments(record.assignments).reduce(
-      (recordSum, assignment) => ({
-        hn: recordSum.hn + (Number(assignment?.horasNormales) || 0),
-        he: recordSum.he + (Number(assignment?.horasExtras) || 0),
-      }),
-      { hn: 0, he: 0 }
-    )
+    const totals = sumAssignmentHours(record.assignments)
 
     return {
       hn: sum.hn + totals.hn,
@@ -158,8 +192,8 @@ async function getExistingDailyHourTotals(workerId, date, excludeRecordId = null
   }, { hn: 0, he: 0 })
 }
 
-async function applyDailyNormalCap(reg, excludeRecordId = null) {
-  const usedTotals = await getExistingDailyHourTotals(reg.workerId, reg.date, excludeRecordId)
+async function applyDailyNormalCap(reg, excludeLocalId = null, excludeRemoteId = null) {
+  const usedTotals = await getExistingDailyHourTotals(reg.workerId, reg.date, excludeLocalId, excludeRemoteId)
   const validation = validateAssignmentsByDailyLimits({
     assignments: reg.assignments,
     dateString: reg.date,
@@ -411,6 +445,19 @@ async function upsertRemoteRowsIntoLocal(rows = [], startDate = null, endDate = 
       localRecord.remoteId &&
       localRecord.syncStatus === "synced" &&
       !remoteIds.has(localRecord.remoteId)
+    ) {
+      await deleteRegistroLocal(localRecord.id)
+      continue
+    }
+
+    // Restos huerfanos de bugs anteriores: un registro local no sincronizado
+    // (pending_create/pending_update/error/rejected) que ya no tiene nada en
+    // la cola de sincronizacion nunca se va a volver a intentar -- nada va a
+    // procesarlo jamas. Se limpia solo en vez de quedar visible para siempre
+    // duplicando los totales del dia.
+    if (
+      localRecord.syncStatus !== "synced" &&
+      !(await getQueueItem(localRecord.id))
     ) {
       await deleteRegistroLocal(localRecord.id)
     }
@@ -741,6 +788,7 @@ export async function insertRegistro(reg) {
       emitDataChanged({ reason: "insert_synced" })
       return { id: syncedRecord.id, syncStatus: "synced", record: localRecordToRegistro(syncedRecord), adjustment }
     } catch (error) {
+      if (!isRetryableSyncError(error)) throw error
       console.warn("Insert offline fallback:", error.message)
     }
   }
@@ -774,7 +822,7 @@ export async function updateRegistro(reg, options = {}) {
     remoteId: existingRecord.remoteId,
     assignments: sanitizeAssignments(reg.assignments),
   }
-  const { normalizedReg, adjustment } = await applyDailyNormalCap(baseReg, existingRecord.id)
+  const { normalizedReg, adjustment } = await applyDailyNormalCap(baseReg, existingRecord.id, existingRecord.remoteId)
 
   if (canReachSupabase() && existingRecord.remoteId) {
     try {
@@ -795,6 +843,7 @@ export async function updateRegistro(reg, options = {}) {
       emitDataChanged({ reason: "update_synced" })
       return { id: syncedRecord.id, syncStatus: "synced", record: localRecordToRegistro(syncedRecord), adjustment }
     } catch (error) {
+      if (!isRetryableSyncError(error)) throw error
       console.warn("Update offline fallback:", error.message)
     }
   }
@@ -962,15 +1011,32 @@ export async function syncPendingRegistros() {
       result.failed++
 
       if (localRecord) {
-        const shouldRestoreDeletedRecord = item.type === "delete" && !isRetryableSyncError(error)
-        await putRegistroLocal({
-          ...localRecord,
-          deleted: shouldRestoreDeletedRecord ? false : localRecord.deleted,
-          syncStatus: "error",
-          updatedAt: new Date().toISOString(),
-        })
-        if (shouldRestoreDeletedRecord) {
+        const permanentlyRejected = !isRetryableSyncError(error)
+        const shouldRestoreDeletedRecord = item.type === "delete" && permanentlyRejected
+
+        if (permanentlyRejected && item.type !== "delete") {
+          // El servidor rechazo esta creacion/actualizacion a proposito (ej. el
+          // trigger de tope diario de horas) — no es un problema de red, y
+          // reintentarla despues nunca va a funcionar. Dejarla en la cola para
+          // siempre solo crearia un fantasma local que infla los totales del dia
+          // sin que nadie se entere, ya que nunca llega a existir en la base real.
+          await putRegistroLocal({
+            ...localRecord,
+            deleted: true,
+            syncStatus: "rejected",
+            updatedAt: new Date().toISOString(),
+          })
           await clearQueuedRecord(item.recordId)
+        } else {
+          await putRegistroLocal({
+            ...localRecord,
+            deleted: shouldRestoreDeletedRecord ? false : localRecord.deleted,
+            syncStatus: "error",
+            updatedAt: new Date().toISOString(),
+          })
+          if (shouldRestoreDeletedRecord) {
+            await clearQueuedRecord(item.recordId)
+          }
         }
       }
     }

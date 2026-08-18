@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import {
   supabase,
   hasSupabaseConfig,
@@ -11,7 +12,11 @@ import {
 } from "../utils/accessControl";
 
 const AuthContext = createContext();
+// Capacitor sirve la app empaquetada desde "https://localhost" por defecto,
+// asi que el hostname solo no basta para distinguir el dev server de Vite
+// de la app nativa real corriendo en un dispositivo/emulador.
 const isLocalDevHost = typeof window !== "undefined"
+  && !Capacitor.isNativePlatform()
   && ["localhost", "127.0.0.1"].includes(window.location.hostname)
 
 export function AuthProvider({ children }) {
