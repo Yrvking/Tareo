@@ -7,8 +7,8 @@ android {
         applicationId "com.melcen.tareador"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +16,19 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            storeFile file('../Keystore/tareador-release.jks')
+            storePassword project.hasProperty('TAREADOR_STORE_PASSWORD') ? TAREADOR_STORE_PASSWORD : ""
+            keyAlias project.hasProperty('TAREADOR_KEY_ALIAS') ? TAREADOR_KEY_ALIAS : ""
+            keyPassword project.hasProperty('TAREADOR_KEY_PASSWORD') ? TAREADOR_KEY_PASSWORD : ""
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
